@@ -1,0 +1,67 @@
+'use client';
+
+import { useAuthStore } from '@/stores/authStore';
+import { authApi } from '@/lib/authApi';
+import { useRouter } from 'next/navigation';
+import { useCallback } from 'react';
+
+export const useAuth = () => {
+  const { user, isAuthenticated, isLoading, error, login, logout, setUser, setLoading, setError } = useAuthStore();
+  const router = useRouter();
+
+  const handleLogin = useCallback(async (email: string, password: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      await authApi.login({ email, password });
+      // Fetch user profile after successful login
+      const userProfile = await authApi.getProfile();
+      setUser(userProfile);
+      if (userProfile.role === 'admin') {
+        router.push('/admin');
+      } else {
+        router.push('/dashboard');
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Erreur de connexion');
+    } finally {
+      setLoading(false);
+    }
+  }, [setLoading, setError, setUser, router]);
+
+  const handleRegister = useCallback(async (name: string, email: string, password: string, role: 'admin' | 'user' = 'user') => {
+    try {
+      setLoading(true);
+      setError(null);
+      await authApi.register({ name, email, password, role });
+      router.push('/login');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Erreur d\'inscription');
+    } finally {
+      setLoading(false);
+    }
+  }, [setLoading, setError, router]);
+
+  const handleLogout = useCallback(async () => {
+    // Only call logout API if user is authenticated
+    if (isAuthenticated) {
+      try {
+        await authApi.logout();
+      } catch (err) {
+        console.error('Erreur lors de la déconnexion:', err);
+      }
+    }
+    logout();
+    router.push('/login');
+  }, [isAuthenticated, logout, router]);
+
+  return {
+    user,
+    isAuthenticated,
+    isLoading,
+    error,
+    login: handleLogin,
+    register: handleRegister,
+    logout: handleLogout,
+  };
+};

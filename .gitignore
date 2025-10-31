@@ -1,0 +1,48 @@
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Environment variables
+.env*
+
+# Temporary files
+tmp/
+temp/
+
+# Cache directories
+.cache/
+.parcel-cache/
+
+# Sensitive files
+*.key
+*.pem
+
+# Cookies and test files
+cookies*.txt
+admin_cookies*.txt
+body.txt
+headers.txt
+response.json
+
+# Build outputs (general)
+dist/
+build/
+
+# Coverage (if not project-specific)
+coverage/
+
+# Yarn integrity
+.yarn-integrity
+
+# Optional npm cache
+.npm
+
+# ESLint cache
+.eslintcache
