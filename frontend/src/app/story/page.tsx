@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Search, RefreshCw, BookOpen, Sparkles, X, Loader2 } from 'lucide-react';
+import { Search, RefreshCw, BookOpen, Sparkles, X, Loader2, Filter } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { templatesApi, Template } from '@/lib/templatesApi';
 import { toast } from 'sonner';
@@ -52,6 +52,7 @@ function StoryPageClient({ initialTemplates }: { initialTemplates: Template[] })
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   // Refs
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -266,10 +267,10 @@ function StoryPageClient({ initialTemplates }: { initialTemplates: Template[] })
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
         {/* Header with Search */}
-        <div className="mb-8">
-          <div className="flex items-center gap-4 mb-6">
+        <div className="mb-6 lg:mb-8">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-4 lg:mb-6">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -324,7 +325,7 @@ function StoryPageClient({ initialTemplates }: { initialTemplates: Template[] })
               <Button
                 variant="outline"
                 onClick={resetFilters}
-                className="flex-shrink-0"
+                className="flex-shrink-0 w-full sm:w-auto"
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Réinitialiser
@@ -333,10 +334,22 @@ function StoryPageClient({ initialTemplates }: { initialTemplates: Template[] })
           </div>
         </div>
 
-        <div className="flex gap-8">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Mobile Filter Toggle */}
+          <div className="lg:hidden">
+            <Button
+              variant="outline"
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="w-full mb-4"
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              {isSidebarOpen ? 'Masquer les filtres' : 'Afficher les filtres'}
+            </Button>
+          </div>
+
           {/* Filters Sidebar */}
-          <aside className="w-80 flex-shrink-0">
-            <div className="sticky top-8 bg-card border rounded-lg p-6 space-y-6">
+          <aside className={`w-full lg:w-80 flex-shrink-0 ${isSidebarOpen ? 'block' : 'hidden'} lg:block`}>
+            <div className="sticky top-8 bg-card border rounded-lg p-4 lg:p-6 space-y-4 lg:space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold">Filtres</h2>
                 <Badge variant="secondary">{sortedTemplates.length}</Badge>
@@ -484,7 +497,7 @@ function StoryPageClient({ initialTemplates }: { initialTemplates: Template[] })
             {/* Results */}
             {displayedTemplates.length > 0 ? (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
                   {displayedTemplates.map((template) => (
                     <StoryCard
                       key={template._id}
@@ -509,23 +522,23 @@ function StoryPageClient({ initialTemplates }: { initialTemplates: Template[] })
               </>
             ) : (
               /* Empty State */
-              <div className="text-center py-16">
+              <div className="text-center py-12 lg:py-16">
                 <motion.div
                   initial={{ scale: 0.8, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   className="mb-6 relative inline-block"
                 >
-                  <div className="w-24 h-24 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-full flex items-center justify-center">
-                    <BookOpen className="w-12 h-12 text-primary" />
+                  <div className="w-20 h-20 lg:w-24 lg:h-24 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-full flex items-center justify-center">
+                    <BookOpen className="w-10 h-10 lg:w-12 lg:h-12 text-primary" />
                   </div>
-                  <Sparkles className="w-6 h-6 text-secondary absolute -top-1 -right-1 animate-pulse" />
+                  <Sparkles className="w-5 h-5 lg:w-6 lg:h-6 text-secondary absolute -top-1 -right-1 animate-pulse" />
                 </motion.div>
-                
-                <h3 className="text-2xl font-bold mb-3">
+
+                <h3 className="text-xl lg:text-2xl font-bold mb-3">
                   {hasActiveFilters ? 'Aucun résultat trouvé' : 'Aucune histoire disponible'}
                 </h3>
-                
-                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+
+                <p className="text-muted-foreground mb-6 max-w-md mx-auto text-sm lg:text-base">
                   {hasActiveFilters
                     ? 'Essayez de modifier vos filtres pour découvrir plus d\'histoires.'
                     : 'Les histoires seront bientôt disponibles. Revenez plus tard !'
@@ -543,13 +556,13 @@ function StoryPageClient({ initialTemplates }: { initialTemplates: Template[] })
 
             {/* Error State */}
             {swrError && (
-              <div className="text-center py-16">
-                <div className="w-24 h-24 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <X className="w-12 h-12 text-red-500" />
+              <div className="text-center py-12 lg:py-16">
+                <div className="w-20 h-20 lg:w-24 lg:h-24 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <X className="w-10 h-10 lg:w-12 lg:h-12 text-red-500" />
                 </div>
-                
-                <h3 className="text-2xl font-bold mb-3">Oups ! Une erreur est survenue</h3>
-                <p className="text-muted-foreground mb-6">
+
+                <h3 className="text-xl lg:text-2xl font-bold mb-3">Oups ! Une erreur est survenue</h3>
+                <p className="text-muted-foreground mb-6 text-sm lg:text-base">
                   Impossible de charger les histoires
                 </p>
                 

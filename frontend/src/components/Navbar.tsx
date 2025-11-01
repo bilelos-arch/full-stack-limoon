@@ -1,3 +1,4 @@
+//frontend/src/app/story/page.tsx
 'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';

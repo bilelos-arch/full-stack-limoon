@@ -25,6 +25,14 @@ const nextConfig: NextConfig = {
     ],
   },
   turbopack: {},
+  async rewrites() {
+    return [
+      {
+        source: '/uploads/:path*',
+        destination: 'http://localhost:3001/uploads/:path*',
+      },
+    ];
+  },
   async redirects() {
     return [
       {

@@ -13,7 +13,7 @@ import { detectVariables } from '../../utils/variables';
 export class PdfGeneratorService {
   private readonly logger = new Logger(PdfGeneratorService.name);
   private uploadsDir = './uploads';
-  private previewsDir = '/tmp/previews';
+  private previewsDir = './uploads/previews';
   private cartoonifyServiceUrl = process.env.CARTOONIFY_SERVICE_URL || 'http://localhost:3001';
 
   constructor(private editorElementsService: EditorElementsService) {}
@@ -368,9 +368,9 @@ export class PdfGeneratorService {
 
       for (const result of results) {
         if (result.path) {
-          // Return relative URL path for serving
-          const relativePath = path.relative(process.cwd(), result.path);
-          imageUrls.push(`/${relativePath}`);
+          // Return URL path for serving via /uploads
+          const filename = path.basename(result.path);
+          imageUrls.push(`/uploads/previews/${filename}`);
         }
       }
 
