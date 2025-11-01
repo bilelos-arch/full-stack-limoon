@@ -9,6 +9,8 @@ export const useAuth = () => {
   const { user, isAuthenticated, isLoading, error, login, logout, setUser, setLoading, setError } = useAuthStore();
   const router = useRouter();
 
+  console.log('useAuth hook - user:', user, 'isAuthenticated:', isAuthenticated);
+
   const handleLogin = useCallback(async (email: string, password: string) => {
     try {
       setLoading(true);

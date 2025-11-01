@@ -14,11 +14,14 @@ export class Histoire {
   @Prop({ type: Object, required: true })
   variables: Record<string, any>;
 
-  @Prop({ type: String })
-  previewUrl?: string;
+  @Prop({ type: [String] })
+  previewUrls?: string[];
 
   @Prop({ type: String })
   pdfUrl?: string;
+
+  @Prop({ type: String })
+  generatedPdfUrl?: string;
 }
 
 export const HistoireSchema = SchemaFactory.createForClass(Histoire);

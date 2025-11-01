@@ -1,12 +1,16 @@
+//backend/src/templates.service.ts
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Template, TemplateDocument } from './template.schema';
 import { CreateTemplateDto } from './create-template.dto';
 import { UpdateTemplateDto } from './update-template.dto';
+import { EditorElement } from './editor-element.schema';
+import { parseVariablesFromEditorElements } from './utils/variables';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.min.js';
+import { PDFDocument } from 'pdf-lib';
 // Configure PDF.js for Node.js
 pdfjsLib.GlobalWorkerOptions.workerSrc = require('pdfjs-dist/legacy/build/pdf.worker.js');
 
@@ -14,6 +18,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = require('pdfjs-dist/legacy/build/pdf.wo
 export class TemplatesService {
   constructor(
     @InjectModel(Template.name) private templateModel: Model<TemplateDocument>,
+    @InjectModel(EditorElement.name) private editorElementModel: Model<EditorElement>,
   ) {}
 
   async create(createTemplateDto: CreateTemplateDto, pdfPath: string, coverPath: string): Promise<TemplateDocument> {
@@ -35,11 +40,17 @@ export class TemplatesService {
       const pdfMetadata = await this.analyzePdf(pdfPath);
       console.log('PDF metadata:', pdfMetadata);
 
+      // Get editor elements for this template (though it might be empty at creation)
+      const editorElements = await this.editorElementModel.find({ templateId: null }).exec(); // Will be empty initially
+      const variables = parseVariablesFromEditorElements(editorElements);
+
       const templateData = {
         ...normalizedDto,
         pdfPath,
         coverPath,
-        ...pdfMetadata,
+        pageCount: pdfMetadata.pageCount,
+        dimensions: pdfMetadata.dimensions,
+        variables,
       };
       console.log('Template data to save:', templateData);
       console.log('Template data ageRange:', templateData.ageRange);
@@ -72,11 +83,16 @@ export class TemplatesService {
   }
 
   async findOne(id: string): Promise<TemplateDocument> {
+    console.log('findOne called with id:', id);
+    console.log('id is valid ObjectId:', Types.ObjectId.isValid(id));
     if (!Types.ObjectId.isValid(id)) {
+      console.log('Throwing BadRequestException for invalid ID');
       throw new BadRequestException('Invalid template ID');
     }
     const template = await this.templateModel.findById(id).exec();
+    console.log('Template found:', !!template);
     if (!template) {
+      console.log('Throwing NotFoundException for template not found');
       throw new NotFoundException('Template not found');
     }
     return template;
@@ -98,6 +114,10 @@ export class TemplatesService {
       const pdfMetadata = await this.analyzePdf(pdfPath);
       updateData.pageCount = pdfMetadata.pageCount;
       updateData.dimensions = pdfMetadata.dimensions;
+
+      // Update variables from editor elements
+      const editorElements = await this.editorElementModel.find({ templateId: id }).exec();
+      updateData.variables = parseVariablesFromEditorElements(editorElements);
     }
 
     if (files?.cover && files.cover.length > 0) {
@@ -205,4 +225,5 @@ export class TemplatesService {
       throw new BadRequestException('Invalid PDF file');
     }
   }
+
 }

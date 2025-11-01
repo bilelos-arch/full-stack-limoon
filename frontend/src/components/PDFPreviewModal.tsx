@@ -6,10 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, X, Maximize2, Minimize2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Template } from '@/lib/templatesApi';
-import * as pdfjsLib from 'pdfjs-dist';
-
-// Configure PDF.js worker
-pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
 
 interface PDFPreviewModalProps {
   isOpen: boolean;
@@ -24,7 +21,7 @@ export default function PDFPreviewModal({
   template,
   onCustomize
 }: PDFPreviewModalProps) {
-  const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
+  const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [numPages, setNumPages] = useState(0);
   const [scale, setScale] = useState(1.0);
@@ -36,6 +33,15 @@ export default function PDFPreviewModal({
   const lastFocusableRef = useRef<HTMLButtonElement>(null);
 
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+  // Dynamic import of PDF.js
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      import('pdfjs-dist').then((pdfjsLib) => {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+      });
+    }
+  }, []);
 
   // Load PDF when template changes
   useEffect(() => {
@@ -95,10 +101,11 @@ export default function PDFPreviewModal({
 
     setIsLoading(true);
     try {
+      const { getDocument } = await import('pdfjs-dist');
       const pdfUrl = `${API_BASE_URL}/uploads/${template.pdfPath}`;
       console.log('Loading PDF from URL:', pdfUrl);
       console.log('Template pdfPath:', template.pdfPath);
-      const loadingTask = pdfjsLib.getDocument({url: pdfUrl});
+      const loadingTask = getDocument({url: pdfUrl});
       const pdf = await loadingTask.promise;
       setPdfDoc(pdf);
       setNumPages(pdf.numPages);

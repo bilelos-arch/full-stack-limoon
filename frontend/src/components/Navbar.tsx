@@ -111,8 +111,8 @@ const Navbar: React.FC = () => {
     <>
       <nav
         className={cn(
-          "fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b transition-all duration-300",
-          isScrolled ? "shadow-lg border-border/50" : "border-transparent"
+          "fixed top-0 left-0 right-0 z-50 glass-citron border-b transition-all duration-300",
+          isScrolled ? "shadow-sm border-gray-200/50 dark:border-gray-700/50" : "border-transparent"
         )}
         role="navigation"
         aria-label="Navigation principale"
@@ -122,10 +122,10 @@ const Navbar: React.FC = () => {
             {/* Logo */}
             <Link 
               href="/" 
-              className="flex-shrink-0 text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent hover:opacity-80 transition-opacity"
+              className="flex-shrink-0 text-2xl font-bold text-gradient-citron hover:opacity-90 transition-all duration-300 transform hover:scale-105"
               aria-label="Limoon - Retour à l'accueil"
             >
-              Limoon
+              <span className="bg-gradient-citron bg-clip-text text-transparent">Limoon</span>
             </Link>
 
             {/* Desktop Navigation */}
@@ -134,7 +134,7 @@ const Navbar: React.FC = () => {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="px-4 py-2 text-sm font-medium text-foreground/80 hover:text-primary hover:bg-accent rounded-lg transition-all"
+                  className="px-4 py-2 text-sm font-medium text-foreground/80 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-sm border border-transparent hover:border-gray-200 dark:hover:border-gray-700"
                 >
                   {link.label}
                 </Link>
@@ -150,7 +150,7 @@ const Navbar: React.FC = () => {
                   variant="outline" 
                   size="sm"
                   onClick={logout}
-                  className="ml-2"
+                  className="ml-2 border-gray-300 hover:bg-gray-600 hover:text-white hover:border-gray-400 transition-all duration-300 transform hover:scale-105 shadow-sm hover:shadow-md"
                 >
                   <LogOut className="h-4 w-4 mr-2" aria-hidden="true" />
                   Déconnexion
@@ -185,20 +185,20 @@ const Navbar: React.FC = () => {
           {isMenuOpen && (
             <motion.div
               id="mobile-menu"
-              className="md:hidden border-t border-border"
+              className="md:hidden border-t border-gray-200 dark:border-gray-700"
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              transition={{ duration: 0.3 }}
               role="menu"
             >
-              <div className="px-4 pt-2 pb-4 space-y-1 bg-background">
+              <div className="px-4 pt-3 pb-4 space-y-1 bg-background/95 backdrop-blur-lg">
                 {navLinks.map((link) => (
                   <Link
                     key={link.href}
                     href={link.href}
                     onClick={handleMenuClose}
-                    className="block px-4 py-3 text-base font-medium text-foreground hover:text-primary hover:bg-accent rounded-lg transition-colors"
+                    className="block px-4 py-3 text-base font-medium text-foreground hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-sm border border-transparent hover:border-gray-200 dark:hover:border-gray-700"
                     role="menuitem"
                   >
                     {link.label}
@@ -208,7 +208,7 @@ const Navbar: React.FC = () => {
                 {isAuthenticated && (
                   <Button
                     variant="outline"
-                    className="w-full mt-4"
+                    className="w-full mt-4 border-gray-300 hover:bg-gray-600 hover:text-white hover:border-gray-400 transition-all duration-300 transform hover:scale-105 shadow-sm"
                     onClick={handleLogout}
                   >
                     <LogOut className="h-4 w-4 mr-2" aria-hidden="true" />

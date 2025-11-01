@@ -1,3 +1,4 @@
+//backend/src/histoires/histoires.service.ts
 import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -5,10 +6,12 @@ import { Histoire, HistoireDocument } from './schemas/histoire.schema';
 import { PdfGeneratorService } from './utils/pdf-generator.service';
 import { TemplatesService } from '../templates.service';
 import { UsersService } from '../users.service';
+import { EditorElementsService } from '../editor-elements.service';
 import { detectVariables } from '../utils/variables';
 import { CreateHistoireDto } from './dto/create-histoire.dto';
 import { UpdateHistoireDto } from './dto/update-histoire.dto';
 import { PreviewHistoireDto } from './dto/preview-histoire.dto';
+import { GenerateHistoireDto } from './dto/generate-histoire.dto';
 
 @Injectable()
 export class HistoiresService {
@@ -19,6 +22,7 @@ export class HistoiresService {
     private pdfGeneratorService: PdfGeneratorService,
     private templatesService: TemplatesService,
     private usersService: UsersService,
+    private editorElementsService: EditorElementsService,
   ) {}
 
   async findByTemplate(templateId: string): Promise<HistoireDocument[]> {
@@ -76,10 +80,19 @@ export class HistoiresService {
     return savedHistoire;
   }
 
-  async generatePreview(userId: string, previewDto: PreviewHistoireDto): Promise<{ previewUrl: string }> {
+  async generatePreview(userId: string, previewDto: PreviewHistoireDto): Promise<{ previewUrls: string[], histoireId: string }> {
     this.logger.log(`Generating preview for user ${userId} with template ${previewDto.templateId}`);
 
     const { templateId, variables } = previewDto;
+
+    // Inject default values if variables are empty or missing
+    const defaultValues = {
+      nom: 'Alex',
+      âge: '5',
+      date: '2025-10-30',
+      image: '/assets/avatar.png',
+    };
+    const mergedVariables = { ...defaultValues, ...variables };
 
     // Validate template exists
     let template;
@@ -101,11 +114,22 @@ export class HistoiresService {
       throw new BadRequestException('User not found');
     }
 
-    // Generate preview PDF
-    const previewUrl = await this.pdfGeneratorService.generatePreview(template, variables);
-    this.logger.log(`Preview generated successfully: ${previewUrl}`);
+    // Generate preview images
+    const previewUrls = await this.pdfGeneratorService.generatePreview(template, mergedVariables);
+    this.logger.log(`Preview generated successfully: ${previewUrls.length} images`);
 
-    return { previewUrl };
+    // Create histoire record with preview URLs
+    const histoire = new this.histoireModel({
+      templateId: new Types.ObjectId(templateId),
+      userId: new Types.ObjectId(userId),
+      variables: mergedVariables,
+      previewUrls,
+    });
+
+    const savedHistoire = await histoire.save();
+    this.logger.log(`Histoire with preview created successfully with ID: ${savedHistoire._id}`);
+
+    return { previewUrls, histoireId: savedHistoire._id.toString() };
   }
 
   async generatePdf(userId: string, histoireId: string): Promise<HistoireDocument> {
@@ -136,6 +160,7 @@ export class HistoiresService {
 
     // Update histoire with PDF URL
     histoire.pdfUrl = pdfUrl;
+    histoire.generatedPdfUrl = pdfUrl; // Also set generatedPdfUrl for consistency
     const updatedHistoire = await histoire.save();
     this.logger.log(`Final PDF generated successfully for histoire ${histoireId}: ${pdfUrl}`);
 
@@ -242,12 +267,14 @@ export class HistoiresService {
     }
 
     // Remove associated files if they exist
-    if (histoire.previewUrl) {
+    if (histoire.previewUrls && histoire.previewUrls.length > 0) {
       const fs = require('fs');
       const path = require('path');
-      const previewPath = path.join('./uploads', histoire.previewUrl);
-      if (fs.existsSync(previewPath)) {
-        fs.unlinkSync(previewPath);
+      for (const previewUrl of histoire.previewUrls) {
+        const previewPath = path.join('./uploads', previewUrl);
+        if (fs.existsSync(previewPath)) {
+          fs.unlinkSync(previewPath);
+        }
       }
     }
 
@@ -262,5 +289,65 @@ export class HistoiresService {
 
     await this.histoireModel.findByIdAndDelete(id);
     this.logger.log(`Histoire ${id} deleted successfully`);
+  }
+
+  async generateHistoire(userId: string, generateDto: GenerateHistoireDto, uploadedImagePaths?: string[]): Promise<HistoireDocument> {
+    this.logger.log(`Generating complete histoire for user ${userId} with template ${generateDto.templateId}`);
+
+    const { templateId, variables } = generateDto;
+
+    // Validate template exists
+    let template;
+    try {
+      template = await this.templatesService.findOne(templateId);
+    } catch (error) {
+      this.logger.error(`Template ${templateId} not found: ${error.message}`);
+      throw new BadRequestException('Template not found');
+    }
+
+    // Validate user exists
+    try {
+      const user = await this.usersService.findById(userId);
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+    } catch (error) {
+      this.logger.error(`User ${userId} not found: ${error.message}`);
+      throw new BadRequestException('User not found');
+    }
+
+    // Validate variables
+    if (!variables || typeof variables !== 'object') {
+      throw new BadRequestException('Variables must be a valid object');
+    }
+
+    this.logger.log('Variables received:', variables);
+
+    // Validate that all required variables from template are provided
+    const isValid = await this.pdfGeneratorService.validateVariables(template, variables);
+    if (!isValid) {
+      throw new BadRequestException('Missing required variables for template');
+    }
+
+    // Generate preview images first
+    const previewUrls = await this.pdfGeneratorService.generatePreview(template, variables);
+
+    // Generate final PDF
+    const pdfUrl = await this.pdfGeneratorService.generateFinalPdf(template, variables, uploadedImagePaths);
+
+    // Create new Histoire record
+    const histoire = new this.histoireModel({
+      templateId: new Types.ObjectId(templateId),
+      userId: new Types.ObjectId(userId),
+      variables,
+      previewUrls,
+      pdfUrl,
+      generatedPdfUrl: pdfUrl, // Also set generatedPdfUrl for consistency
+    });
+
+    const savedHistoire = await histoire.save();
+    this.logger.log(`Histoire generated and saved successfully with ID: ${savedHistoire._id}, PDF: ${pdfUrl}, Previews: ${previewUrls.length}`);
+
+    return savedHistoire;
   }
 }

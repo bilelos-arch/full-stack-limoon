@@ -1,3 +1,4 @@
+//frontend/src/app/histoires/creer/[templateId]/page.tsx
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
@@ -5,22 +6,15 @@ import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useHistoiresStore } from '@/stores/histoiresStore';
 import { templatesApi, Template } from '@/lib/templatesApi';
+import { histoireApi } from '@/lib/histoireApi';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Upload, Eye, Sparkles } from 'lucide-react';
-import Image from 'next/image';
+import { ArrowLeft, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { detectVariables } from '@/lib/utils';
 import HistoireForm from '@/components/HistoireForm';
 import HistoirePreview from '@/components/HistoirePreview';
-
-interface FormData {
-  [key: string]: string;
-}
 
 export default function CreerHistoirePage() {
   const router = useRouter();
@@ -29,197 +23,97 @@ export default function CreerHistoirePage() {
   const { generateHistoire, isLoading, error, clearError } = useHistoiresStore();
 
   const [template, setTemplate] = useState<Template | null>(null);
-  const [formData, setFormData] = useState<FormData>({});
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewImages, setPreviewImages] = useState<string[]>([]);
+  const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
 
   const templateId = params.templateId as string;
 
   useEffect(() => {
+    console.log('useEffect triggered - isAuthenticated:', isAuthenticated, 'templateId:', templateId, 'user:', user);
     if (!isAuthenticated) {
+      console.log('User not authenticated, redirecting to login');
       router.push('/login');
       return;
     }
 
     if (templateId) {
+      // Basic validation: check if templateId looks like a valid MongoDB ObjectId (24 hex chars)
+      const isValidObjectId = /^[a-f\d]{24}$/i.test(templateId);
+      if (!isValidObjectId) {
+        console.error('Invalid templateId format:', templateId);
+        // Could redirect to error page or show error message
+        return;
+      }
       loadTemplate();
     }
   }, [isAuthenticated, templateId, router]);
 
   const loadTemplate = async () => {
     try {
+      console.log('Loading template with ID:', templateId);
       const templateData = await templatesApi.getTemplate(templateId);
+      console.log('Template loaded successfully:', templateData);
       setTemplate(templateData);
-
-      // Initialize form data with detected variables
-      const variables = detectVariables(templateData.description || '');
-      const initialFormData: FormData = {};
-      variables.forEach(variable => {
-        initialFormData[variable] = '';
-      });
-      setFormData(initialFormData);
     } catch (error) {
       console.error('Erreur lors du chargement du template:', error);
+      console.error('Template ID that failed:', templateId);
     }
   };
 
-  const handleInputChange = useCallback((variable: string, value: string) => {
-    setFormData(prev => ({ ...prev, [variable]: value }));
+  const handlePreview = useCallback(async (variables: Record<string, string>) => {
+    if (!template || !user?._id) return;
 
-    // Debounced preview generation (800ms)
-    if (debounceTimer) {
-      clearTimeout(debounceTimer);
-    }
-
-    const timer = setTimeout(() => {
-      generatePreview();
-    }, 800);
-
-    setDebounceTimer(timer);
-  }, [debounceTimer]);
-
-  const generatePreview = async () => {
-    if (!template || !user?.userId) return;
-
+    setIsGeneratingPreview(true);
     try {
-      // For now, we'll simulate preview generation
-      // In a real implementation, this would call a preview API
-      setPreviewUrl(null); // Reset preview while generating
-
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Set a placeholder preview URL
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-      setPreviewUrl(`${API_BASE_URL}/uploads/${template.coverPath}`);
+      // Call preview API using histoireApi
+      const data = await histoireApi.generatePreview(templateId, variables);
+      setPreviewImages(data.previewUrls || []);
     } catch (error) {
       console.error('Erreur lors de la génération de l\'aperçu:', error);
+      setPreviewImages([]);
+    } finally {
+      setIsGeneratingPreview(false);
     }
-  };
+  }, [template, user?._id, templateId]);
 
-  const handleGenerate = async () => {
-    if (!template || !user?.userId) return;
+  const handleGenerate = async (variables: Record<string, string>) => {
+    console.log('handleGenerate called with variables:', variables);
+    console.log('template:', template);
+    console.log('user:', user);
+    console.log('user?._id:', user?._id);
+    console.log('isAuthenticated:', isAuthenticated);
+
+    if (!template || !user?._id) {
+      console.error('Missing template or user:', { template: !!template, userId: user?._id, user: user, isAuthenticated });
+      console.error('Full user object:', JSON.stringify(user, null, 2));
+      return;
+    }
 
     setIsGenerating(true);
     try {
+      console.log('Calling generateHistoire with:', {
+        templateId: templateId,
+        variables,
+      });
       const histoire = await generateHistoire({
-        templateId: template._id,
-        variables: formData,
+        templateId: templateId,
+        variables,
       });
 
+      console.log('generateHistoire returned:', histoire);
+
       if (histoire) {
+        console.log('Navigating to preview page:', `/histoires/preview/${histoire._id}`);
         router.push(`/histoires/preview/${histoire._id}`);
+      } else {
+        console.error('generateHistoire returned null');
       }
     } catch (error) {
       console.error('Erreur lors de la génération:', error);
     } finally {
       setIsGenerating(false);
     }
-  };
-
-  const handleFileUpload = (variable: string, file: File) => {
-    // For now, we'll just store the file name
-    // In a real implementation, this would upload the file and store the URL
-    setFormData(prev => ({ ...prev, [variable]: file.name }));
-  };
-
-  const renderFormField = (variable: string) => {
-    const value = formData[variable] || '';
-
-    // Determine field type based on variable name (simple heuristic)
-    const isImageField = variable.toLowerCase().includes('image') ||
-                        variable.toLowerCase().includes('photo') ||
-                        variable.toLowerCase().includes('picture');
-
-    const isDateField = variable.toLowerCase().includes('date') ||
-                       variable.toLowerCase().includes('naissance');
-
-    const isAgeField = variable.toLowerCase().includes('age') ||
-                      variable.toLowerCase().includes('âge');
-
-    if (isImageField) {
-      return (
-        <div className="space-y-2">
-          <Label htmlFor={variable} className="text-sm font-medium">
-            {variable.charAt(0).toUpperCase() + variable.slice(1).replace(/([A-Z])/g, ' $1')}
-          </Label>
-          <div className="flex items-center gap-4">
-            <Input
-              id={variable}
-              type="file"
-              accept="image/*"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  handleFileUpload(variable, file);
-                }
-              }}
-              className="flex-1"
-            />
-            {value && (
-              <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
-                <Upload className="h-6 w-6 text-muted-foreground" />
-              </div>
-            )}
-          </div>
-        </div>
-      );
-    }
-
-    if (isDateField) {
-      return (
-        <div className="space-y-2">
-          <Label htmlFor={variable} className="text-sm font-medium">
-            {variable.charAt(0).toUpperCase() + variable.slice(1).replace(/([A-Z])/g, ' $1')}
-          </Label>
-          <Input
-            id={variable}
-            type="date"
-            value={value}
-            onChange={(e) => handleInputChange(variable, e.target.value)}
-            className="w-full"
-          />
-        </div>
-      );
-    }
-
-    if (isAgeField) {
-      return (
-        <div className="space-y-2">
-          <Label htmlFor={variable} className="text-sm font-medium">
-            {variable.charAt(0).toUpperCase() + variable.slice(1).replace(/([A-Z])/g, ' $1')}
-          </Label>
-          <Input
-            id={variable}
-            type="number"
-            min="1"
-            max="18"
-            value={value}
-            onChange={(e) => handleInputChange(variable, e.target.value)}
-            placeholder="Ex: 5"
-            className="w-full"
-          />
-        </div>
-      );
-    }
-
-    // Default text field
-    return (
-      <div className="space-y-2">
-        <Label htmlFor={variable} className="text-sm font-medium">
-          {variable.charAt(0).toUpperCase() + variable.slice(1).replace(/([A-Z])/g, ' $1')}
-        </Label>
-        <Input
-          id={variable}
-          type="text"
-          value={value}
-          onChange={(e) => handleInputChange(variable, e.target.value)}
-          placeholder={`Entrez ${variable.toLowerCase()}`}
-          className="w-full"
-        />
-      </div>
-    );
   };
 
   if (!isAuthenticated) {
@@ -229,17 +123,12 @@ export default function CreerHistoirePage() {
   if (!template) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-8">
-          <div className="max-w-4xl mx-auto">
+        <div className="container mx-auto px-4 py-4 md:py-8">
+          <div className="max-w-7xl mx-auto">
             <Skeleton className="h-8 w-64 mb-6" />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-8">
               <div>
-                <Skeleton className="h-64 w-full mb-6" />
-                <div className="space-y-4">
-                  {[...Array(4)].map((_, i) => (
-                    <Skeleton key={i} className="h-12 w-full" />
-                  ))}
-                </div>
+                <Skeleton className="h-96 w-full" />
               </div>
               <div>
                 <Skeleton className="h-96 w-full" />
@@ -251,12 +140,10 @@ export default function CreerHistoirePage() {
     );
   }
 
-  const variables = detectVariables(template.description || '');
-
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -272,8 +159,8 @@ export default function CreerHistoirePage() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Personnaliser l'histoire</h1>
-              <p className="text-muted-foreground mt-1">{template.title}</p>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground">Personnaliser l'histoire</h1>
+              <p className="text-sm md:text-base text-muted-foreground mt-1">{template.title}</p>
             </div>
           </motion.div>
 
@@ -296,13 +183,8 @@ export default function CreerHistoirePage() {
             >
               <HistoireForm
                 templateId={templateId}
-                onPreview={(variables) => {
-                  // Générer l'aperçu avec les variables
-                  generatePreview();
-                }}
-                onSubmit={async (variables) => {
-                  await handleGenerate();
-                }}
+                onPreview={handlePreview}
+                onSubmit={handleGenerate}
               />
             </motion.div>
 
@@ -313,10 +195,10 @@ export default function CreerHistoirePage() {
               transition={{ delay: 0.2 }}
             >
               <HistoirePreview
-                pdfUrl={previewUrl || undefined}
-                isLoading={isGenerating}
+                previewImages={previewImages}
+                isLoading={isGeneratingPreview || isGenerating}
                 error={error}
-                onRetry={() => generatePreview()}
+                onRetry={() => handlePreview({})}
               />
             </motion.div>
           </div>

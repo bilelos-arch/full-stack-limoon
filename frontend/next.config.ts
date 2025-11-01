@@ -25,6 +25,15 @@ const nextConfig: NextConfig = {
     ],
   },
   turbopack: {},
+  async redirects() {
+    return [
+      {
+        source: '/templates',
+        destination: '/story',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -1,3 +1,4 @@
+//frontend/src/components/HistoireForm.tsx
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
@@ -13,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { detectVariables } from '@/lib/utils';
-import { templatesApi, Template } from '@/lib/templatesApi';
+import { templatesApi, Template, EditorElement } from '@/lib/templatesApi';
 import { useHistoiresStore } from '@/stores/histoiresStore';
 
 interface HistoireFormProps {
@@ -70,6 +71,7 @@ export default function HistoireForm({
   const [formSchema, setFormSchema] = useState<z.ZodObject<any> | null>(null);
   const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout | null>(null);
   const [imagePreviews, setImagePreviews] = useState<Record<string, string>>({});
+  const [editorElements, setEditorElements] = useState<EditorElement[]>([]);
 
   const { isLoading, error, clearError } = useHistoiresStore();
 
@@ -86,20 +88,46 @@ export default function HistoireForm({
         const templateData = await templatesApi.getTemplate(templateId);
         setTemplate(templateData);
 
-        const detectedVars = detectVariables(templateData.description || '');
+        // Récupérer les éléments d'éditeur pour obtenir les valeurs par défaut
+        const elements = await templatesApi.getEditorElements(templateId);
+        setEditorElements(elements);
+
+        const detectedVars = templateData.variables || [];
         setVariables(detectedVars);
 
         const schema = createFormSchema(detectedVars);
         setFormSchema(schema);
 
-        // Initialiser les valeurs par défaut
+        // Extraire les valeurs par défaut des éléments d'éditeur
+        const defaultValuesFromElements: Record<string, any> = {};
+        elements.forEach(element => {
+          if (element.defaultValues) {
+            Object.assign(defaultValuesFromElements, element.defaultValues);
+          }
+        });
+
+        // Initialiser les valeurs par défaut (valeurs des éléments d'abord, puis fallbacks)
         const defaultValues: Record<string, any> = {};
         detectedVars.forEach(variable => {
           const lowerVar = variable.toLowerCase();
-          if (lowerVar.includes('image') || lowerVar.includes('photo') || lowerVar.includes('picture')) {
-            defaultValues[variable] = undefined;
+
+          // Utiliser les valeurs par défaut des éléments d'éditeur si disponibles
+          if (defaultValuesFromElements[variable] !== undefined) {
+            defaultValues[variable] = defaultValuesFromElements[variable];
           } else {
-            defaultValues[variable] = '';
+            // Fallbacks par défaut
+            if (lowerVar.includes('nom') || lowerVar.includes('name')) {
+              defaultValues[variable] = 'Adam';
+            } else if (lowerVar.includes('âge') || lowerVar.includes('age')) {
+              defaultValues[variable] = '5';
+            } else if (lowerVar.includes('date') || lowerVar.includes('naissance')) {
+              const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+              defaultValues[variable] = currentDate;
+            } else if (lowerVar.includes('image') || lowerVar.includes('photo') || lowerVar.includes('picture')) {
+              defaultValues[variable] = undefined;
+            } else {
+              defaultValues[variable] = '';
+            }
           }
         });
         form.reset(defaultValues);
@@ -240,9 +268,47 @@ export default function HistoireForm({
 
   const handleSubmit = async (data: Record<string, any>) => {
     if (onSubmit) {
-      // Pour les images, on pourrait avoir besoin d'uploader d'abord
-      // Pour l'instant, on passe les données telles quelles
-      await onSubmit(data);
+      // Upload images first if any
+      const formData = new FormData();
+      const imageFields: string[] = [];
+
+      // Prepare form data with images
+      Object.entries(data).forEach(([key, value]) => {
+        if (value instanceof File) {
+          formData.append('images', value);
+          imageFields.push(key);
+        }
+      });
+
+      // Add other variables
+      const variables: Record<string, any> = {};
+      Object.entries(data).forEach(([key, value]) => {
+        if (!(value instanceof File)) {
+          variables[key] = value;
+        }
+      });
+
+      formData.append('templateId', templateId);
+      formData.append('variables', JSON.stringify(variables));
+
+      try {
+        // Upload images and generate histoire
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/histoires/generate`, {
+          method: 'POST',
+          credentials: 'include',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to generate histoire');
+        }
+
+        const result = await response.json();
+        await onSubmit(result);
+      } catch (error) {
+        console.error('Error generating histoire:', error);
+        throw error;
+      }
     }
   };
 
@@ -322,7 +388,7 @@ export default function HistoireForm({
                     ) : (
                       <>
                         <Sparkles className="h-4 w-4 mr-2" />
-                        Générer
+                        Générer mon histoire
                       </>
                     )}
                   </Button>

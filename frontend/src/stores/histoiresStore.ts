@@ -75,16 +75,8 @@ export const useHistoiresStore = create<HistoiresState>()(
           set({ isLoading: true, error: null });
           const response = await histoireApi.generateHistoire(data);
 
-          // Créer une nouvelle histoire avec les données de réponse
-          const newHistoire: Histoire = {
-            _id: Date.now().toString(), // Temporaire, devrait venir du backend
-            templateId: data.templateId,
-            userId: '', // Sera défini par le backend
-            variables: data.variables,
-            generatedPdfUrl: response.generatedPdfUrl,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          };
+          // Utiliser directement la réponse du backend qui contient maintenant l'objet Histoire complet
+          const newHistoire: Histoire = response;
 
           set(state => ({
             histoires: [newHistoire, ...state.histoires],

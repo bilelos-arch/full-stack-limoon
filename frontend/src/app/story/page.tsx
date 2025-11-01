@@ -163,7 +163,7 @@ function StoryPageClient({ initialTemplates }: { initialTemplates: Template[] })
 
   const handleCustomize = (template: Template) => {
     if (user) {
-      router.push(`/histoires/creer/${template._id}/page.tsx`);
+      router.push(`/histoires/creer/${template._id}`);
     } else {
       // Handle case when user is not connected
       toast.error('Vous devez être connecté pour personnaliser une histoire');

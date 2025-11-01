@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface HistoirePreviewProps {
-  pdfUrl?: string;
+  previewImages?: string[];
   isLoading?: boolean;
   error?: string | null;
   onRetry?: () => void;
@@ -17,47 +17,21 @@ interface HistoirePreviewProps {
 }
 
 export default function HistoirePreview({
-  pdfUrl,
+  previewImages = [],
   isLoading = false,
   error = null,
   onRetry,
   className
 }: HistoirePreviewProps) {
-  const [zoom, setZoom] = useState(1);
-  const [rotation, setRotation] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [imageErrors, setImageErrors] = useState<Set<number>>(new Set());
+  const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
 
-  const handleZoomIn = useCallback(() => {
-    setZoom(prev => Math.min(prev + 0.25, 3));
+  const handleImageLoad = useCallback((index: number) => {
+    setLoadedImages(prev => new Set(prev).add(index));
   }, []);
 
-  const handleZoomOut = useCallback(() => {
-    setZoom(prev => Math.max(prev - 0.25, 0.5));
-  }, []);
-
-  const handleReset = useCallback(() => {
-    setZoom(1);
-    setRotation(0);
-    setCurrentPage(1);
-  }, []);
-
-  const handleDownload = useCallback(() => {
-    if (pdfUrl) {
-      const link = document.createElement('a');
-      link.href = pdfUrl;
-      link.download = 'mon-histoire.pdf';
-      link.click();
-    }
-  }, [pdfUrl]);
-
-  const handlePreviousPage = useCallback(() => {
-    setCurrentPage(prev => Math.max(prev - 1, 1));
-  }, []);
-
-  const handleNextPage = useCallback(() => {
-    setCurrentPage(prev => Math.min(prev + 1, totalPages));
+  const handleImageError = useCallback((index: number) => {
+    setImageErrors(prev => new Set(prev).add(index));
   }, []);
 
   if (error) {
@@ -113,7 +87,7 @@ export default function HistoirePreview({
     );
   }
 
-  if (!pdfUrl) {
+  if (!previewImages || previewImages.length === 0) {
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
@@ -154,123 +128,54 @@ export default function HistoirePreview({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {/* Controls */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleZoomOut}
-                disabled={zoom <= 0.5}
+          {/* Preview Images Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {previewImages.map((imageUrl, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="relative group"
               >
-                <ZoomOut className="h-4 w-4" />
-              </Button>
-              <span className="text-sm text-muted-foreground min-w-[60px] text-center">
-                {Math.round(zoom * 100)}%
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleZoomIn}
-                disabled={zoom >= 3}
-              >
-                <ZoomIn className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleReset}
-              >
-                <RotateCcw className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handlePreviousPage}
-                disabled={currentPage <= 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <span className="text-sm text-muted-foreground">
-                {currentPage} / {totalPages}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleNextPage}
-                disabled={currentPage >= totalPages}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleDownload}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Télécharger
-            </Button>
-          </div>
-
-          {/* PDF Viewer Container */}
-          <div
-            ref={containerRef}
-            className="relative aspect-[3/4] bg-white border rounded-lg overflow-hidden"
-            style={{
-              transform: `scale(${zoom}) rotate(${rotation}deg)`,
-              transformOrigin: 'center top',
-            }}
-          >
-            {/* Pour l'instant, on affiche une image placeholder */}
-            {/* Dans une vraie implémentation, on utiliserait react-pdf ou pdfjs-dist */}
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/5 to-secondary/5">
-              <div className="text-center">
-                <div className="w-32 h-40 bg-muted rounded-lg mx-auto mb-4 flex items-center justify-center">
-                  <Eye className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Aperçu PDF - Page {currentPage}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Intégration PDF complète à implémenter
-                </p>
-              </div>
-            </div>
-
-            {/* Overlay pour les contrôles tactiles sur mobile */}
-            <div className="absolute inset-0 md:hidden pointer-events-none">
-              <div className="absolute top-4 left-4 right-4 flex justify-between pointer-events-auto">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={handlePreviousPage}
-                  disabled={currentPage <= 1}
-                  className="opacity-75"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleNextPage}
-                  disabled={currentPage >= totalPages}
-                  className="opacity-75"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
+                <Card className="overflow-hidden">
+                  <div className="aspect-[3/4] relative">
+                    {!loadedImages.has(index) && !imageErrors.has(index) && (
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                      </div>
+                    )}
+                    {imageErrors.has(index) ? (
+                      <div className="absolute inset-0 bg-muted flex items-center justify-center">
+                        <div className="text-center text-muted-foreground">
+                          <AlertCircle className="h-8 w-8 mx-auto mb-2" />
+                          <p className="text-xs">Erreur de chargement</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <img
+                        src={imageUrl}
+                        alt={`Aperçu ${index + 1}`}
+                        className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                        onLoad={() => handleImageLoad(index)}
+                        onError={() => handleImageError(index)}
+                      />
+                    )}
+                  </div>
+                  <div className="p-3 bg-background/95 backdrop-blur-sm">
+                    <p className="text-sm font-medium text-center">
+                      Page {index + 1}
+                    </p>
+                  </div>
+                </Card>
+              </motion.div>
+            ))}
           </div>
 
           {/* Status */}
-          <div className="mt-4 text-center">
+          <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
-              Utilisez les contrôles pour zoomer et naviguer dans votre histoire
+              {previewImages.length} page{previewImages.length > 1 ? 's' : ''} générée{previewImages.length > 1 ? 's' : ''}
             </p>
           </div>
         </CardContent>

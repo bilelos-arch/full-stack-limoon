@@ -11,8 +11,16 @@ export class UsersController {
 
   @Get('profile')
   async getProfile(@Req() req: any) {
+    console.log('Users Controller: getProfile called');
+    console.log('Users Controller: req.user:', req.user);
+    console.log('Users Controller: req.cookies:', req.cookies);
     const user = await this.usersService.findById(req.user.userId);
+    console.log('Users Controller: User found:', !!user);
+    if (!user) {
+      console.log('Users Controller: User not found for ID:', req.user.userId);
+    }
     const { passwordHash, ...profile } = user.toObject();
+    console.log('Users Controller: Returning profile for user:', user.email);
     return profile;
   }
 

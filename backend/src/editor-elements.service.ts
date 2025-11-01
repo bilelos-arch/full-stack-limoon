@@ -4,7 +4,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { EditorElement } from './editor-element.schema';
 import { Template } from './template.schema';
-import { detectVariables } from './utils/variables';
+import { detectVariables, parseVariablesFromEditorElements } from './utils/variables';
 
 @Injectable()
 export class EditorElementsService {
@@ -49,7 +49,7 @@ export class EditorElementsService {
     return transformed;
   }
 
-  async create(templateId: string, elementData: Partial<EditorElement>): Promise<EditorElement> {
+  async create(templateId: string, elementData: any): Promise<EditorElement> {
     console.log('=== CREATE ELEMENT ===');
     console.log('Template ID:', templateId);
     console.log('Element data received (RELATIVE COORDINATES):', elementData);
@@ -82,6 +82,9 @@ export class EditorElementsService {
     const saved = await createdElement.save();
     console.log('Element saved with ID:', saved._id);
 
+    // Update template variables after creating element
+    await this.updateTemplateVariables(templateId);
+
     // Transform for frontend
     const obj = saved.toObject();
     obj.id = obj._id.toString();
@@ -90,7 +93,7 @@ export class EditorElementsService {
     return obj as any;
   }
 
-  async update(templateId: string, elementId: string, elementData: Partial<EditorElement>): Promise<EditorElement> {
+  async update(templateId: string, elementId: string, elementData: any): Promise<EditorElement> {
     console.log('=== UPDATE ELEMENT ===');
     console.log('Template ID:', templateId);
     console.log('Element ID:', elementId);
@@ -128,6 +131,9 @@ export class EditorElementsService {
     }
     console.log('Element updated with ID:', updatedElement._id);
 
+    // Update template variables after updating element
+    await this.updateTemplateVariables(templateId);
+
     // Transform for frontend
     const obj = updatedElement.toObject();
     obj.id = obj._id.toString();
@@ -144,5 +150,35 @@ export class EditorElementsService {
     if (!result) {
       throw new NotFoundException('Element not found');
     }
+
+    // Update template variables after removing element
+    await this.updateTemplateVariables(templateId);
+  }
+
+  async extractVariablesFromElements(templateId: string): Promise<string[]> {
+    console.log('=== EXTRACT VARIABLES FROM ELEMENTS ===');
+    console.log('Template ID:', templateId);
+
+    // Récupérer tous les éléments du template
+    const editorElements = await this.editorElementModel.find({ templateId }).exec();
+    console.log('Elements found for variable extraction:', editorElements.length);
+
+    // Extraire les variables des éléments
+    const variables = parseVariablesFromEditorElements(editorElements);
+    console.log('Extracted variables:', variables);
+
+    // Mettre à jour le template avec les variables extraites
+    await this.templateModel.findByIdAndUpdate(templateId, { variables }).exec();
+    console.log('Updated template variables:', variables);
+
+    return variables;
+  }
+
+  private async updateTemplateVariables(templateId: string): Promise<void> {
+    const editorElements = await this.editorElementModel.find({ templateId }).exec();
+    const variables = parseVariablesFromEditorElements(editorElements);
+
+    await this.templateModel.findByIdAndUpdate(templateId, { variables }).exec();
+    console.log('Updated template variables:', variables);
   }
 }

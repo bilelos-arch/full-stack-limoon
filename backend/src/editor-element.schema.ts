@@ -64,6 +64,9 @@ export class EditorElement extends Document {
   @Prop({ required: false, type: [String] })
   variables?: string[];
 
+  @Prop({ required: false, type: Object })
+  defaultValues?: Record<string, string>;
+
   @Prop({ default: Date.now })
   createdAt: Date;
 

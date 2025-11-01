@@ -73,6 +73,31 @@ export default function TemplateEditorPage() {
   // ⚠️ CORRECTION : Stocker les dimensions ORIGINALES du PDF
   const [originalPdfDimensions, setOriginalPdfDimensions] = useState<{width: number, height: number} | null>(null);
 
+  // État pour les valeurs par défaut des variables
+  const [defaultValues, setDefaultValues] = useState<Record<string, string>>({});
+
+  // Fonction pour détecter les variables dans le textContent
+  const detectVariables = useCallback((text: string): string[] => {
+    if (typeof window === 'undefined') return []; // SSR safe
+    const variableRegex = /\{\{(\w+)\}\}/g;
+    const variables: string[] = [];
+    let match;
+    while ((match = variableRegex.exec(text)) !== null) {
+      if (!variables.includes(match[1])) {
+        variables.push(match[1]);
+      }
+    }
+    return variables;
+  }, []);
+
+  // Fonction pour mettre à jour les valeurs par défaut des variables
+  const updateDefaultValue = useCallback((variableName: string, value: string) => {
+    setDefaultValues(prev => ({
+      ...prev,
+      [variableName]: value
+    }));
+  }, []);
+
   const loadTemplate = useCallback(async (id: string) => {
     try {
       const response = await axios.get(`${API_BASE_URL}/templates/${id}`, {
@@ -732,6 +757,49 @@ export default function TemplateEditorPage() {
           role="complementary"
           aria-label="Propriétés de l'élément"
         >
+          {/* Section Variables */}
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">
+              Variables par défaut
+            </h3>
+            <div className="space-y-3">
+              {(() => {
+                // Collecter toutes les variables de tous les éléments texte
+                const allVariables = new Set<string>();
+                elementsRelative.forEach(element => {
+                  if (element.type === 'text' && element.textContent) {
+                    const variables = detectVariables(element.textContent);
+                    variables.forEach(v => allVariables.add(v));
+                  }
+                });
+
+                const variablesArray = Array.from(allVariables);
+                return variablesArray.length > 0 ? (
+                  variablesArray.map(variableName => (
+                    <div key={variableName} className="space-y-2">
+                      <Label htmlFor={`var-${variableName}`} className="text-sm font-medium">
+                        {variableName}
+                      </Label>
+                      <Input
+                        id={`var-${variableName}`}
+                        type="text"
+                        value={defaultValues[variableName] || ''}
+                        onChange={(e) => updateDefaultValue(variableName, e.target.value)}
+                        placeholder={`Valeur par défaut pour ${variableName}`}
+                        className="w-full"
+                      />
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Aucune variable détectée dans les éléments texte.
+                  </p>
+                );
+              })()}
+            </div>
+          </div>
+
+          {/* Propriétés de l'élément sélectionné */}
           {template && originalPdfDimensions && (
             <ElementPropertiesPanel
               element={selectedElement}

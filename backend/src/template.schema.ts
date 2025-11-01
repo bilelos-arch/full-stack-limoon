@@ -35,6 +35,9 @@ export class Template {
   @Prop({ type: Object })
   dimensions?: { width: number; height: number };
 
+  @Prop({ type: [String], default: [] })
+  variables: string[];
+
   @Prop({ default: false })
   isPublished: boolean;
 }

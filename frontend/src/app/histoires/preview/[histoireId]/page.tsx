@@ -1,6 +1,7 @@
+//frontend/src/app/histoires/preview/[histoireId]/page.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useHistoiresStore } from '@/stores/histoiresStore';
@@ -10,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Download, Edit, Share2, Heart } from 'lucide-react';
+import { ArrowLeft, Download, Edit, Share2, Heart, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import PDFPreviewModal from '@/components/PDFPreviewModal';
 
@@ -24,6 +25,9 @@ export default function PreviewHistoirePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showPDFModal, setShowPDFModal] = useState(false);
+  const [pdfGenerationFailed, setPdfGenerationFailed] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const histoireId = params.histoireId as string;
 
@@ -36,25 +40,48 @@ export default function PreviewHistoirePage() {
     if (histoireId) {
       loadHistoire();
     }
+
+    // Cleanup timeout on unmount
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
   }, [isAuthenticated, histoireId, router]);
 
   const loadHistoire = async () => {
     try {
+      console.log('loadHistoire: Starting to load histoire with ID:', histoireId);
       setIsLoading(true);
       setError(null);
+      setPdfGenerationFailed(false);
 
       const histoireData = await histoireApi.getHistoire(histoireId);
+      console.log('loadHistoire: Histoire data received:', histoireData);
+      console.log('loadHistoire: generatedPdfUrl present:', !!histoireData.generatedPdfUrl);
       setHistoire(histoireData);
 
       // Load template data
       if (histoireData.templateId) {
-        const templateData = await templatesApi.getTemplate(histoireData.templateId);
+        const templateId = typeof histoireData.templateId === 'string' ? histoireData.templateId : (histoireData.templateId as { _id: string })._id;
+        console.log('loadHistoire: Loading template with ID:', templateId);
+        const templateData = await templatesApi.getTemplate(templateId);
         setTemplate(templateData);
+      }
+
+      // Set timeout for PDF generation (30 seconds)
+      if (!histoireData.generatedPdfUrl) {
+        timeoutRef.current = setTimeout(() => {
+          console.log('PDF generation timeout reached');
+          setPdfGenerationFailed(true);
+        }, 30000);
       }
     } catch (error) {
       console.error('Erreur lors du chargement de l\'histoire:', error);
       setError('Erreur lors du chargement de l\'histoire');
+      setPdfGenerationFailed(true);
     } finally {
+      console.log('loadHistoire: Setting isLoading to false');
       setIsLoading(false);
     }
   };
@@ -65,9 +92,26 @@ export default function PreviewHistoirePage() {
     }
   };
 
+  const nextImage = () => {
+    if (histoire?.previewUrls && histoire.previewUrls.length > 0) {
+      setCurrentImageIndex((prev) =>
+        prev === histoire.previewUrls!.length - 1 ? 0 : prev + 1
+      );
+    }
+  };
+
+  const prevImage = () => {
+    if (histoire?.previewUrls && histoire.previewUrls.length > 0) {
+      setCurrentImageIndex((prev) =>
+        prev === 0 ? histoire.previewUrls!.length - 1 : prev - 1
+      );
+    }
+  };
+
   const handleEdit = () => {
     if (histoire?.templateId) {
-      router.push(`/histoires/creer/${histoire.templateId}`);
+      const templateId = typeof histoire.templateId === 'string' ? histoire.templateId : (histoire.templateId as { _id: string })._id;
+      router.push(`/histoires/creer/${templateId}`);
     }
   };
 
@@ -198,8 +242,39 @@ export default function PreviewHistoirePage() {
             >
               <Card className="overflow-hidden">
                 <CardContent className="p-0">
-                  <div className="aspect-[3/4] bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center">
-                    {histoire.generatedPdfUrl ? (
+                  <div className="aspect-[3/4] bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center relative">
+                    {histoire.previewUrls && histoire.previewUrls.length > 0 ? (
+                      <div className="w-full h-full relative">
+                        <img
+                          src={`${API_BASE_URL}${histoire.previewUrls[currentImageIndex]}`}
+                          alt={`Page ${currentImageIndex + 1}`}
+                          className="w-full h-full object-contain"
+                        />
+                        {histoire.previewUrls.length > 1 && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white"
+                              onClick={prevImage}
+                            >
+                              <ChevronLeft className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white"
+                              onClick={nextImage}
+                            >
+                              <ChevronRight className="h-4 w-4" />
+                            </Button>
+                            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+                              {currentImageIndex + 1} / {histoire.previewUrls.length}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ) : histoire.generatedPdfUrl ? (
                       <div className="w-full h-full flex items-center justify-center">
                         <div className="text-center">
                           <div className="w-32 h-40 bg-white border-2 border-dashed border-muted-foreground/30 rounded-lg flex items-center justify-center mb-4 mx-auto">
@@ -213,12 +288,25 @@ export default function PreviewHistoirePage() {
                           </Button>
                         </div>
                       </div>
+                    ) : pdfGenerationFailed ? (
+                      <div className="text-center text-muted-foreground">
+                        <div className="w-32 h-40 bg-red-50 border-2 border-red-200 rounded-lg flex items-center justify-center mb-4 mx-auto">
+                          <div className="text-4xl text-red-500">⚠️</div>
+                        </div>
+                        <p className="text-sm font-medium text-red-600 mb-2">
+                          Échec de la génération du PDF
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Une erreur s'est produite lors de la génération du PDF. Veuillez réessayer plus tard.
+                        </p>
+                      </div>
                     ) : (
                       <div className="text-center text-muted-foreground">
                         <div className="w-32 h-40 bg-muted rounded-lg flex items-center justify-center mb-4 mx-auto">
                           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                         </div>
                         <p>Génération du PDF en cours...</p>
+                        <p className="text-xs mt-2">Debug: generatedPdfUrl is falsy</p>
                       </div>
                     )}
                   </div>

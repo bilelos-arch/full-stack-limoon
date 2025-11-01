@@ -1,7 +1,9 @@
+//backend/src/histoires/utils/pdf-generator.service.ts
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { PDFDocument, rgb, StandardFonts, PDFFont, PDFPage, PDFImage } from 'pdf-lib';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as pdf2pic from 'pdf2pic';
 import { Template, TemplateDocument } from '../../template.schema';
 import { EditorElement } from '../../editor-element.schema';
 import { EditorElementsService } from '../../editor-elements.service';
@@ -11,13 +13,19 @@ import { detectVariables } from '../../utils/variables';
 export class PdfGeneratorService {
   private readonly logger = new Logger(PdfGeneratorService.name);
   private uploadsDir = './uploads';
+  private previewsDir = '/tmp/previews';
   private cartoonifyServiceUrl = process.env.CARTOONIFY_SERVICE_URL || 'http://localhost:3001';
 
   constructor(private editorElementsService: EditorElementsService) {}
 
-  async generatePreview(template: TemplateDocument, variables: Record<string, any>): Promise<string> {
+  async generatePreview(template: TemplateDocument, variables: Record<string, any>): Promise<string[]> {
     try {
       this.logger.log(`Generating preview for template ${template._id}`);
+
+      // Ensure previews directory exists
+      if (!fs.existsSync(this.previewsDir)) {
+        fs.mkdirSync(this.previewsDir, { recursive: true });
+      }
 
       // Load the template PDF
       const templatePath = path.join(this.uploadsDir, template.pdfPath);
@@ -34,18 +42,34 @@ export class PdfGeneratorService {
       // Apply variables to the PDF
       await this.applyVariablesToPdf(pdfDoc, editorElements, variables, template);
 
-      // Convert first page to image for preview
-      const previewImagePath = await this.convertPdfToImage(pdfDoc, 'preview');
+      // Save modified PDF temporarily
+      const tempPdfFilename = `temp-${Date.now()}-${Math.round(Math.random() * 1e9)}.pdf`;
+      const tempPdfPath = path.join(this.previewsDir, tempPdfFilename);
+      const pdfBytes = await pdfDoc.save();
+      fs.writeFileSync(tempPdfPath, pdfBytes);
 
-      this.logger.log(`Preview generated successfully: ${previewImagePath}`);
-      return previewImagePath;
+      // Convert PDF to images with fallback for missing binaries
+      let previewImageUrls: string[] = [];
+      try {
+        previewImageUrls = await this.convertPdfToImages(tempPdfPath);
+      } catch (error) {
+        this.logger.warn('Image conversion failed, likely due to missing GraphicsMagick/ImageMagick binaries. Returning empty preview URLs.');
+        // Fallback: return empty array instead of failing
+        previewImageUrls = [];
+      }
+
+      // Clean up temporary PDF
+      fs.unlinkSync(tempPdfPath);
+
+      this.logger.log(`Preview generated successfully: ${previewImageUrls.length} images`);
+      return previewImageUrls;
     } catch (error) {
       this.logger.error('Preview generation error:', error);
       throw new BadRequestException('Failed to generate preview');
     }
   }
 
-  async generateFinalPdf(template: TemplateDocument, variables: Record<string, any>): Promise<string> {
+  async generateFinalPdf(template: TemplateDocument, variables: Record<string, any>, uploadedImagePaths?: string[]): Promise<string> {
     try {
       this.logger.log(`Generating final PDF for template ${template._id}`);
 
@@ -62,7 +86,7 @@ export class PdfGeneratorService {
       const editorElements = await this.editorElementsService.findAllByTemplate(template._id.toString());
 
       // Apply variables to the PDF
-      await this.applyVariablesToPdf(pdfDoc, editorElements, variables, template);
+      await this.applyVariablesToPdf(pdfDoc, editorElements, variables, template, uploadedImagePaths);
 
       const finalBytes = await pdfDoc.save();
       const finalFilename = `generated-${Date.now()}-${Math.round(Math.random() * 1e9)}.pdf`;
@@ -79,17 +103,30 @@ export class PdfGeneratorService {
   }
 
   // Helper method to validate variables against template requirements
-  validateVariables(template: TemplateDocument, variables: Record<string, any>): boolean {
-    // Extract variables from template PDF content
-    // This is a placeholder - in real implementation, you'd scan the PDF or use editor elements
-    const requiredVars = detectVariables('Sample text with (name) and (age) variables');
+  async validateVariables(template: TemplateDocument, variables: Record<string, any>): Promise<boolean> {
+    // Get editor elements for the template
+    const editorElements = await this.editorElementsService.findAllByTemplate(template._id.toString());
 
+    // Extract required variables from editor elements
+    const requiredVars = new Set<string>();
+    for (const element of editorElements) {
+      if (element.variables && element.variables.length > 0) {
+        element.variables.forEach(varName => requiredVars.add(varName));
+      }
+      if (element.variableName) {
+        requiredVars.add(element.variableName);
+      }
+    }
+
+    // Check if all required variables are provided
     for (const varName of requiredVars) {
       if (!(varName in variables)) {
+        this.logger.warn(`Missing required variable: ${varName}`);
         return false;
       }
     }
 
+    this.logger.log(`All required variables present: ${Array.from(requiredVars).join(', ')}`);
     return true;
   }
 
@@ -100,9 +137,23 @@ export class PdfGeneratorService {
     pdfDoc: PDFDocument,
     editorElements: EditorElement[],
     variables: Record<string, any>,
-    template: TemplateDocument
+    template: TemplateDocument,
+    uploadedImagePaths?: string[]
   ): Promise<void> {
     this.logger.log(`Applying ${Object.keys(variables).length} variables to PDF with ${editorElements.length} elements`);
+
+    // Collect default values from all elements
+    const defaultVars: Record<string, any> = {};
+    for (const element of editorElements) {
+      if (element.defaultValues) {
+        Object.assign(defaultVars, element.defaultValues);
+      }
+    }
+
+    // Merge default values with user variables (user variables take precedence)
+    const mergedVars = { ...defaultVars, ...variables };
+
+    this.logger.log(`Merged variables: ${Object.keys(mergedVars).length} total (defaults: ${Object.keys(defaultVars).length}, user: ${Object.keys(variables).length})`);
 
     // Group elements by page
     const elementsByPage = editorElements.reduce((acc, element) => {
@@ -127,11 +178,11 @@ export class PdfGeneratorService {
 
       // Process text elements
       const textElements = elements.filter(el => el.type === 'text');
-      await this.replaceTextVariables(page, textElements, variables, template);
+      await this.replaceTextVariables(page, textElements, mergedVars, template);
 
       // Process image elements
       const imageElements = elements.filter(el => el.type === 'image');
-      await this.replaceImageVariables(page, imageElements, variables, template, pdfDoc);
+      await this.replaceImageVariables(page, imageElements, mergedVars, template, pdfDoc, uploadedImagePaths);
     }
 
     this.logger.log('Variables applied successfully to PDF');
@@ -215,7 +266,8 @@ export class PdfGeneratorService {
     imageElements: EditorElement[],
     variables: Record<string, any>,
     template: TemplateDocument,
-    pdfDoc: PDFDocument
+    pdfDoc: PDFDocument,
+    uploadedImagePaths?: string[]
   ): Promise<void> {
     this.logger.log(`Processing ${imageElements.length} image elements`);
 
@@ -235,13 +287,19 @@ export class PdfGeneratorService {
         // Already cartoonified image
         imagePath = path.join(this.uploadsDir, imageVar);
       } else if (typeof imageVar === 'string') {
-        // Original image that needs cartoonification
-        try {
-          const cartoonifiedPath = await this.cartoonifyImage(imageVar);
-          imagePath = path.join(this.uploadsDir, cartoonifiedPath);
-        } catch (error) {
-          this.logger.error(`Failed to cartoonify image ${imageVar}: ${error.message}`);
-          continue;
+        // Check if it's an uploaded image path
+        if (uploadedImagePaths && uploadedImagePaths.includes(imageVar)) {
+          // Use the uploaded image directly
+          imagePath = path.join(this.uploadsDir, imageVar);
+        } else {
+          // Original image that needs cartoonification
+          try {
+            const cartoonifiedPath = await this.cartoonifyImage(imageVar);
+            imagePath = path.join(this.uploadsDir, cartoonifiedPath);
+          } catch (error) {
+            this.logger.error(`Failed to cartoonify image ${imageVar}: ${error.message}`);
+            continue;
+          }
         }
       } else {
         this.logger.warn(`Invalid image variable type for ${element.variableName}`);
@@ -292,23 +350,35 @@ export class PdfGeneratorService {
   }
 
   /**
-   * Convert PDF first page to image for preview
+   * Convert PDF pages to images for preview
    */
-  private async convertPdfToImage(pdfDoc: PDFDocument, prefix: string): Promise<string> {
+  private async convertPdfToImages(pdfPath: string): Promise<string[]> {
     try {
-      // For now, save as PDF and return path. In production, you'd use a library like pdf2pic
-      // to convert to actual image format
-      const imageFilename = `${prefix}-${Date.now()}-${Math.round(Math.random() * 1e9)}.pdf`;
-      const imagePath = path.join(this.uploadsDir, imageFilename);
+      const convert = pdf2pic.fromPath(pdfPath, {
+        density: 100,
+        saveFilename: `preview-${Date.now()}`,
+        savePath: this.previewsDir,
+        format: 'png',
+        width: 800,
+        height: 600,
+      });
 
-      const pdfBytes = await pdfDoc.save();
-      fs.writeFileSync(imagePath, pdfBytes);
+      const results = await convert.bulk(-1); // Convert all pages
+      const imageUrls: string[] = [];
 
-      this.logger.log(`Preview image saved: ${imageFilename}`);
-      return imageFilename;
+      for (const result of results) {
+        if (result.path) {
+          // Return relative URL path for serving
+          const relativePath = path.relative(process.cwd(), result.path);
+          imageUrls.push(`/${relativePath}`);
+        }
+      }
+
+      this.logger.log(`Converted PDF to ${imageUrls.length} images`);
+      return imageUrls;
     } catch (error) {
-      this.logger.error(`Failed to convert PDF to image: ${error.message}`);
-      throw new BadRequestException('Failed to generate preview image');
+      this.logger.error(`Failed to convert PDF to images: ${error.message}`);
+      throw new BadRequestException('Failed to generate preview images');
     }
   }
 
