@@ -9,8 +9,15 @@ const nextConfig: NextConfig = {
         fs: false,
         path: false,
         crypto: false,
+        canvas: false,
       };
     }
+
+    // Polyfill pour DOMMatrix
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'dommatrix': 'dommatrix/dist/dommatrix.js',
+    };
 
     return config;
   },

@@ -165,7 +165,7 @@ export default function TemplateEditorPage() {
     }
 
     if (user?.role !== 'admin') {
-      router.push('/story');
+      router.push('/book-store');
       return;
     }
   }, [isAuthenticated, user, router]);

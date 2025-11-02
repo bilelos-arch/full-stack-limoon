@@ -300,10 +300,20 @@ export default function HistoireForm({
         });
 
         if (!response.ok) {
-          throw new Error('Failed to generate histoire');
+          // Try to get error details from response
+          let errorMessage = 'Failed to generate histoire';
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.message || errorData.error || errorMessage;
+            console.error('Backend error details:', errorData);
+          } catch (parseError) {
+            console.error('Could not parse error response:', parseError);
+          }
+          throw new Error(errorMessage);
         }
 
         const result = await response.json();
+        console.log('Histoire generation successful:', result);
         await onSubmit(result);
       } catch (error) {
         console.error('Error generating histoire:', error);

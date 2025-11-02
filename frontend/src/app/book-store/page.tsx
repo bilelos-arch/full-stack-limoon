@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Search, RefreshCw, BookOpen, Sparkles, X, Loader2, Filter } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { templatesApi, Template } from '@/lib/templatesApi';
+import { histoireApi } from '@/lib/histoireApi';
 import { toast } from 'sonner';
 import useSWR from 'swr';
 import { useQuery } from '@tanstack/react-query';
@@ -75,6 +76,20 @@ function StoryPageClient({ initialTemplates }: { initialTemplates: Template[] })
       dedupingInterval: 5000,
     }
   );
+
+  // Debug logs for templates data
+  useEffect(() => {
+    console.log('Templates received from API:', templates);
+    console.log('Number of templates:', templates.length);
+    templates.forEach((template, index) => {
+      console.log(`Template ${index + 1}: ${template.title} - _id = ${template._id}`);
+      console.log(`  _id type: ${typeof template._id}`);
+      console.log(`  _id is null: ${template._id === null}`);
+      console.log(`  _id is undefined: ${template._id === undefined}`);
+      console.log(`  _id is empty string: ${template._id === ''}`);
+      console.log(`  _id matches ObjectId regex: ${template._id ? /^[a-f\d]{24}$/i.test(template._id) : false}`);
+    });
+  }, [templates]);
 
   // React Query for search suggestions
   const { data: searchResults, refetch: refetchSearch, isFetching: isSearching } = useQuery({
@@ -152,9 +167,19 @@ function StoryPageClient({ initialTemplates }: { initialTemplates: Template[] })
   };
 
   // Modal handlers
-  const handlePreviewClick = (template: Template) => {
+  const handlePreviewClick = async (template: Template) => {
     setSelectedTemplate(template);
     setIsModalOpen(true);
+
+    // Generate preview PDF with default variables
+    try {
+      const result = await histoireApi.generatePreview(template._id, {});
+      setSelectedTemplate({ ...template, pdfUrl: result.pdfUrl });
+      console.log('Preview generated:', result);
+    } catch (error) {
+      console.error('Failed to generate preview:', error);
+      toast.error('Erreur lors de la génération de l\'aperçu');
+    }
   };
 
   const handleModalClose = () => {
@@ -582,6 +607,7 @@ function StoryPageClient({ initialTemplates }: { initialTemplates: Template[] })
         onClose={handleModalClose}
         template={selectedTemplate}
         onCustomize={handleCustomize}
+        pdfUrl={selectedTemplate?.pdfUrl ? `${process.env.NEXT_PUBLIC_API_URL}/uploads/${selectedTemplate.pdfUrl}` : undefined}
       />
     </div>
   );

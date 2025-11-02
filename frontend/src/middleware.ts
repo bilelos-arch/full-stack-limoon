@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server';
 
 const protectedRoutes = ['/dashboard', '/admin', '/stories', '/histoires'];
 const authRoutes = ['/login', '/register'];
-const publicRoutes = ['/', '/story'];
+const publicRoutes = ['/', '/book-store'];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -18,7 +18,7 @@ export function middleware(request: NextRequest) {
 
   // Si l'utilisateur est sur une route d'authentification et a un token, rediriger vers story
   if (isAuthRoute && accessToken) {
-    return NextResponse.redirect(new URL('/story', request.url));
+    return NextResponse.redirect(new URL('/book-store', request.url));
   }
 
   // Si l'utilisateur est sur une route protégée sans token, rediriger vers login

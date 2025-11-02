@@ -103,7 +103,7 @@ export default function Home() {
                   </Link>
                 </Button>
                 <Button asChild variant="outline" size="lg">
-                  <Link href="/story">
+                  <Link href="/book-store">
                     Découvrir les templates
                   </Link>
                 </Button>

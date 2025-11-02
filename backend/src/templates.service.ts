@@ -7,6 +7,7 @@ import { CreateTemplateDto } from './create-template.dto';
 import { UpdateTemplateDto } from './update-template.dto';
 import { EditorElement } from './editor-element.schema';
 import { parseVariablesFromEditorElements } from './utils/variables';
+import { PdfGeneratorService } from './histoires/utils/pdf-generator.service';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.min.js';
@@ -16,10 +17,18 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = require('pdfjs-dist/legacy/build/pdf.wo
 
 @Injectable()
 export class TemplatesService {
+  private tempPreviewsDir = './uploads/temp-previews';
+
   constructor(
     @InjectModel(Template.name) private templateModel: Model<TemplateDocument>,
     @InjectModel(EditorElement.name) private editorElementModel: Model<EditorElement>,
-  ) {}
+    private pdfGeneratorService: PdfGeneratorService,
+  ) {
+    // Ensure temp previews directory exists
+    if (!fs.existsSync(this.tempPreviewsDir)) {
+      fs.mkdirSync(this.tempPreviewsDir, { recursive: true });
+    }
+  }
 
   async create(createTemplateDto: CreateTemplateDto, pdfPath: string, coverPath: string): Promise<TemplateDocument> {
     console.log('=== TEMPLATES SERVICE CREATE ===');
@@ -167,6 +176,61 @@ export class TemplatesService {
       .limit(limit)
       .sort({ createdAt: -1 })
       .exec();
+  }
+
+  async generatePreview(templateId: string, variables: Record<string, any>): Promise<{ pdfUrl: string }> {
+    console.log('=== GENERATE PREVIEW DEBUG ===');
+    console.log('Template ID:', templateId);
+    console.log('Variables:', variables);
+
+    // Find the template
+    const template = await this.findOne(templateId);
+    console.log('Template found:', template._id, template.title);
+
+    // Check if template is published
+    if (!template.isPublished) {
+      throw new BadRequestException('Template is not available for preview');
+    }
+
+    // Generate temporary PDF
+    console.log('Generating temporary PDF...');
+    const tempPdfFilename = await this.pdfGeneratorService.generateFinalPdf(template, variables);
+    console.log('Generated PDF filename:', tempPdfFilename);
+
+    // Move to temp previews directory
+    const tempPdfPath = path.join('./uploads', tempPdfFilename);
+    const finalTempPath = path.join(this.tempPreviewsDir, `preview-${templateId}-${Date.now()}-${Math.round(Math.random() * 1e9)}.pdf`);
+
+    console.log('Moving PDF from:', tempPdfPath, 'to:', finalTempPath);
+    console.log('Temp PDF exists:', fs.existsSync(tempPdfPath));
+    console.log('Temp previews dir exists:', fs.existsSync(this.tempPreviewsDir));
+
+    fs.renameSync(tempPdfPath, finalTempPath);
+
+    console.log('File moved successfully. Final path exists:', fs.existsSync(finalTempPath));
+
+    // Schedule cleanup after 24 hours instead of 1 hour for better persistence
+    setTimeout(() => {
+      try {
+        if (fs.existsSync(finalTempPath)) {
+          fs.unlinkSync(finalTempPath);
+        }
+      } catch (error) {
+        console.error('Failed to cleanup temp preview file:', error);
+      }
+    }, 24 * 60 * 60 * 1000); // 24 hours
+
+    // Return URL for serving
+    const filename = path.basename(finalTempPath);
+    const pdfUrl = `/uploads/temp-previews/${filename}`;
+    console.log('Returning PDF URL:', pdfUrl);
+    console.log('Full URL should be:', `${process.env.BASE_URL || 'http://localhost:3000'}${pdfUrl}`);
+    console.log('File exists at final path:', fs.existsSync(finalTempPath));
+    console.log('File size:', fs.existsSync(finalTempPath) ? fs.statSync(finalTempPath).size : 'N/A');
+
+    return {
+      pdfUrl
+    };
   }
 
   private normalizeCategory(category: string): string {

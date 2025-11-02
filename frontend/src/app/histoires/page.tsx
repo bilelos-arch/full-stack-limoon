@@ -53,7 +53,7 @@ export default function HistoiresPage() {
   }, [isAuthenticated, user?.userId, router, fetchUserHistoires, fetchTemplates]);
 
   const handleCreateNew = () => {
-    router.push('/story');
+    router.push('/book-store');
   };
 
   const handlePreview = (histoireId: string) => {

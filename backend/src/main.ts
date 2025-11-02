@@ -16,7 +16,11 @@ async function bootstrap() {
 
   // Servir les fichiers statiques depuis le dossier uploads
   app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
-  app.use('/uploads/previews', express.static(join(process.cwd(), 'previews')));
+  app.use('/uploads/previews', express.static(join(process.cwd(), 'uploads/previews')));
+  app.use('/uploads/temp-previews', express.static(join(process.cwd(), 'uploads/temp-previews')));
+
+  // Servir les fichiers temporaires de prévisualisation
+  app.use('/temp-previews', express.static(join(process.cwd(), 'uploads/temp-previews')));
 
 
   await app.listen(process.env.PORT || 3001);

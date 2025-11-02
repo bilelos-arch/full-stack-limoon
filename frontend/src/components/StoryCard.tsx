@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Star } from 'lucide-react'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { Template } from '@/lib/templatesApi'
 
 interface StoryCardProps {
@@ -16,6 +17,16 @@ interface StoryCardProps {
 
 export function StoryCard({ template, onPreview, onCustomize }: StoryCardProps) {
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+  const router = useRouter()
+
+  // Logs de débogage pour diagnostiquer la navigation
+  console.log('StoryCard - template:', template)
+  console.log('StoryCard - template._id:', template._id)
+  console.log('StoryCard - template._id type:', typeof template._id)
+  console.log('StoryCard - template._id is null:', template._id === null)
+  console.log('StoryCard - template._id is undefined:', template._id === undefined)
+  console.log('StoryCard - template._id is empty string:', template._id === '')
+  console.log('StoryCard - template._id matches ObjectId regex:', template._id ? /^[a-f\d]{24}$/i.test(template._id) : false)
 
   return (
     <motion.div
@@ -84,7 +95,21 @@ export function StoryCard({ template, onPreview, onCustomize }: StoryCardProps) 
               size="default"
               variant="outline"
               aria-label={`Aperçu de ${template.title}`}
-              onClick={() => onPreview(template)}
+              onClick={() => {
+                console.log('Navigation to preview - template._id:', template._id);
+                console.log('Template object:', template);
+                console.log('Template._id type:', typeof template._id);
+                console.log('Template._id is null:', template._id === null);
+                console.log('Template._id is undefined:', template._id === undefined);
+                console.log('Template._id is empty string:', template._id === '');
+                if (template._id) {
+                  console.log('Navigating to:', `/book-store/book/${template._id}`);
+                  router.push(`/book-store/book/${template._id}`);
+                } else {
+                  console.error('Template ID is undefined, cannot navigate to preview');
+                  console.error('Full template object:', JSON.stringify(template, null, 2));
+                }
+              }}
             >
               <span className="mr-2">👁️</span>
               Aperçu

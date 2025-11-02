@@ -193,12 +193,14 @@ export default function CreerHistoirePage() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 }}
+              className="w-full"
             >
               <HistoirePreview
                 previewImages={previewImages}
                 isLoading={isGeneratingPreview || isGenerating}
                 error={error}
                 onRetry={() => handlePreview({})}
+                className="w-full"
               />
             </motion.div>
           </div>

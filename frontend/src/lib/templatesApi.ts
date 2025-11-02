@@ -1,3 +1,4 @@
+//frontend/src/lib/templatesApi.ts
 import axios from 'axios';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -53,6 +54,8 @@ export interface Template {
   isRecent?: boolean;
   createdAt: string;
   updatedAt: string;
+  pdfUrl?: string; // For generated preview PDFs
+  previewUrls?: string[]; // Preview images for templates
 }
 
 class TemplatesApi {
@@ -111,6 +114,14 @@ class TemplatesApi {
 
   async getEditorElements(templateId: string): Promise<EditorElement[]> {
     const response = await this.api.get<EditorElement[]>(`/templates/${templateId}/elements/public/${templateId}`);
+    return response.data;
+  }
+
+  async generatePreview(templateId: string, variables: Record<string, string>): Promise<{ previewUrls: string[], pdfUrl: string, histoireId: string }> {
+    const response = await this.api.post<{ previewUrls: string[], pdfUrl: string, histoireId: string }>('/templates/preview', {
+      templateId,
+      variables,
+    });
     return response.data;
   }
 }

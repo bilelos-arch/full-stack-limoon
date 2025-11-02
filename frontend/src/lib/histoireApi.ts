@@ -40,8 +40,8 @@ class HistoireApi {
     withCredentials: true, // Important pour les cookies HTTP-only
   });
 
-  async generatePreview(templateId: string, variables: Record<string, string>): Promise<{ previewUrls: string[] }> {
-    const response = await this.api.post<{ previewUrls: string[] }>('/histoires/preview', {
+  async generatePreview(templateId: string, variables: Record<string, string>): Promise<{ previewUrls: string[], pdfUrl: string, histoireId: string }> {
+    const response = await this.api.post<{ previewUrls: string[], pdfUrl: string, histoireId: string }>('/histoires/preview', {
       templateId,
       variables,
     });

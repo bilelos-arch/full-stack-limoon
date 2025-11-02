@@ -80,7 +80,7 @@ export class HistoiresService {
     return savedHistoire;
   }
 
-  async generatePreview(userId: string, previewDto: PreviewHistoireDto): Promise<{ previewUrls: string[], histoireId: string }> {
+  async generatePreview(userId: string, previewDto: PreviewHistoireDto): Promise<{ previewUrls: string[], pdfUrl: string, histoireId: string }> {
     this.logger.log(`Generating preview for user ${userId} with template ${previewDto.templateId}`);
 
     const { templateId, variables } = previewDto;
@@ -118,18 +118,23 @@ export class HistoiresService {
     const previewUrls = await this.pdfGeneratorService.generatePreview(template, mergedVariables);
     this.logger.log(`Preview generated successfully: ${previewUrls.length} images`);
 
-    // Create histoire record with preview URLs
+    // Generate PDF with default variables
+    const pdfUrl = await this.pdfGeneratorService.generateFinalPdf(template, mergedVariables);
+    this.logger.log(`PDF preview generated successfully: ${pdfUrl}`);
+
+    // Create histoire record with preview URLs and PDF URL
     const histoire = new this.histoireModel({
       templateId: new Types.ObjectId(templateId),
       userId: new Types.ObjectId(userId),
       variables: mergedVariables,
       previewUrls,
+      pdfUrl,
     });
 
     const savedHistoire = await histoire.save();
     this.logger.log(`Histoire with preview created successfully with ID: ${savedHistoire._id}`);
 
-    return { previewUrls, histoireId: savedHistoire._id.toString() };
+    return { previewUrls, pdfUrl, histoireId: savedHistoire._id.toString() };
   }
 
   async generatePdf(userId: string, histoireId: string): Promise<HistoireDocument> {
@@ -167,7 +172,7 @@ export class HistoiresService {
     return updatedHistoire;
   }
 
-  async findOne(id: string, userId?: string): Promise<HistoireDocument> {
+  async findOne(id: string, userId?: string): Promise<any> {
     if (!Types.ObjectId.isValid(id)) {
       throw new BadRequestException('Invalid histoire ID');
     }
@@ -187,7 +192,14 @@ export class HistoiresService {
       throw new NotFoundException('Histoire not found');
     }
 
-    return histoire;
+    const histoireObj = histoire.toObject();
+    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+
+    return {
+      ...histoireObj,
+      previewImage: histoireObj.previewUrls?.[0] || null,
+      defaultPdfUrl: histoireObj.pdfUrl || `${baseUrl}/pdfs/${histoireObj.templateId}-default.pdf`,
+    };
   }
 
   async findByUser(userId: string): Promise<HistoireDocument[]> {
@@ -299,7 +311,9 @@ export class HistoiresService {
     // Validate template exists
     let template;
     try {
+      this.logger.log(`Validating template ${templateId} exists`);
       template = await this.templatesService.findOne(templateId);
+      this.logger.log(`Template ${templateId} found: ${template.title}`);
     } catch (error) {
       this.logger.error(`Template ${templateId} not found: ${error.message}`);
       throw new BadRequestException('Template not found');
@@ -307,10 +321,12 @@ export class HistoiresService {
 
     // Validate user exists
     try {
+      this.logger.log(`Validating user ${userId} exists`);
       const user = await this.usersService.findById(userId);
       if (!user) {
         throw new NotFoundException('User not found');
       }
+      this.logger.log(`User ${userId} found: ${user.name}`);
     } catch (error) {
       this.logger.error(`User ${userId} not found: ${error.message}`);
       throw new BadRequestException('User not found');
@@ -318,36 +334,67 @@ export class HistoiresService {
 
     // Validate variables
     if (!variables || typeof variables !== 'object') {
+      this.logger.error('Variables validation failed: variables must be a valid object');
       throw new BadRequestException('Variables must be a valid object');
     }
 
-    this.logger.log('Variables received:', variables);
+    this.logger.log('Variables received:', JSON.stringify(variables, null, 2));
 
     // Validate that all required variables from template are provided
-    const isValid = await this.pdfGeneratorService.validateVariables(template, variables);
-    if (!isValid) {
-      throw new BadRequestException('Missing required variables for template');
+    try {
+      this.logger.log('Validating required variables against template');
+      const isValid = await this.pdfGeneratorService.validateVariables(template, variables);
+      if (!isValid) {
+        this.logger.error('Variable validation failed: missing required variables');
+        throw new BadRequestException('Missing required variables for template');
+      }
+      this.logger.log('Variable validation passed');
+    } catch (error) {
+      this.logger.error(`Variable validation error: ${error.message}`);
+      throw error;
     }
 
     // Generate preview images first
-    const previewUrls = await this.pdfGeneratorService.generatePreview(template, variables);
+    let previewUrls: string[] = [];
+    try {
+      this.logger.log('Generating preview images');
+      previewUrls = await this.pdfGeneratorService.generatePreview(template, variables);
+      this.logger.log(`Preview images generated: ${previewUrls.length} images`);
+    } catch (error) {
+      this.logger.error(`Preview generation failed: ${error.message}`);
+      throw new BadRequestException('Failed to generate preview images');
+    }
 
     // Generate final PDF
-    const pdfUrl = await this.pdfGeneratorService.generateFinalPdf(template, variables, uploadedImagePaths);
+    let pdfUrl: string;
+    try {
+      this.logger.log('Generating final PDF');
+      pdfUrl = await this.pdfGeneratorService.generateFinalPdf(template, variables, uploadedImagePaths);
+      this.logger.log(`Final PDF generated: ${pdfUrl}`);
+    } catch (error) {
+      this.logger.error(`PDF generation failed: ${error.message}`);
+      throw new BadRequestException('Failed to generate PDF');
+    }
 
     // Create new Histoire record
-    const histoire = new this.histoireModel({
-      templateId: new Types.ObjectId(templateId),
-      userId: new Types.ObjectId(userId),
-      variables,
-      previewUrls,
-      pdfUrl,
-      generatedPdfUrl: pdfUrl, // Also set generatedPdfUrl for consistency
-    });
+    try {
+      this.logger.log('Creating Histoire record in database');
+      const histoire = new this.histoireModel({
+        templateId: new Types.ObjectId(templateId),
+        userId: new Types.ObjectId(userId),
+        variables,
+        previewUrls,
+        pdfUrl,
+        generatedPdfUrl: pdfUrl, // Also set generatedPdfUrl for consistency
+      });
 
-    const savedHistoire = await histoire.save();
-    this.logger.log(`Histoire generated and saved successfully with ID: ${savedHistoire._id}, PDF: ${pdfUrl}, Previews: ${previewUrls.length}`);
+      const savedHistoire = await histoire.save();
+      this.logger.log(`Histoire generated and saved successfully with ID: ${savedHistoire._id}, PDF: ${pdfUrl}, Previews: ${previewUrls.length}`);
 
-    return savedHistoire;
+      return savedHistoire;
+    } catch (error) {
+      this.logger.error(`Database save failed: ${error.message}`);
+      throw new BadRequestException('Failed to save histoire to database');
+    }
   }
 }

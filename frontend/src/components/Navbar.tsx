@@ -1,4 +1,3 @@
-//frontend/src/app/story/page.tsx
 'use client';
 
 import React, { useState, useMemo, useCallback } from 'react';
@@ -85,14 +84,14 @@ const Navbar: React.FC = () => {
   const navLinks = useMemo(() => {
     const publicLinks = [
       { href: '/', label: 'Accueil' },
-      { href: '/story', label: 'Histoires' },
+      { href: '/book-store', label: 'Histoires' },
       { href: '/login', label: 'Connexion' },
       { href: '/register', label: 'Inscription' },
     ];
 
     const userLinks = [
       { href: '/', label: 'Accueil' },
-      { href: '/templates', label: 'Templates' },
+      { href: '/book-store', label: 'Book-Store' },
       { href: '/histoires', label: 'Mes histoires' },
       { href: '/dashboard', label: 'Tableau de bord' },
     ];

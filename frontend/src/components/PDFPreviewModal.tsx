@@ -13,19 +13,21 @@ interface PDFPreviewModalProps {
   onClose: () => void;
   template: Template | null;
   onCustomize: (template: Template) => void;
+  pdfUrl?: string;
 }
 
 export default function PDFPreviewModal({
   isOpen,
   onClose,
   template,
-  onCustomize
+  onCustomize,
+  pdfUrl
 }: PDFPreviewModalProps) {
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [numPages, setNumPages] = useState(0);
   const [scale, setScale] = useState(1.0);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -43,12 +45,16 @@ export default function PDFPreviewModal({
     }
   }, []);
 
-  // Load PDF when template changes
+  // Load PDF when template or pdfUrl changes
   useEffect(() => {
     if (template && isOpen) {
-      loadPDF();
+      if (pdfUrl) {
+        loadPDF(pdfUrl);
+      } else {
+        loadPDF();
+      }
     }
-  }, [template, isOpen]);
+  }, [template, isOpen, pdfUrl]);
 
   // Render current page
   useEffect(() => {
@@ -96,15 +102,17 @@ export default function PDFPreviewModal({
     }
   }, [isOpen, onClose]);
 
-  const loadPDF = async () => {
+  const loadPDF = async (customPdfUrl?: string) => {
     if (!template) return;
 
     setIsLoading(true);
     try {
       const { getDocument } = await import('pdfjs-dist');
-      const pdfUrl = `${API_BASE_URL}/uploads/${template.pdfPath}`;
+      const pdfUrl = customPdfUrl || `${API_BASE_URL}/uploads/${template.pdfPath}`;
       console.log('Loading PDF from URL:', pdfUrl);
       console.log('Template pdfPath:', template.pdfPath);
+      console.log('API_BASE_URL:', API_BASE_URL);
+      console.log('process.env.NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
       const loadingTask = getDocument({url: pdfUrl});
       const pdf = await loadingTask.promise;
       setPdfDoc(pdf);
@@ -113,7 +121,9 @@ export default function PDFPreviewModal({
       setScale(1.0);
     } catch (error) {
       console.error('Error loading PDF:', error);
-      console.error('Failed URL:', `${API_BASE_URL}/uploads/${template.pdfPath}`);
+      console.error('Failed URL:', customPdfUrl || `${API_BASE_URL}/uploads/${template.pdfPath}`);
+      console.error('API_BASE_URL at error:', API_BASE_URL);
+      console.error('template.pdfPath at error:', template.pdfPath);
     } finally {
       setIsLoading(false);
     }
@@ -185,7 +195,7 @@ export default function PDFPreviewModal({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
+          className="fixed inset-0 z-50 bg-black/0 backdrop-blur-none"
           role="dialog"
           aria-modal="true"
           aria-labelledby="pdf-modal-title"
@@ -194,11 +204,11 @@ export default function PDFPreviewModal({
         >
           <motion.div
             ref={modalRef}
-            initial={{ scale: 0.95, opacity: 0 }}
+            initial={{ scale: 1, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
+            exit={{ scale: 1, opacity: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className={`relative mx-auto mt-8 mb-8 bg-background rounded-lg shadow-xl overflow-hidden ${
+            className={`relative mx-auto mt-0 mb-0 bg-background rounded-none shadow-none overflow-hidden ${
               isFullscreen ? 'w-full h-full max-w-none max-h-none' : 'w-full max-w-4xl h-[80vh]'
             }`}
             onClick={(e) => e.stopPropagation()}
@@ -295,7 +305,7 @@ export default function PDFPreviewModal({
 
             {/* PDF Viewer */}
             <CardContent className="p-0 flex-1 overflow-auto">
-              <div className="flex justify-center items-center min-h-[400px] p-4">
+              <div className="flex justify-center items-center min-h-full p-0">
                 {isLoading ? (
                   <div className="flex items-center justify-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -304,7 +314,7 @@ export default function PDFPreviewModal({
                 ) : (
                   <canvas
                     ref={canvasRef}
-                    className="shadow-lg border rounded"
+                    className="shadow-none border-none rounded-none"
                     style={{ maxWidth: '100%', height: 'auto' }}
                   />
                 )}

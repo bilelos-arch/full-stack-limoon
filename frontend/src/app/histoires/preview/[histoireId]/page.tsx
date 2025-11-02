@@ -11,9 +11,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Download, Edit, Share2, Heart, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Download, Edit, Share2, Heart, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
 import { motion } from 'framer-motion';
 import PDFPreviewModal from '@/components/PDFPreviewModal';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
 
 export default function PreviewHistoirePage() {
   const router = useRouter();
@@ -27,7 +28,13 @@ export default function PreviewHistoirePage() {
   const [showPDFModal, setShowPDFModal] = useState(false);
   const [pdfGenerationFailed, setPdfGenerationFailed] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
+  const [pdfCurrentPage, setPdfCurrentPage] = useState(1);
+  const [pdfNumPages, setPdfNumPages] = useState(0);
+  const [pdfScale, setPdfScale] = useState(1.0);
+  const [isPdfLoading, setIsPdfLoading] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const pdfCanvasRef = useRef<HTMLCanvasElement>(null);
 
   const histoireId = params.histoireId as string;
 
@@ -48,6 +55,29 @@ export default function PreviewHistoirePage() {
       }
     };
   }, [isAuthenticated, histoireId, router]);
+
+  // Dynamic import of PDF.js
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      import('pdfjs-dist').then((pdfjsLib) => {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+      });
+    }
+  }, []);
+
+  // Load PDF when generatedPdfUrl is available
+  useEffect(() => {
+    if (histoire?.generatedPdfUrl) {
+      loadPDF(histoire.generatedPdfUrl);
+    }
+  }, [histoire?.generatedPdfUrl]);
+
+  // Render PDF page when pdfDoc or page/scale changes
+  useEffect(() => {
+    if (pdfDoc && pdfCanvasRef.current) {
+      renderPdfPage(pdfCurrentPage);
+    }
+  }, [pdfDoc, pdfCurrentPage, pdfScale]);
 
   const loadHistoire = async () => {
     try {
@@ -86,9 +116,77 @@ export default function PreviewHistoirePage() {
     }
   };
 
+  const loadPDF = async (pdfUrl: string) => {
+    setIsPdfLoading(true);
+    try {
+      const { getDocument } = await import('pdfjs-dist');
+      const loadingTask = getDocument({ url: pdfUrl });
+      const pdf = await loadingTask.promise;
+      setPdfDoc(pdf);
+      setPdfNumPages(pdf.numPages);
+      setPdfCurrentPage(1);
+      setPdfScale(1.0);
+    } catch (error) {
+      console.error('Error loading PDF:', error);
+    } finally {
+      setIsPdfLoading(false);
+    }
+  };
+
+  const renderPdfPage = async (pageNum: number) => {
+    if (!pdfDoc || !pdfCanvasRef.current) return;
+
+    try {
+      const page = await pdfDoc.getPage(pageNum);
+      const viewport = page.getViewport({ scale: pdfScale });
+
+      const canvas = pdfCanvasRef.current;
+      const context = canvas.getContext('2d');
+      if (!context) return;
+
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+
+      const renderContext = {
+        canvasContext: context,
+        viewport: viewport,
+        canvas: canvas,
+      };
+
+      await page.render(renderContext).promise;
+    } catch (error) {
+      console.error('Error rendering PDF page:', error);
+    }
+  };
+
+  const goToPrevPdfPage = () => {
+    if (pdfCurrentPage > 1) {
+      setPdfCurrentPage(pdfCurrentPage - 1);
+    }
+  };
+
+  const goToNextPdfPage = () => {
+    if (pdfCurrentPage < pdfNumPages) {
+      setPdfCurrentPage(pdfCurrentPage + 1);
+    }
+  };
+
+  const zoomInPdf = () => {
+    setPdfScale(prev => Math.min(prev + 0.25, 3.0));
+  };
+
+  const zoomOutPdf = () => {
+    setPdfScale(prev => Math.max(prev - 0.25, 0.5));
+  };
+
   const handleDownload = () => {
     if (histoire?.generatedPdfUrl) {
-      window.open(histoire.generatedPdfUrl, '_blank');
+      const link = document.createElement('a');
+      link.href = histoire.generatedPdfUrl;
+      link.download = `${template?.title || 'Histoire personnalisée'}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   };
 
@@ -275,17 +373,74 @@ export default function PreviewHistoirePage() {
                         )}
                       </div>
                     ) : histoire.generatedPdfUrl ? (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <div className="text-center">
-                          <div className="w-32 h-40 bg-white border-2 border-dashed border-muted-foreground/30 rounded-lg flex items-center justify-center mb-4 mx-auto">
-                            <div className="text-4xl">📄</div>
+                      <div className="w-full h-full flex flex-col">
+                        {/* PDF Controls */}
+                        <div className="flex items-center justify-between p-4 bg-muted/50 border-b">
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={goToPrevPdfPage}
+                              disabled={pdfCurrentPage <= 1}
+                              aria-label="Page précédente"
+                            >
+                              <ChevronLeft className="h-4 w-4" />
+                            </Button>
+                            <span className="text-sm font-medium min-w-[80px] text-center">
+                              {pdfCurrentPage} / {pdfNumPages}
+                            </span>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={goToNextPdfPage}
+                              disabled={pdfCurrentPage >= pdfNumPages}
+                              aria-label="Page suivante"
+                            >
+                              <ChevronRight className="h-4 w-4" />
+                            </Button>
                           </div>
-                          <p className="text-sm text-muted-foreground mb-4">
-                            PDF généré avec succès
-                          </p>
-                          <Button onClick={() => setShowPDFModal(true)} variant="outline">
-                            Aperçu du PDF
-                          </Button>
+
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={zoomOutPdf}
+                              disabled={pdfScale <= 0.5}
+                              aria-label="Zoom arrière"
+                            >
+                              <ZoomOut className="h-4 w-4" />
+                            </Button>
+                            <span className="text-sm font-medium min-w-[60px] text-center">
+                              {Math.round(pdfScale * 100)}%
+                            </span>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={zoomInPdf}
+                              disabled={pdfScale >= 3.0}
+                              aria-label="Zoom avant"
+                            >
+                              <ZoomIn className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* PDF Viewer */}
+                        <div className="flex-1 overflow-auto p-4">
+                          <div className="flex justify-center items-center min-h-[400px]">
+                            {isPdfLoading ? (
+                              <div className="flex items-center justify-center">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                                <span className="ml-2">Chargement du PDF...</span>
+                              </div>
+                            ) : (
+                              <canvas
+                                ref={pdfCanvasRef}
+                                className="shadow-lg border rounded"
+                                style={{ maxWidth: '100%', height: 'auto' }}
+                              />
+                            )}
+                          </div>
                         </div>
                       </div>
                     ) : pdfGenerationFailed ? (

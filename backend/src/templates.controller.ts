@@ -15,6 +15,7 @@ import {
 import { TemplatesService } from './templates.service';
 import { CreateTemplateDto } from './create-template.dto';
 import { UpdateTemplateDto } from './update-template.dto';
+import { PreviewTemplateDto } from './preview-template.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { RolesGuard } from './roles.guard';
 import { Roles } from './roles.decorator';
@@ -113,6 +114,11 @@ export class TemplatesController {
   @UseGuards()
   async findOne(@Param('id') id: string) {
     return this.templatesService.findOne(id);
+  }
+
+  @Post('preview')
+  async generatePreview(@Body() previewDto: PreviewTemplateDto) {
+    return this.templatesService.generatePreview(previewDto.templateId, previewDto.variables || {});
   }
 
   @Put(':id')

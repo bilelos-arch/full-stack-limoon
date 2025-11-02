@@ -91,7 +91,7 @@ export default function NewTemplatePage() {
     }
 
     if (user?.role !== 'admin') {
-      router.push('/story');
+      router.push('/book-store');
       return;
     }
   }, [isAuthenticated, user, router]);

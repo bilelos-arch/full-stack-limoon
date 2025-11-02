@@ -354,13 +354,40 @@ export class PdfGeneratorService {
    */
   private async convertPdfToImages(pdfPath: string): Promise<string[]> {
     try {
+      // Load PDF to get actual page dimensions
+      const pdfBytes = fs.readFileSync(pdfPath);
+      const pdfDoc = await PDFDocument.load(pdfBytes);
+      const pages = pdfDoc.getPages();
+
+      if (pages.length === 0) {
+        throw new BadRequestException('PDF has no pages');
+      }
+
+      // Get the first page dimensions to calculate aspect ratio
+      const firstPage = pages[0];
+      const { width: pdfWidth, height: pdfHeight } = firstPage.getSize();
+
+      // Calculate preview dimensions maintaining aspect ratio
+      const maxPreviewWidth = 800;
+      const maxPreviewHeight = 600;
+
+      // Calculate scaling factor to fit within max dimensions while preserving aspect ratio
+      const widthRatio = maxPreviewWidth / pdfWidth;
+      const heightRatio = maxPreviewHeight / pdfHeight;
+      const scaleFactor = Math.min(widthRatio, heightRatio);
+
+      const previewWidth = Math.round(pdfWidth * scaleFactor);
+      const previewHeight = Math.round(pdfHeight * scaleFactor);
+
+      this.logger.log(`PDF dimensions: ${pdfWidth}x${pdfHeight}, Preview dimensions: ${previewWidth}x${previewHeight}`);
+
       const convert = pdf2pic.fromPath(pdfPath, {
         density: 100,
         saveFilename: `preview-${Date.now()}`,
         savePath: this.previewsDir,
         format: 'png',
-        width: 800,
-        height: 600,
+        width: previewWidth,
+        height: previewHeight,
       });
 
       const results = await convert.bulk(-1); // Convert all pages

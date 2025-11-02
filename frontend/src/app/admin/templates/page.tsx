@@ -56,7 +56,7 @@ export default function AdminTemplatesPage() {
     }
 
     if (user?.role !== 'admin') {
-      router.push('/story');
+      router.push('/book-store');
       return;
     }
 

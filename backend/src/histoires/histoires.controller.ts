@@ -87,7 +87,12 @@ export class HistoiresController {
   async generatePreview(@Body() previewDto: PreviewHistoireDto, @Request() req) {
     const userId = req.user.userId;
     this.logger.log(`Generating preview for user ${userId}`);
-    return this.histoiresService.generatePreview(userId, previewDto);
+    const result = await this.histoiresService.generatePreview(userId, previewDto);
+    return {
+      previewUrls: result.previewUrls,
+      pdfUrl: result.pdfUrl,
+      histoireId: result.histoireId
+    };
   }
 
   @Post(':id/generer')
@@ -134,14 +139,21 @@ export class HistoiresController {
     const userId = req.user.userId;
     this.logger.log(`Generating complete PDF for template ${generateDto.templateId} by user ${userId}`);
 
-    // Handle uploaded images
-    let uploadedImagePaths: string[] = [];
-    if (files?.images) {
-      uploadedImagePaths = files.images.map(file => file.filename);
-      this.logger.log(`Uploaded images: ${uploadedImagePaths.join(', ')}`);
-    }
+    try {
+      // Handle uploaded images
+      let uploadedImagePaths: string[] = [];
+      if (files?.images) {
+        uploadedImagePaths = files.images.map(file => file.filename);
+        this.logger.log(`Uploaded images: ${uploadedImagePaths.join(', ')}`);
+      }
 
-    return this.histoiresService.generateHistoire(userId, generateDto, uploadedImagePaths);
+      const result = await this.histoiresService.generateHistoire(userId, generateDto, uploadedImagePaths);
+      this.logger.log(`Histoire generation successful for user ${userId}, histoire ID: ${result._id}`);
+      return result;
+    } catch (error) {
+      this.logger.error(`Histoire generation failed for user ${userId}: ${error.message}`, error.stack);
+      throw error; // Re-throw to let NestJS handle the error response
+    }
   }
 
   @Get('template/:id')
