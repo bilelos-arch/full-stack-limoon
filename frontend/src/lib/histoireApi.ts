@@ -23,15 +23,23 @@ export interface GenerateHistoireDto {
 }
 
 export interface GenerateHistoireResponse {
-  _id: string;
-  templateId: string;
-  userId: string;
-  variables: Record<string, any>; // Changed from Record<string, string> to match backend
-  previewUrls?: string[];
-  pdfUrl?: string;
-  generatedPdfUrl?: string;
-  createdAt: string;
-  updatedAt: string;
+  success: boolean;
+  histoire: {
+    _id: string;
+    templateId: string;
+    userId: string;
+    variables: Record<string, any>; // Changed from Record<string, string> to match backend
+    previewUrls?: string[];
+    pdfUrl?: string;
+    generatedPdfUrl?: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+  processingSummary?: {
+    uploadedImages: number;
+    mappedVariables: string[];
+    fileErrors?: string[];
+  };
 }
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';

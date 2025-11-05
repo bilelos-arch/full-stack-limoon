@@ -17,11 +17,11 @@ import { RolesGuard } from './roles.guard';
 import { Roles } from './roles.decorator';
 
 @Controller('templates/:id/elements')
-@UseGuards(JwtAuthGuard, RolesGuard)
 export class EditorElementsController {
   constructor(private readonly editorElementsService: EditorElementsService) {}
 
   @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   async findAll(@Param('id') templateId: string): Promise<EditorElement[]> {
     return this.editorElementsService.findAllByTemplate(templateId);

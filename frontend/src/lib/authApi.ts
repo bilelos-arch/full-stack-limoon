@@ -45,11 +45,7 @@ class AuthApi {
     import('@/stores/authStore').then(({ useAuthStore }) => {
       const { logout } = useAuthStore.getState();
       logout();
-      // Redirection vers /login
-      if (typeof window !== 'undefined') {
-        console.log('authApi.handleUnauthorized: Redirection vers /login');
-        window.location.href = '/login';
-      }
+      // ⚠️ REMOVED: La redirection sera gérée par les composants
     });
   }
 

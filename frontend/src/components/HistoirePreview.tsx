@@ -34,16 +34,24 @@ export default function HistoirePreview({
   const [currentPage, setCurrentPage] = useState(0);
 
   useEffect(() => {
+    console.log('[DEBUG] HistoirePreview useEffect triggered');
+    console.log('[DEBUG] previewImages:', previewImages);
+    console.log('[DEBUG] previewImages length:', previewImages?.length);
+    console.log('[DEBUG] isLoading:', isLoading);
+    console.log('[DEBUG] error:', error);
     setCurrentPage(0);
   }, [previewImages]);
 
   const handleImageLoad = useCallback((index: number) => {
+    console.log(`[DEBUG] Image loaded successfully for page ${index + 1}`);
     setLoadedImages(prev => new Set(prev).add(index));
   }, []);
 
   const handleImageError = useCallback((index: number) => {
+    console.error(`[DEBUG] Image failed to load for page ${index + 1}`);
+    console.error(`[DEBUG] Image URL:`, previewImages[index]);
     setImageErrors(prev => new Set(prev).add(index));
-  }, []);
+  }, [previewImages]);
 
   const displayedImages = previewImages;
 

@@ -27,7 +27,10 @@ export const useTokenRefresh = () => {
   useEffect(() => {
     if (isAuthenticated) {
       // Rafraîchir le token toutes les 10 minutes (avant l'expiration de 15 minutes)
-      intervalRef.current = setInterval(refreshToken, 10 * 60 * 1000);
+      intervalRef.current = setInterval(() => {
+        console.log('useTokenRefresh: Auto-refresh interval triggered');
+        refreshToken();
+      }, 10 * 60 * 1000);
     } else {
       // Nettoyer le timer si non authentifié
       if (intervalRef.current) {
@@ -39,9 +42,10 @@ export const useTokenRefresh = () => {
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
     };
-  }, [refreshToken, isAuthenticated]);
+  }, [isAuthenticated]); // ⚠️ CORRECTION: refreshToken pas dans les dépendances
 
   return { refreshToken };
 };

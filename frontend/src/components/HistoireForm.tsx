@@ -293,7 +293,7 @@ export default function HistoireForm({
 
   const handleSubmit = async (data: Record<string, any>) => {
     if (onSubmit) {
-      console.log('[HistoireForm] Starting form submission with data:', data);
+      console.log('[DEBUG] [HistoireForm] Starting form submission with data:', data);
 
       // Upload images first if any
       const formData = new FormData();
@@ -302,7 +302,7 @@ export default function HistoireForm({
       // Prepare form data with images - use variable names as field names
       Object.entries(data).forEach(([key, value]) => {
         if (value instanceof File) {
-          console.log(`[HistoireForm] Adding image file for variable "${key}":`, value.name, value.size, 'bytes');
+          console.log(`[DEBUG] [HistoireForm] Adding image file for variable "${key}":`, value.name, value.size, 'bytes');
           // Use the variable name as the field name for the image
           formData.append(`images_${key}`, value);
           // Store the mapping for later use
@@ -310,7 +310,7 @@ export default function HistoireForm({
         }
       });
 
-      console.log('[HistoireForm] Image fields mapping:', imageFields);
+      console.log('[DEBUG] [HistoireForm] Image fields mapping:', imageFields);
 
       // Add other variables
       const variables: Record<string, any> = {};
@@ -320,23 +320,28 @@ export default function HistoireForm({
         }
       });
 
-      console.log('[HistoireForm] Non-image variables:', variables);
+      console.log('[DEBUG] [HistoireForm] Non-image variables:', variables);
 
       formData.append('templateId', templateId);
       formData.append('variables', JSON.stringify(variables));
       formData.append('imageFields', JSON.stringify(imageFields));
 
-      console.log('[HistoireForm] FormData prepared, sending to backend...');
+      console.log('[DEBUG] [HistoireForm] FormData prepared, sending to backend...');
 
       try {
         // Upload images and generate histoire
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/histoires/generate`, {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+        const endpoint = `${apiUrl}/histoires/generate`;
+        console.log('[DEBUG] [HistoireForm] Making request to:', endpoint);
+
+        const response = await fetch(endpoint, {
           method: 'POST',
           credentials: 'include',
           body: formData,
         });
 
-        console.log('[HistoireForm] Backend response status:', response.status);
+        console.log('[DEBUG] [HistoireForm] Backend response status:', response.status);
+        console.log('[DEBUG] [HistoireForm] Response headers:', Object.fromEntries(response.headers.entries()));
 
         if (!response.ok) {
           // Try to get error details from response
@@ -344,18 +349,30 @@ export default function HistoireForm({
           try {
             const errorData = await response.json();
             errorMessage = errorData.message || errorData.error || errorMessage;
-            console.error('[HistoireForm] Backend error details:', errorData);
+            console.error('[DEBUG] [HistoireForm] Backend error details:', errorData);
           } catch (parseError) {
-            console.error('[HistoireForm] Could not parse error response:', parseError);
+            console.error('[DEBUG] [HistoireForm] Could not parse error response:', parseError);
+            // Try to get text response
+            try {
+              const errorText = await response.text();
+              console.error('[DEBUG] [HistoireForm] Raw error response:', errorText);
+            } catch (textError) {
+              console.error('[DEBUG] [HistoireForm] Could not get error response text:', textError);
+            }
           }
           throw new Error(errorMessage);
         }
 
         const result = await response.json();
-        console.log('[HistoireForm] Histoire generation successful:', result);
+        console.log('[DEBUG] [HistoireForm] Histoire generation successful:', result);
         await onSubmit(result);
       } catch (error) {
-        console.error('[HistoireForm] Error generating histoire:', error);
+        console.error('[DEBUG] [HistoireForm] Error generating histoire:', error);
+        console.error('[DEBUG] [HistoireForm] Error details:', {
+          message: (error as Error).message,
+          stack: (error as Error).stack,
+          name: (error as Error).name
+        });
         throw error;
       }
     }

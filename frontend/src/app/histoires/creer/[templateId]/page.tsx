@@ -30,7 +30,6 @@ export default function CreerHistoirePage() {
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedHistoire, setGeneratedHistoire] = useState<Histoire | null>(null);
-  const [generatedPreviewImages, setGeneratedPreviewImages] = useState<string[]>([]);
   const [finalVariables, setFinalVariables] = useState<Record<string, string>>({});
   const [isGeneratingFinalPreview, setIsGeneratingFinalPreview] = useState(false);
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
@@ -102,34 +101,58 @@ export default function CreerHistoirePage() {
   };
 
   const handlePreview = useCallback(async (variables: Record<string, string>) => {
-    if (!template || !user?._id) return;
+    console.log('[DEBUG] handlePreview called with variables:', variables);
+    console.log('[DEBUG] template:', template);
+    console.log('[DEBUG] user:', user);
+    console.log('[DEBUG] user?._id:', user?._id);
+    console.log('[DEBUG] templateId:', templateId);
+
+    if (!template || !user?._id) {
+      console.error('[DEBUG] Missing template or user:', { template: !!template, userId: user?._id });
+      return;
+    }
 
     setIsGeneratingPreview(true);
     try {
+      console.log('[DEBUG] Calling generateHistoire for preview...');
       // Generate the full histoire instead of just preview
       const histoire = await generateHistoire({
         templateId: templateId,
         variables,
       });
 
+      console.log('[DEBUG] generateHistoire returned:', histoire);
+      console.log('[DEBUG] histoire type:', typeof histoire);
+      console.log('[DEBUG] histoire.previewUrls:', histoire?.previewUrls);
+      console.log('[DEBUG] histoire.previewUrls length:', histoire?.previewUrls?.length);
+
       if (histoire) {
-        console.log('Setting generated histoire for preview');
+        console.log('[DEBUG] Setting generated histoire for preview');
         setGeneratedHistoire(histoire);
         setFinalVariables(variables);
 
         // Use the preview images from the generated histoire
         const previewUrls = histoire.previewUrls || [];
-        console.log('Setting previewImages with:', previewUrls);
+        console.log('[DEBUG] Setting previewImages with:', previewUrls);
+        console.log('[DEBUG] Preview URLs are strings:', previewUrls.every(url => typeof url === 'string'));
         setPreviewImages(previewUrls);
 
-        setShowPreview(true); // Show preview after generation
+        // Show preview immediately after generation
+        setShowPreview(true);
       } else {
-        console.error('generateHistoire returned null or undefined');
+        console.error('[DEBUG] generateHistoire returned null or undefined');
         setPreviewImages([]);
+        setShowPreview(false);
       }
     } catch (error) {
-      console.error('Erreur lors de la génération de l\'histoire:', error);
+      console.error('[DEBUG] Erreur lors de la génération de l\'histoire:', error);
+      console.error('[DEBUG] Error details:', {
+        message: (error as Error).message,
+        stack: (error as Error).stack,
+        name: (error as Error).name
+      });
       setPreviewImages([]);
+      setShowPreview(false);
     } finally {
       setIsGeneratingPreview(false);
     }
@@ -179,13 +202,19 @@ export default function CreerHistoirePage() {
 
         // Utiliser les images de preview générées lors de la création de l'histoire
         const previewUrls = histoire.previewUrls || [];
-        console.log('Setting generatedPreviewImages with:', previewUrls);
-        setGeneratedPreviewImages(previewUrls);
+        console.log('Setting previewImages with:', previewUrls);
+        console.log('Preview URLs are strings:', previewUrls.every(url => typeof url === 'string'));
+        setPreviewImages(previewUrls);
+
+        // Show preview immediately after generation
+        setShowPreview(true);
 
         // Stay on the page instead of navigating
       } else {
         console.error('generateHistoire returned null or undefined');
         console.error('This means the API call failed or returned an invalid response');
+        setPreviewImages([]);
+        setShowPreview(false);
       }
     } catch (error) {
       console.error('Erreur lors de la génération:', error);
@@ -194,6 +223,8 @@ export default function CreerHistoirePage() {
         stack: (error as Error).stack,
         name: (error as Error).name
       });
+      setPreviewImages([]);
+      setShowPreview(false);
     } finally {
       setIsGenerating(false);
     }
@@ -449,22 +480,17 @@ export default function CreerHistoirePage() {
 
               {/* Action Buttons */}
               <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
-                {(() => {
-                  console.log('Debug: generatedHistoire:', generatedHistoire);
-                  console.log('Debug: generatedHistoire?.generatedPdfUrl:', generatedHistoire?.generatedPdfUrl);
-                  console.log('Debug: condition result:', !!generatedHistoire?.generatedPdfUrl);
-                  return generatedHistoire?.generatedPdfUrl ? (
-                    <Button
-                      onClick={handleDownload}
-                      disabled={isDownloading}
-                      className="flex-1 sm:flex-none"
-                      size="lg"
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      {isDownloading ? 'Téléchargement...' : 'Télécharger l\'histoire'}
-                    </Button>
-                  ) : null;
-                })()}
+                {generatedHistoire?.generatedPdfUrl && (
+                  <Button
+                    onClick={handleDownload}
+                    disabled={isDownloading}
+                    className="flex-1 sm:flex-none"
+                    size="lg"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    {isDownloading ? 'Téléchargement...' : 'Télécharger l\'histoire'}
+                  </Button>
+                )}
 
                 {downloadError && (
                   <Alert className="mt-4" variant="destructive">

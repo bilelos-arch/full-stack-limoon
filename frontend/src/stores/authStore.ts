@@ -43,11 +43,8 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: false,
           error: null,
         });
-        // Redirection automatique vers /login
-        if (typeof window !== 'undefined') {
-          console.log('authStore.logout: Redirection vers /login');
-          window.location.href = '/login';
-        }
+        // ⚠️ NE PLUS rediriger automatiquement ici
+        // La redirection sera gérée par le composant qui utilise ce store
       },
       setUser: (user: User) => set({ user }),
       setLoading: (loading: boolean) => set({ isLoading: loading }),

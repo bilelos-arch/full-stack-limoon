@@ -56,7 +56,9 @@ export const useAuth = () => {
       }
     }
     logout();
-  }, [isAuthenticated, logout]);
+    // ⚠️ NOUVEAU: Redirection après déconnexion
+    router.push('/login');
+  }, [isAuthenticated, logout, router]);
 
   return {
     user,

@@ -81,18 +81,23 @@ export class HistoiresService {
   }
 
   async generatePreview(userId: string, previewDto: PreviewHistoireDto, uploadedImagePaths?: string[]): Promise<{ previewUrls: string[], pdfUrl: string, histoireId: string }> {
-    this.logger.log(`Generating preview for user ${userId} with template ${previewDto.templateId}`);
+    this.logger.log(`[SERVICE] Generating preview for user ${userId} with template ${previewDto.templateId}`);
+    this.logger.log(`[SERVICE] Preview DTO:`, JSON.stringify(previewDto, null, 2));
+    this.logger.log(`[SERVICE] Uploaded image paths:`, uploadedImagePaths);
 
     const { templateId, variables } = previewDto;
 
-    // Inject default values if variables are empty or missing
-    const defaultValues = {
-      nom: 'Alex',
-      âge: '5',
-      date: '2025-10-30',
-      image: '/assets/avatar.png',
-    };
-    const mergedVariables = { ...defaultValues, ...variables };
+    // Validate variables before generation (no default values for images)
+    const validation = await this.pdfGeneratorService.validateVariables(await this.templatesService.findOne(templateId), variables, uploadedImagePaths);
+    if (!validation.valid) {
+      const errors = [];
+      if (validation.missingVariables?.length) errors.push(`Missing variables: ${validation.missingVariables.join(', ')}`);
+      if (validation.missingImages?.length) errors.push(`Missing images: ${validation.missingImages.join(', ')}`);
+      if (validation.imageErrors?.length) errors.push(`Image errors: ${validation.imageErrors.join(', ')}`);
+      throw new BadRequestException(`Validation failed: ${errors.join('; ')}`);
+    }
+
+    const mergedVariables = variables;
 
     // Validate template exists
     let template;
@@ -116,11 +121,12 @@ export class HistoiresService {
 
     // Generate preview images (now includes uploadedImagePaths)
     const previewUrls = await this.pdfGeneratorService.generatePreview(template, mergedVariables, uploadedImagePaths);
-    this.logger.log(`Preview generated successfully: ${previewUrls.length} images`);
+    this.logger.log(`[SERVICE] Preview generated successfully: ${previewUrls.length} images`);
+    this.logger.log(`[SERVICE] Preview URLs:`, previewUrls);
 
-    // Generate PDF with default variables
+    // Generate PDF with same variables (no defaults)
     const pdfUrl = await this.pdfGeneratorService.generateFinalPdf(template, mergedVariables, uploadedImagePaths);
-    this.logger.log(`PDF preview generated successfully: ${pdfUrl}`);
+    this.logger.log(`[SERVICE] PDF preview generated successfully: ${pdfUrl}`);
 
     // Create histoire record with preview URLs and PDF URL
     const histoire = new this.histoireModel({
@@ -132,7 +138,9 @@ export class HistoiresService {
     });
 
     const savedHistoire = await histoire.save();
-    this.logger.log(`Histoire with preview created successfully with ID: ${savedHistoire._id}`);
+    this.logger.log(`[SERVICE] Histoire with preview created successfully with ID: ${savedHistoire._id}`);
+    this.logger.log(`[SERVICE] Saved histoire preview URLs:`, savedHistoire.previewUrls);
+    this.logger.log(`[SERVICE] Saved histoire PDF URL:`, savedHistoire.pdfUrl);
 
     return { previewUrls, pdfUrl, histoireId: savedHistoire._id.toString() };
   }
@@ -378,12 +386,15 @@ export class HistoiresService {
       this.logger.log('[DEBUG] Validating required variables against template');
       this.logger.log('[DEBUG] Template for validation:', JSON.stringify(template, null, 2));
       this.logger.log('[DEBUG] Variables for validation:', JSON.stringify(variables, null, 2));
-      const isValid = await this.pdfGeneratorService.validateVariables(template, variables);
-      this.logger.log('[DEBUG] Validation result:', isValid);
-      if (!isValid) {
-        this.logger.error('[DEBUG] Variable validation failed: missing required variables');
-        this.logger.error('[DEBUG] Template elements that might require variables:', template.elements || 'No elements');
-        throw new BadRequestException('Missing required variables for template');
+      const validation = await this.pdfGeneratorService.validateVariables(template, variables, uploadedImagePaths);
+      this.logger.log('[DEBUG] Validation result:', validation);
+      if (!validation.valid) {
+        const errors = [];
+        if (validation.missingVariables?.length) errors.push(`Missing variables: ${validation.missingVariables.join(', ')}`);
+        if (validation.missingImages?.length) errors.push(`Missing images: ${validation.missingImages.join(', ')}`);
+        if (validation.imageErrors?.length) errors.push(`Image errors: ${validation.imageErrors.join(', ')}`);
+        this.logger.error('[DEBUG] Variable validation failed:', errors.join('; '));
+        throw new BadRequestException(`Validation failed: ${errors.join('; ')}`);
       }
       this.logger.log('[DEBUG] Variable validation passed');
     } catch (error) {

@@ -85,76 +85,162 @@ export class HistoiresController {
   @Post('preview')
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileFieldsInterceptor([
+    // Flexible field configuration - accepte tous les champs d'images du formulaire
+    // Configuration flexible pour accepter tous les champs d'images
     { name: 'images_photo', maxCount: 1 },
     { name: 'images_image', maxCount: 1 },
-    { name: 'images_picture', maxCount: 1 }
+    { name: 'images_picture', maxCount: 1 },
+    { name: 'images_portrait', maxCount: 1 },
+    { name: 'images_avatar', maxCount: 1 },
+    { name: 'images_personnage', maxCount: 1 },
+    { name: 'images_scene', maxCount: 1 },
+    { name: 'images_fond', maxCount: 1 },
+    { name: 'images_objet', maxCount: 1 },
+    { name: 'images_autre', maxCount: 1 }
   ], {
     storage: diskStorage({
       destination: './uploads/temp-images',
       filename: (req, file, callback) => {
-        const variableName = file.fieldname.replace('images_', '');
+        const logger = req.res?.locals?.logger || new Logger('FileUpload');
+        const variableName = (file.fieldname || '').replace('images_', '');
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const filename = `${variableName}-${uniqueSuffix}${extname(file.originalname)}`;
-        callback(null, filename);
+        const originalExt = file.originalname ? extname(file.originalname) : '.jpg';
+        const filename = `${variableName}-${uniqueSuffix}${originalExt}`;
+        if (filename) {
+          const logMessage = `Generated filename: ${filename} for variable: ${variableName}`;
+          logger.log(`[CONTROLLER] ${logMessage}`);
+        }
+        callback(null, filename || 'unknown');
       },
     }),
     fileFilter: (req, file, callback) => {
-      if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
-        return callback(new BadRequestException('Only image files are allowed!'), false);
+      const logger = req.res?.locals?.logger || new Logger('FileUpload');
+      const fileType = file.mimetype || 'unknown';
+      if (!fileType.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
+        const errorMsg = `Invalid file type: ${fileType}. Only image files (jpg, jpeg, png, gif, webp) are allowed!`;
+        logger.error(`[CONTROLLER] File filter rejected: ${errorMsg}`);
+        return callback(new BadRequestException(errorMsg || 'Invalid file type'), false);
+      }
+      const fileName = file.originalname || 'unknown';
+      if (fileName && fileType) {
+        logger.log(`[CONTROLLER] File filter accepted: ${fileName} (${fileType})`);
       }
       callback(null, true);
     },
     limits: {
-      fileSize: 5 * 1024 * 1024, // 5MB
+      fileSize: 5 * 1024 * 1024, // 5MB par fichier
+      files: 10, // Maximum 10 fichiers
     },
   }))
   async generatePreview(@Body() body: any, @UploadedFiles() files: Record<string, Express.Multer.File[]>, @Request() req) {
     const userId = req.user.userId;
-    this.logger.log(`[DEBUG] Generating preview for user ${userId}`);
-
-    // Extract uploaded image paths and map them to variable names
-    const uploadedImagePaths: string[] = [];
-    const imageVariableMapping: Record<string, string> = {};
-
-    if (files) {
-      this.logger.log(`[DEBUG] Processing ${Object.keys(files).length} file fields for preview`);
-      Object.entries(files).forEach(([fieldName, fileArray]) => {
-        if (fieldName.startsWith('images_') && fileArray && fileArray.length > 0) {
-          const variableName = fieldName.replace('images_', '');
-          const file = fileArray[0];
-          uploadedImagePaths.push(file.path);
-          imageVariableMapping[variableName] = file.filename;
-          this.logger.log(`[DEBUG] Mapped preview image variable "${variableName}" to file "${file.filename}" at path "${file.path}"`);
-        }
-      });
+    this.logger.log(`[CONTROLLER] 📸 Generating preview for user ${userId}`);
+    this.logger.log(`[CONTROLLER] 📝 Request body:`, JSON.stringify(body, null, 2));
+    this.logger.log(`[CONTROLLER] 📁 Uploaded files:`, Object.keys(files || {}));
+    
+    // Validation des paramètres requis
+    if (!body.templateId) {
+      throw new BadRequestException('Template ID is required');
+    }
+    
+    if (!body.variables) {
+      throw new BadRequestException('Variables object is required');
     }
 
-    // Parse variables from form data
+    // Extract uploaded image paths and map them to variable names (ENHANCED)
+    const uploadedImagePaths: string[] = [];
+    const imageVariableMapping: Record<string, string> = {};
+    const fileProcessingErrors: string[] = [];
+
+    if (files && Object.keys(files).length > 0) {
+      this.logger.log(`[CONTROLLER] Processing ${Object.keys(files).length} file fields for preview`);
+      
+      for (const [fieldName, fileArray] of Object.entries(files)) {
+        try {
+          if (fieldName.startsWith('images_') && fileArray && fileArray.length > 0) {
+            const variableName = fieldName.replace('images_', '');
+            const file = fileArray[0];
+            
+            // Validation du fichier uploadé
+            if (!file || !file.filename || !file.path) {
+              const errorMsg = `Invalid file data for field "${fieldName}"`;
+              this.logger.error(`[CONTROLLER] ${errorMsg}`);
+              fileProcessingErrors.push(errorMsg);
+              continue;
+            }
+            
+            uploadedImagePaths.push(file.path);
+            imageVariableMapping[variableName] = file.filename;
+            
+            this.logger.log(`[CONTROLLER] ✅ Mapped preview image variable "${variableName}" to file "${file.filename}" (${file.size} bytes) at path "${file.path}"`);
+          }
+        } catch (error) {
+          const errorMsg = `Error processing file field "${fieldName}": ${error.message}`;
+          this.logger.error(`[CONTROLLER] ${errorMsg}`);
+          fileProcessingErrors.push(errorMsg);
+        }
+      }
+    } else {
+      this.logger.log(`[CONTROLLER] No image files uploaded for preview`);
+    }
+
+    this.logger.log(`[CONTROLLER] 📊 File processing summary: ${uploadedImagePaths.length} files processed, ${fileProcessingErrors.length} errors`);
+
+    // Parse variables from form data with enhanced error handling
     let variables;
     try {
       variables = typeof body.variables === 'string' ? JSON.parse(body.variables) : body.variables;
+      
+      if (!variables || typeof variables !== 'object') {
+        throw new Error('Variables must be a valid object');
+      }
+      
+      this.logger.log(`[CONTROLLER] ✅ Parsed ${Object.keys(variables).length} variables`);
     } catch (error) {
-      this.logger.error(`[DEBUG] Failed to parse variables for preview: ${error.message}`);
-      throw new BadRequestException('Variables must be a valid JSON string');
+      const errorMsg = `Failed to parse variables: ${error.message}`;
+      this.logger.error(`[CONTROLLER] ❌ ${errorMsg}`);
+      throw new BadRequestException(`Variables must be a valid JSON object: ${error.message}`);
     }
 
-    // Add image filenames to variables for preview generation
+    // Add image filenames to variables for preview generation (ENHANCED)
+    const addedImageVars: string[] = [];
     Object.entries(imageVariableMapping).forEach(([variableName, filename]) => {
       variables[variableName] = filename;
-      this.logger.log(`[DEBUG] Added preview image variable "${variableName}" with filename "${filename}"`);
+      addedImageVars.push(variableName);
+      this.logger.log(`[CONTROLLER] ✅ Added preview image variable "${variableName}" with filename "${filename}"`);
     });
 
+    this.logger.log(`[CONTROLLER] 📸 Added ${addedImageVars.length} image variables to the variables object`);
+
+    // Return processing summary for debugging
     const previewDto: PreviewHistoireDto = {
       templateId: body.templateId,
       variables,
     };
 
-    const result = await this.histoiresService.generatePreview(userId, previewDto, uploadedImagePaths);
-    return {
-      previewUrls: result.previewUrls,
-      pdfUrl: result.pdfUrl,
-      histoireId: result.histoireId
-    };
+    try {
+      const result = await this.histoiresService.generatePreview(userId, previewDto, uploadedImagePaths);
+
+      this.logger.log(`[CONTROLLER] ✅ Preview generation successful: ${result.previewUrls?.length || 0} preview URLs generated`);
+      this.logger.log(`[CONTROLLER] 📋 Preview URLs:`, result.previewUrls);
+      this.logger.log(`[CONTROLLER] 📄 PDF URL:`, result.pdfUrl);
+      this.logger.log(`[CONTROLLER] 🆔 Histoire ID:`, result.histoireId);
+
+      return {
+        success: true,
+        previewUrls: result.previewUrls || [],
+        pdfUrl: result.pdfUrl,
+        histoireId: result.histoireId,
+        processingSummary: {
+          uploadedImages: uploadedImagePaths.length,
+          mappedVariables: addedImageVars,
+          fileErrors: fileProcessingErrors.length > 0 ? fileProcessingErrors : undefined
+        }
+      };
+    } catch (error) {
+      this.logger.error(`[CONTROLLER] ❌ Preview generation failed: ${error.message}`, error.stack);
+      throw new BadRequestException(`Preview generation failed: ${error.message}`);
+    }
   }
 
   @Post(':id/generer')
@@ -168,28 +254,50 @@ export class HistoiresController {
   @Post('generate')
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileFieldsInterceptor([
+    // Configuration cohérente avec preview - accepte tous les champs d'images
     { name: 'images_photo', maxCount: 1 },
     { name: 'images_image', maxCount: 1 },
-    { name: 'images_picture', maxCount: 1 }
+    { name: 'images_picture', maxCount: 1 },
+    { name: 'images_portrait', maxCount: 1 },
+    { name: 'images_avatar', maxCount: 1 },
+    { name: 'images_personnage', maxCount: 1 },
+    { name: 'images_scene', maxCount: 1 },
+    { name: 'images_fond', maxCount: 1 },
+    { name: 'images_objet', maxCount: 1 },
+    { name: 'images_autre', maxCount: 1 }
   ], {
     storage: diskStorage({
       destination: './uploads/temp-images',
       filename: (req, file, callback) => {
-        // Extract variable name from field name (e.g., 'images_photo' -> 'photo')
-        const variableName = file.fieldname.replace('images_', '');
+        const logger = req.res?.locals?.logger || new Logger('FileUpload');
+        const variableName = (file.fieldname || '').replace('images_', '');
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const filename = `${variableName}-${uniqueSuffix}${extname(file.originalname)}`;
-        callback(null, filename);
+        const originalExt = file.originalname ? extname(file.originalname) : '.jpg';
+        const filename = `${variableName}-${uniqueSuffix}${originalExt}`;
+        if (filename) {
+          const logMessage = `Generated filename: ${filename} for variable: ${variableName}`;
+          logger.log(`[CONTROLLER] ${logMessage}`);
+        }
+        callback(null, filename || 'unknown');
       },
     }),
     fileFilter: (req, file, callback) => {
-      if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
-        return callback(new BadRequestException('Only image files are allowed!'), false);
+      const logger = req.res?.locals?.logger || new Logger('FileUpload');
+      const fileType = file.mimetype || 'unknown';
+      if (!fileType.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
+        const errorMsg = `Invalid file type: ${fileType}. Only image files are allowed!`;
+        logger.error(`[CONTROLLER] File filter rejected: ${errorMsg}`);
+        return callback(new BadRequestException(errorMsg || 'Invalid file type'), false);
+      }
+      const fileName = file.originalname || 'unknown';
+      if (fileName && fileType) {
+        logger.log(`[CONTROLLER] File filter accepted: ${fileName} (${fileType})`);
       }
       callback(null, true);
     },
     limits: {
-      fileSize: 5 * 1024 * 1024, // 5MB
+      fileSize: 5 * 1024 * 1024, // 5MB par fichier
+      files: 10, // Maximum 10 fichiers
     },
   }))
   async generateHistoire(
@@ -198,62 +306,88 @@ export class HistoiresController {
     @Request() req,
   ) {
     const userId = req.user.userId;
-    this.logger.log(`[DEBUG] Generating complete PDF for template ${body.templateId} by user ${userId}`);
-    this.logger.log(`[DEBUG] Raw request body:`, body);
-    this.logger.log(`[DEBUG] Uploaded files:`, files ? Object.keys(files) : 'none');
+    this.logger.log(`[CONTROLLER] 🎯 Generating final PDF for template ${body.templateId} by user ${userId}`);
+    
+    // Validation des paramètres requis
+    if (!body.templateId) {
+      throw new BadRequestException('Template ID is required');
+    }
+    
+    if (!body.variables) {
+      throw new BadRequestException('Variables object is required');
+    }
 
-    // Extract uploaded image paths and map them to variable names
+    // Extract uploaded image paths and map them to variable names (ENHANCED)
     const uploadedImagePaths: string[] = [];
     const imageVariableMapping: Record<string, string> = {};
+    const fileProcessingErrors: string[] = [];
 
-    if (files) {
-      this.logger.log(`[DEBUG] Processing ${Object.keys(files).length} file fields`);
-      Object.entries(files).forEach(([fieldName, fileArray]) => {
-        this.logger.log(`[DEBUG] Processing field "${fieldName}" with ${fileArray?.length || 0} files`);
-        if (fieldName.startsWith('images_') && fileArray && fileArray.length > 0) {
-          const variableName = fieldName.replace('images_', '');
-          const file = fileArray[0]; // Take first file if multiple
-          this.logger.log(`[DEBUG] File details: originalname=${file.originalname}, filename=${file.filename}, path=${file.path}, size=${file.size}`);
-          uploadedImagePaths.push(file.path);
-          imageVariableMapping[variableName] = file.filename;
-          this.logger.log(`[DEBUG] Mapped image variable "${variableName}" to file "${file.filename}" at path "${file.path}"`);
-        } else {
-          this.logger.log(`[DEBUG] Skipping field "${fieldName}" - doesn't match image pattern or no files`);
+    if (files && Object.keys(files).length > 0) {
+      this.logger.log(`[CONTROLLER] Processing ${Object.keys(files).length} file fields for generation`);
+      
+      for (const [fieldName, fileArray] of Object.entries(files)) {
+        try {
+          if (fieldName.startsWith('images_') && fileArray && fileArray.length > 0) {
+            const variableName = fieldName.replace('images_', '');
+            const file = fileArray[0];
+            
+            // Validation du fichier uploadé
+            if (!file || !file.filename || !file.path) {
+              const errorMsg = `Invalid file data for field "${fieldName}"`;
+              this.logger.error(`[CONTROLLER] ${errorMsg}`);
+              fileProcessingErrors.push(errorMsg);
+              continue;
+            }
+            
+            uploadedImagePaths.push(file.path);
+            imageVariableMapping[variableName] = file.filename;
+            
+            this.logger.log(`[CONTROLLER] ✅ Mapped generation image variable "${variableName}" to file "${file.filename}" (${file.size} bytes) at path "${file.path}"`);
+          }
+        } catch (error) {
+          const errorMsg = `Error processing file field "${fieldName}": ${error.message}`;
+          this.logger.error(`[CONTROLLER] ${errorMsg}`);
+          fileProcessingErrors.push(errorMsg);
         }
-      });
+      }
     } else {
-      this.logger.log(`[DEBUG] No files uploaded`);
+      this.logger.log(`[CONTROLLER] No image files uploaded for generation`);
     }
 
-    this.logger.log(`[DEBUG] Final uploaded image paths:`, uploadedImagePaths);
-    this.logger.log(`[DEBUG] Image variable mapping:`, imageVariableMapping);
+    this.logger.log(`[CONTROLLER] 📊 File processing summary: ${uploadedImagePaths.length} files processed, ${fileProcessingErrors.length} errors`);
 
-    // Parse variables from form data
+    // Parse variables from form data with enhanced error handling
     let variables;
     try {
-      this.logger.log(`[DEBUG] Parsing variables from body.variables:`, body.variables);
       variables = typeof body.variables === 'string' ? JSON.parse(body.variables) : body.variables;
-      this.logger.log(`[DEBUG] Parsed variables:`, variables);
+      
+      if (!variables || typeof variables !== 'object') {
+        throw new Error('Variables must be a valid object');
+      }
+      
+      this.logger.log(`[CONTROLLER] ✅ Parsed ${Object.keys(variables).length} variables`);
     } catch (error) {
-      this.logger.error(`[DEBUG] Failed to parse variables: ${error.message}`);
-      throw new BadRequestException('Variables must be a valid JSON string');
+      const errorMsg = `Failed to parse variables: ${error.message}`;
+      this.logger.error(`[CONTROLLER] ❌ ${errorMsg}`);
+      throw new BadRequestException(`Variables must be a valid JSON object: ${error.message}`);
     }
 
-    // Add image filenames to variables for PDF generation
-    this.logger.log(`[DEBUG] Adding image filenames to variables...`);
+    // Add image filenames to variables for PDF generation (ENHANCED)
+    const addedImageVars: string[] = [];
     Object.entries(imageVariableMapping).forEach(([variableName, filename]) => {
       variables[variableName] = filename;
-      this.logger.log(`[DEBUG] Added image variable "${variableName}" with filename "${filename}" to variables`);
+      addedImageVars.push(variableName);
+      this.logger.log(`[CONTROLLER] ✅ Added generation image variable "${variableName}" with filename "${filename}"`);
     });
 
-    this.logger.log(`[DEBUG] Final variables object:`, variables);
+    this.logger.log(`[CONTROLLER] 📸 Added ${addedImageVars.length} image variables to the variables object`);
 
     const generateDto: GenerateHistoireDto = {
       templateId: body.templateId,
       variables,
     };
 
-    this.logger.log(`[DEBUG] Calling histoiresService.generateHistoire with:`, {
+    this.logger.log(`[CONTROLLER] 🎯 Calling histoiresService.generateHistoire with:`, {
       userId,
       templateId: generateDto.templateId,
       variablesCount: Object.keys(generateDto.variables).length,
@@ -262,11 +396,21 @@ export class HistoiresController {
 
     try {
       const result = await this.histoiresService.generateHistoire(userId, generateDto, uploadedImagePaths);
-      this.logger.log(`[DEBUG] Histoire generation successful for user ${userId}, histoire ID: ${result._id}`);
-      return result;
+      
+      this.logger.log(`[CONTROLLER] ✅ Histoire generation successful for user ${userId}, histoire ID: ${result._id}`);
+      
+      return {
+        success: true,
+        histoire: result,
+        processingSummary: {
+          uploadedImages: uploadedImagePaths.length,
+          mappedVariables: addedImageVars,
+          fileErrors: fileProcessingErrors.length > 0 ? fileProcessingErrors : undefined
+        }
+      };
     } catch (error) {
-      this.logger.error(`[DEBUG] Histoire generation failed for user ${userId}: ${error.message}`, error.stack);
-      throw error; // Re-throw to let NestJS handle the error response
+      this.logger.error(`[CONTROLLER] ❌ Histoire generation failed for user ${userId}: ${error.message}`, error.stack);
+      throw new BadRequestException(`Histoire generation failed: ${error.message}`);
     }
   }
 
