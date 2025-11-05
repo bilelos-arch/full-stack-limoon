@@ -1,24 +1,27 @@
 //frontend/src/app/histoires/creer/[templateId]/page.tsx
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useHistoiresStore } from '@/stores/histoiresStore';
 import { templatesApi, Template } from '@/lib/templatesApi';
-import { histoireApi } from '@/lib/histoireApi';
+import { histoireApi, Histoire } from '@/lib/histoireApi';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, Sparkles } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ArrowLeft, Sparkles, Download, BookOpen, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
 import { motion } from 'framer-motion';
 import HistoireForm from '@/components/HistoireForm';
 import HistoirePreview from '@/components/HistoirePreview';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
 
 export default function CreerHistoirePage() {
   const router = useRouter();
   const params = useParams();
+  const templateId = params.templateId as string;
   const { user, isAuthenticated } = useAuth();
   const { generateHistoire, isLoading, error, clearError } = useHistoiresStore();
 
@@ -26,8 +29,21 @@ export default function CreerHistoirePage() {
   const [previewImages, setPreviewImages] = useState<string[]>([]);
   const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedHistoire, setGeneratedHistoire] = useState<Histoire | null>(null);
+  const [generatedPreviewImages, setGeneratedPreviewImages] = useState<string[]>([]);
+  const [finalVariables, setFinalVariables] = useState<Record<string, string>>({});
+  const [isGeneratingFinalPreview, setIsGeneratingFinalPreview] = useState(false);
+  const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
+  const [pdfCurrentPage, setPdfCurrentPage] = useState(1);
+  const [pdfNumPages, setPdfNumPages] = useState(0);
+  const [pdfScale, setPdfScale] = useState(1.0);
+  const [isPdfLoading, setIsPdfLoading] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const pdfCanvasRef = useRef<HTMLCanvasElement>(null);
 
-  const templateId = params.templateId as string;
 
   useEffect(() => {
     console.log('useEffect triggered - isAuthenticated:', isAuthenticated, 'templateId:', templateId, 'user:', user);
@@ -49,6 +65,30 @@ export default function CreerHistoirePage() {
     }
   }, [isAuthenticated, templateId, router]);
 
+
+  // Dynamic import of PDF.js
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      import('pdfjs-dist').then((pdfjsLib) => {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.js';
+      });
+    }
+  }, []);
+
+  // Load PDF when generatedHistoire is available (for download functionality)
+  useEffect(() => {
+    if (generatedHistoire?.generatedPdfUrl) {
+      loadPDF(generatedHistoire.generatedPdfUrl);
+    }
+  }, [generatedHistoire?.generatedPdfUrl]);
+
+  // Render PDF page when pdfDoc or page/scale changes (for download functionality)
+  useEffect(() => {
+    if (pdfDoc && pdfCanvasRef.current) {
+      renderPdfPage(pdfCurrentPage);
+    }
+  }, [pdfDoc, pdfCurrentPage, pdfScale]);
+
   const loadTemplate = async () => {
     try {
       console.log('Loading template with ID:', templateId);
@@ -66,16 +106,34 @@ export default function CreerHistoirePage() {
 
     setIsGeneratingPreview(true);
     try {
-      // Call preview API using histoireApi
-      const data = await histoireApi.generatePreview(templateId, variables);
-      setPreviewImages(data.previewUrls || []);
+      // Generate the full histoire instead of just preview
+      const histoire = await generateHistoire({
+        templateId: templateId,
+        variables,
+      });
+
+      if (histoire) {
+        console.log('Setting generated histoire for preview');
+        setGeneratedHistoire(histoire);
+        setFinalVariables(variables);
+
+        // Use the preview images from the generated histoire
+        const previewUrls = histoire.previewUrls || [];
+        console.log('Setting previewImages with:', previewUrls);
+        setPreviewImages(previewUrls);
+
+        setShowPreview(true); // Show preview after generation
+      } else {
+        console.error('generateHistoire returned null or undefined');
+        setPreviewImages([]);
+      }
     } catch (error) {
-      console.error('Erreur lors de la génération de l\'aperçu:', error);
+      console.error('Erreur lors de la génération de l\'histoire:', error);
       setPreviewImages([]);
     } finally {
       setIsGeneratingPreview(false);
     }
-  }, [template, user?._id, templateId]);
+  }, [template, user?._id, templateId, generateHistoire]);
 
   const handleGenerate = async (variables: Record<string, string>) => {
     console.log('handleGenerate called with variables:', variables);
@@ -96,23 +154,206 @@ export default function CreerHistoirePage() {
         templateId: templateId,
         variables,
       });
+
+      console.log('About to call generateHistoire from store...');
       const histoire = await generateHistoire({
         templateId: templateId,
         variables,
       });
 
       console.log('generateHistoire returned:', histoire);
+      console.log('histoire type:', typeof histoire);
+      console.log('histoire is null:', histoire === null);
+      console.log('histoire is undefined:', histoire === undefined);
+      console.log('histoire.previewUrls:', histoire?.previewUrls);
+      console.log('histoire.previewUrls length:', histoire?.previewUrls?.length);
+      console.log('histoire.previewUrls type:', typeof histoire?.previewUrls);
+      console.log('histoire.generatedPdfUrl:', histoire?.generatedPdfUrl);
+      console.log('histoire.pdfUrl:', histoire?.pdfUrl);
+      console.log('Full histoire object:', JSON.stringify(histoire, null, 2));
 
       if (histoire) {
-        console.log('Navigating to preview page:', `/histoires/preview/${histoire._id}`);
-        router.push(`/histoires/preview/${histoire._id}`);
+        console.log('Setting generated histoire for preview');
+        setGeneratedHistoire(histoire);
+        setFinalVariables(variables);
+
+        // Utiliser les images de preview générées lors de la création de l'histoire
+        const previewUrls = histoire.previewUrls || [];
+        console.log('Setting generatedPreviewImages with:', previewUrls);
+        setGeneratedPreviewImages(previewUrls);
+
+        // Stay on the page instead of navigating
       } else {
-        console.error('generateHistoire returned null');
+        console.error('generateHistoire returned null or undefined');
+        console.error('This means the API call failed or returned an invalid response');
       }
     } catch (error) {
       console.error('Erreur lors de la génération:', error);
+      console.error('Error details:', {
+        message: (error as Error).message,
+        stack: (error as Error).stack,
+        name: (error as Error).name
+      });
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const loadPDF = async (pdfUrl: string) => {
+    setIsPdfLoading(true);
+    try {
+      console.log('Loading PDF from URL:', pdfUrl);
+      const { getDocument } = await import('pdfjs-dist');
+      const loadingTask = getDocument({ url: pdfUrl });
+      console.log('PDF loading task created');
+      const pdf = await loadingTask.promise;
+      console.log('PDF loaded successfully, pages:', pdf.numPages);
+      setPdfDoc(pdf);
+      setPdfNumPages(pdf.numPages);
+      setPdfCurrentPage(1);
+      setPdfScale(1.0);
+    } catch (error) {
+      console.error('Error loading PDF:', error);
+      console.error('Error details:', {
+        message: (error as Error).message,
+        stack: (error as Error).stack,
+        name: (error as Error).name
+      });
+    } finally {
+      setIsPdfLoading(false);
+    }
+  };
+
+  const renderPdfPage = async (pageNum: number) => {
+    if (!pdfDoc || !pdfCanvasRef.current) return;
+
+    try {
+      console.log('Rendering PDF page:', pageNum, 'scale:', pdfScale);
+      const page = await pdfDoc.getPage(pageNum);
+      console.log('PDF page loaded:', pageNum);
+      const viewport = page.getViewport({ scale: pdfScale });
+      console.log('Viewport dimensions:', viewport.width, 'x', viewport.height);
+
+      const canvas = pdfCanvasRef.current;
+      const context = canvas.getContext('2d');
+      if (!context) {
+        console.error('Could not get 2D context from canvas');
+        return;
+      }
+
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+
+      const renderContext = {
+        canvasContext: context,
+        viewport: viewport,
+        canvas: canvas,
+      };
+
+      console.log('Starting PDF render...');
+      await page.render(renderContext).promise;
+      console.log('PDF page rendered successfully');
+    } catch (error) {
+      console.error('Error rendering PDF page:', error);
+      console.error('Error details:', {
+        message: (error as Error).message,
+        stack: (error as Error).stack,
+        name: (error as Error).name
+      });
+    }
+  };
+
+  const goToPrevPdfPage = () => {
+    if (pdfCurrentPage > 1) {
+      setPdfCurrentPage(pdfCurrentPage - 1);
+    }
+  };
+
+  const goToNextPdfPage = () => {
+    if (pdfCurrentPage < pdfNumPages) {
+      setPdfCurrentPage(pdfCurrentPage + 1);
+    }
+  };
+
+  const zoomInPdf = () => {
+    setPdfScale(prev => Math.min(prev + 0.25, 3.0));
+  };
+
+  const zoomOutPdf = () => {
+    setPdfScale(prev => Math.max(prev - 0.25, 0.5));
+  };
+
+  const handleDownload = async () => {
+    console.log('handleDownload called');
+    console.log('generatedHistoire:', generatedHistoire);
+    console.log('generatedPdfUrl:', generatedHistoire?.generatedPdfUrl);
+
+    if (!generatedHistoire?.generatedPdfUrl) {
+      console.log('No generatedPdfUrl, returning');
+      return;
+    }
+
+    setIsDownloading(true);
+    setDownloadError(null);
+
+    try {
+      // Build the full URL for the PDF file
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const fullPdfUrl = `${apiBaseUrl}/uploads/${generatedHistoire.generatedPdfUrl}`;
+      console.log('Fetching PDF from:', fullPdfUrl);
+
+      const response = await fetch(fullPdfUrl);
+      console.log('Response status:', response.status, 'ok:', response.ok);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Response error text:', errorText);
+        throw new Error(`Erreur HTTP: ${response.status} - ${errorText}`);
+      }
+
+      const blob = await response.blob();
+      console.log('Blob received, size:', blob.size, 'type:', blob.type);
+
+      // Validate that it's actually a PDF
+      if (blob.type !== 'application/pdf' && !blob.type.includes('pdf')) {
+        console.error('Downloaded file is not a PDF, type:', blob.type);
+        // Check first few bytes to see if it's actually a PDF
+        const arrayBuffer = await blob.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer.slice(0, 4));
+        const header = Array.from(uint8Array).map(b => b.toString(16).padStart(2, '0')).join('');
+        console.log('File header (first 4 bytes):', header);
+        if (header !== '25504446') { // PDF magic number %PDF
+          throw new Error('Le fichier téléchargé n\'est pas un PDF valide');
+        }
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      console.log('Blob URL created:', url);
+
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${template?.title || 'Histoire personnalisée'}.pdf`;
+      console.log('Download filename:', link.download);
+
+      document.body.appendChild(link);
+      console.log('Link appended to body, clicking...');
+      link.click();
+      console.log('Link clicked, removing from body');
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      console.log('Blob URL revoked');
+    } catch (error) {
+      console.error('Erreur lors du téléchargement du PDF:', error);
+      console.error('Error details:', {
+        message: (error as Error).message,
+        stack: (error as Error).stack,
+        name: (error as Error).name
+      });
+      setDownloadError(`Erreur lors du téléchargement du PDF: ${(error as Error).message}`);
+    } finally {
+      setIsDownloading(false);
+      console.log('Download process finished');
     }
   };
 
@@ -153,13 +394,15 @@ export default function CreerHistoirePage() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => router.back()}
+              onClick={() => showPreview ? setShowPreview(false) : router.back()}
               className="flex-shrink-0"
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground">Personnaliser l'histoire</h1>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+                {showPreview ? 'Aperçu de votre histoire' : 'Personnaliser l\'histoire'}
+              </h1>
               <p className="text-sm md:text-base text-muted-foreground mt-1">{template.title}</p>
             </div>
           </motion.div>
@@ -174,36 +417,98 @@ export default function CreerHistoirePage() {
             </Alert>
           )}
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Form Section */}
+          {!showPreview ? (
+            /* Form Section */
             <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.1 }}
+              className="w-full"
             >
               <HistoireForm
                 templateId={templateId}
-                onPreview={handlePreview}
-                onSubmit={handleGenerate}
+                onShowPreview={handlePreview}
               />
             </motion.div>
-
-            {/* Preview Section */}
+          ) : (
+            /* Preview Section - Full Page */
             <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1 }}
               className="w-full"
             >
               <HistoirePreview
                 previewImages={previewImages}
-                isLoading={isGeneratingPreview || isGenerating}
-                error={error}
-                onRetry={() => handlePreview({})}
-                className="w-full"
+                isLoading={isGeneratingPreview}
+                onRetry={() => handlePreview(finalVariables)}
+                pdfUrl={generatedHistoire?.generatedPdfUrl}
+                onDownload={handleDownload}
+                isDownloading={isDownloading}
               />
+
+              {/* Action Buttons */}
+              <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
+                {(() => {
+                  console.log('Debug: generatedHistoire:', generatedHistoire);
+                  console.log('Debug: generatedHistoire?.generatedPdfUrl:', generatedHistoire?.generatedPdfUrl);
+                  console.log('Debug: condition result:', !!generatedHistoire?.generatedPdfUrl);
+                  return generatedHistoire?.generatedPdfUrl ? (
+                    <Button
+                      onClick={handleDownload}
+                      disabled={isDownloading}
+                      className="flex-1 sm:flex-none"
+                      size="lg"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      {isDownloading ? 'Téléchargement...' : 'Télécharger l\'histoire'}
+                    </Button>
+                  ) : null;
+                })()}
+
+                {downloadError && (
+                  <Alert className="mt-4" variant="destructive">
+                    <AlertDescription>{downloadError}</AlertDescription>
+                  </Alert>
+                )}
+
+                <Button
+                  onClick={() => {
+                    alert('Fonctionnalité de commande bientôt disponible. Redirection vers la boutique...');
+                    router.push('/book-store');
+                  }}
+                  variant="outline"
+                  className="flex-1 sm:flex-none"
+                  size="lg"
+                >
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  Commander le livre
+                </Button>
+
+                <Button
+                  onClick={() => router.push('/histoires')}
+                  variant="outline"
+                  className="flex-1 sm:flex-none"
+                >
+                  Retour à mes histoires
+                </Button>
+              </div>
             </motion.div>
-          </div>
+          )}
+
+          {/* Preview Modal */}
+          <Dialog open={isPreviewModalOpen} onOpenChange={setIsPreviewModalOpen}>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Aperçu de l'histoire</DialogTitle>
+              </DialogHeader>
+              <HistoirePreview
+                previewImages={previewImages}
+                isLoading={isGeneratingPreview}
+                onRetry={() => handlePreview(finalVariables)}
+              />
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </div>

@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion } from 'framer-motion';
-import { Upload, Eye, Sparkles, AlertCircle } from 'lucide-react';
+import { Upload, Eye, Sparkles, AlertCircle, Image } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,6 +21,7 @@ interface HistoireFormProps {
   templateId: string;
   onPreview?: (variables: Record<string, string>) => void;
   onSubmit?: (variables: Record<string, string>) => Promise<void>;
+  onShowPreview?: (variables: Record<string, string>) => void;
   className?: string;
 }
 
@@ -64,6 +65,7 @@ export default function HistoireForm({
   templateId,
   onPreview,
   onSubmit,
+  onShowPreview,
   className
 }: HistoireFormProps) {
   const [template, setTemplate] = useState<Template | null>(null);
@@ -85,14 +87,28 @@ export default function HistoireForm({
   useEffect(() => {
     const loadTemplate = async () => {
       try {
+        console.log('HistoireForm: Loading template with ID:', templateId);
         const templateData = await templatesApi.getTemplate(templateId);
+        console.log('HistoireForm: Template loaded:', templateData);
+        console.log('HistoireForm: Template coverPath:', templateData.coverPath);
+        console.log('HistoireForm: Template variables:', templateData.variables);
         setTemplate(templateData);
 
         // Récupérer les éléments d'éditeur pour obtenir les valeurs par défaut
         const elements = await templatesApi.getEditorElements(templateId);
+        console.log('HistoireForm: Editor elements loaded:', elements.length);
+        elements.forEach((el, index) => {
+          console.log(`HistoireForm: Element ${index}:`, {
+            id: el.id,
+            type: el.type,
+            variableName: el.variableName,
+            textContent: el.textContent
+          });
+        });
         setEditorElements(elements);
 
         const detectedVars = templateData.variables || [];
+        console.log('HistoireForm: Detected variables from template:', detectedVars);
         setVariables(detectedVars);
 
         const schema = createFormSchema(detectedVars);
@@ -102,6 +118,7 @@ export default function HistoireForm({
         const defaultValuesFromElements: Record<string, any> = {};
         elements.forEach(element => {
           if (element.defaultValues) {
+            console.log('HistoireForm: Default values from element:', element.defaultValues);
             Object.assign(defaultValuesFromElements, element.defaultValues);
           }
         });
@@ -110,10 +127,12 @@ export default function HistoireForm({
         const defaultValues: Record<string, any> = {};
         detectedVars.forEach(variable => {
           const lowerVar = variable.toLowerCase();
+          console.log(`HistoireForm: Setting default value for variable "${variable}"`);
 
           // Utiliser les valeurs par défaut des éléments d'éditeur si disponibles
           if (defaultValuesFromElements[variable] !== undefined) {
             defaultValues[variable] = defaultValuesFromElements[variable];
+            console.log(`HistoireForm: Using default value from element for "${variable}":`, defaultValues[variable]);
           } else {
             // Fallbacks par défaut
             if (lowerVar.includes('nom') || lowerVar.includes('name')) {
@@ -125,11 +144,14 @@ export default function HistoireForm({
               defaultValues[variable] = currentDate;
             } else if (lowerVar.includes('image') || lowerVar.includes('photo') || lowerVar.includes('picture')) {
               defaultValues[variable] = undefined;
+              console.log(`HistoireForm: Setting undefined default for image variable "${variable}"`);
             } else {
               defaultValues[variable] = '';
             }
+            console.log(`HistoireForm: Using fallback default for "${variable}":`, defaultValues[variable]);
           }
         });
+        console.log('HistoireForm: Final default values:', defaultValues);
         form.reset(defaultValues);
       } catch (error) {
         console.error('Erreur lors du chargement du template:', error);
@@ -201,6 +223,8 @@ export default function HistoireForm({
     const isImageField = lowerVar.includes('image') || lowerVar.includes('photo') || lowerVar.includes('picture');
     const isDateField = lowerVar.includes('date') || lowerVar.includes('naissance');
     const isAgeField = lowerVar.includes('age') || lowerVar.includes('âge');
+    const label = variable.charAt(0).toUpperCase() + variable.slice(1).replace(/([A-Z])/g, ' $1');
+    const placeholder = label; // Placeholder takes the value of the label
 
     return (
       <FormField
@@ -210,7 +234,7 @@ export default function HistoireForm({
         render={({ field }) => (
           <FormItem>
             <FormLabel>
-              {variable.charAt(0).toUpperCase() + variable.slice(1).replace(/([A-Z])/g, ' $1')}
+              {label}
             </FormLabel>
             <FormControl>
               {isImageField ? (
@@ -237,6 +261,7 @@ export default function HistoireForm({
               ) : isDateField ? (
                 <Input
                   type="date"
+                  placeholder={placeholder}
                   {...field}
                   value={field.value || ''}
                 />
@@ -245,7 +270,7 @@ export default function HistoireForm({
                   type="number"
                   min="1"
                   max="18"
-                  placeholder="Ex: 5"
+                  placeholder={placeholder}
                   {...field}
                   value={field.value || ''}
                   onChange={(e) => field.onChange(e.target.value)}
@@ -253,7 +278,7 @@ export default function HistoireForm({
               ) : (
                 <Input
                   type="text"
-                  placeholder={`Entrez ${variable.toLowerCase()}`}
+                  placeholder={placeholder}
                   {...field}
                   value={field.value || ''}
                 />
@@ -268,17 +293,24 @@ export default function HistoireForm({
 
   const handleSubmit = async (data: Record<string, any>) => {
     if (onSubmit) {
+      console.log('[HistoireForm] Starting form submission with data:', data);
+
       // Upload images first if any
       const formData = new FormData();
-      const imageFields: string[] = [];
+      const imageFields: Record<string, string> = {};
 
-      // Prepare form data with images
+      // Prepare form data with images - use variable names as field names
       Object.entries(data).forEach(([key, value]) => {
         if (value instanceof File) {
-          formData.append('images', value);
-          imageFields.push(key);
+          console.log(`[HistoireForm] Adding image file for variable "${key}":`, value.name, value.size, 'bytes');
+          // Use the variable name as the field name for the image
+          formData.append(`images_${key}`, value);
+          // Store the mapping for later use
+          imageFields[key] = `images_${key}`;
         }
       });
+
+      console.log('[HistoireForm] Image fields mapping:', imageFields);
 
       // Add other variables
       const variables: Record<string, any> = {};
@@ -288,8 +320,13 @@ export default function HistoireForm({
         }
       });
 
+      console.log('[HistoireForm] Non-image variables:', variables);
+
       formData.append('templateId', templateId);
       formData.append('variables', JSON.stringify(variables));
+      formData.append('imageFields', JSON.stringify(imageFields));
+
+      console.log('[HistoireForm] FormData prepared, sending to backend...');
 
       try {
         // Upload images and generate histoire
@@ -299,24 +336,26 @@ export default function HistoireForm({
           body: formData,
         });
 
+        console.log('[HistoireForm] Backend response status:', response.status);
+
         if (!response.ok) {
           // Try to get error details from response
           let errorMessage = 'Failed to generate histoire';
           try {
             const errorData = await response.json();
             errorMessage = errorData.message || errorData.error || errorMessage;
-            console.error('Backend error details:', errorData);
+            console.error('[HistoireForm] Backend error details:', errorData);
           } catch (parseError) {
-            console.error('Could not parse error response:', parseError);
+            console.error('[HistoireForm] Could not parse error response:', parseError);
           }
           throw new Error(errorMessage);
         }
 
         const result = await response.json();
-        console.log('Histoire generation successful:', result);
+        console.log('[HistoireForm] Histoire generation successful:', result);
         await onSubmit(result);
       } catch (error) {
-        console.error('Error generating histoire:', error);
+        console.error('[HistoireForm] Error generating histoire:', error);
         throw error;
       }
     }
@@ -343,8 +382,25 @@ export default function HistoireForm({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className={className}
+      className={className ? `${className} w-full lg:w-1/2 mx-auto` : "w-full lg:w-1/2 mx-auto"}
     >
+      {/* Template Cover Image */}
+      {template?.coverPath && (
+        <div className="mb-6">
+          <img
+            src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/uploads/${template.coverPath}`}
+            alt={`Couverture de ${template.title}`}
+            className="w-full h-auto rounded-lg shadow-md"
+            onError={(e) => {
+              console.error('HistoireForm: Cover image failed to load:', e.currentTarget.src);
+              console.error('HistoireForm: Template coverPath:', template.coverPath);
+            }}
+            onLoad={() => {
+              console.log('HistoireForm: Cover image loaded successfully');
+            }}
+          />
+        </div>
+      )}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -371,36 +427,28 @@ export default function HistoireForm({
               )}
 
               <div className="flex gap-4 pt-4 border-t">
-                {onPreview && (
+                {onShowPreview && (
                   <Button
                     type="button"
                     variant="outline"
-                    onClick={generatePreview}
+                    onClick={() => {
+                      if (form.formState.isValid) {
+                        const formData = form.getValues();
+                        // Convertir les fichiers en URLs pour l'aperçu
+                        const variablesWithUrls = { ...formData };
+                        Object.keys(variablesWithUrls).forEach(key => {
+                          if (variablesWithUrls[key] instanceof File) {
+                            variablesWithUrls[key] = imagePreviews[key] || '';
+                          }
+                        });
+                        onShowPreview(variablesWithUrls);
+                      }
+                    }}
                     disabled={!form.formState.isValid}
                     className="flex-1"
                   >
-                    <Eye className="h-4 w-4 mr-2" />
-                    Aperçu
-                  </Button>
-                )}
-
-                {onSubmit && (
-                  <Button
-                    type="submit"
-                    disabled={isLoading || !form.formState.isValid}
-                    className="flex-1"
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Génération...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="h-4 w-4 mr-2" />
-                        Générer mon histoire
-                      </>
-                    )}
+                    <Image className="h-4 w-4 mr-2" />
+                    Afficher l'histoire
                   </Button>
                 )}
               </div>

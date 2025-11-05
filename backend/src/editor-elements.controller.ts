@@ -29,7 +29,11 @@ export class EditorElementsController {
 
   @Get('public/:templateId')
   async findAllPublic(@Param('templateId') templateId: string): Promise<EditorElement[]> {
-    return this.editorElementsService.findAllByTemplate(templateId);
+    console.log('=== PUBLIC ELEMENTS ENDPOINT ===');
+    console.log('Template ID:', templateId);
+    const result = await this.editorElementsService.findAllByTemplate(templateId);
+    console.log('Public elements result:', result.length, 'elements');
+    return result;
   }
 
   @Post()

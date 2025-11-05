@@ -10,14 +10,31 @@ export function detectVariables(text: string): string[] {
 export function parseVariablesFromEditorElements(editorElements: EditorElement[]): string[] {
   const variables = new Set<string>();
 
+  console.log('=== PARSING VARIABLES FROM ELEMENTS ===');
+  console.log('Number of editor elements:', editorElements.length);
+
   for (const element of editorElements) {
+    console.log('Processing element:', {
+      id: element._id,
+      type: element.type,
+      textContent: element.textContent,
+      variableName: element.variableName
+    });
+
     if (element.type === 'text' && element.textContent) {
       const foundVariables = parseVariablesFromText(element.textContent);
+      console.log('Found text variables:', foundVariables);
       foundVariables.forEach(variable => variables.add(variable));
+    } else if (element.type === 'image' && element.variableName) {
+      // Add image element variables
+      console.log('Found image variable:', element.variableName);
+      variables.add(element.variableName);
     }
   }
 
-  return Array.from(variables);
+  const result = Array.from(variables);
+  console.log('Final variables list:', result);
+  return result;
 }
 
 function parseVariablesFromText(text: string): string[] {

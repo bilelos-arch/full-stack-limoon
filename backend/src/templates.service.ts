@@ -10,10 +10,10 @@ import { parseVariablesFromEditorElements } from './utils/variables';
 import { PdfGeneratorService } from './histoires/utils/pdf-generator.service';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.min.js';
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.min.mjs';
 import { PDFDocument } from 'pdf-lib';
 // Configure PDF.js for Node.js
-pdfjsLib.GlobalWorkerOptions.workerSrc = require('pdfjs-dist/legacy/build/pdf.worker.js');
+pdfjsLib.GlobalWorkerOptions.workerSrc = path.resolve(require.resolve('pdfjs-dist/legacy/build/pdf.worker.min.mjs'));
 
 @Injectable()
 export class TemplatesService {

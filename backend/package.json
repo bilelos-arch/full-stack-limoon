@@ -41,12 +41,12 @@
     "passport-local": "^1.0.0",
     "pdf-lib": "^1.17.1",
     "pdf2pic": "^3.2.0",
-    "pdfjs-dist": "^3.11.174",
+    "pdfjs-dist": "^5.4.394",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1"
   },
   "devDependencies": {
-    "@nestjs/cli": "^10.0.0",
+    "@nestjs/cli": "^11.0.10",
     "@nestjs/schematics": "^10.0.0",
     "@nestjs/testing": "^10.0.0",
     "@types/bcrypt": "^5.0.0",

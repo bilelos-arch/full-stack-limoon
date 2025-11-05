@@ -18,7 +18,7 @@ export class PdfGeneratorService {
 
   constructor(private editorElementsService: EditorElementsService) {}
 
-  async generatePreview(template: TemplateDocument, variables: Record<string, any>): Promise<string[]> {
+  async generatePreview(template: TemplateDocument, variables: Record<string, any>, uploadedImagePaths?: string[]): Promise<string[]> {
     try {
       this.logger.log(`Generating preview for template ${template._id}`);
 
@@ -39,13 +39,13 @@ export class PdfGeneratorService {
       // Get editor elements for positioning
       const editorElements = await this.editorElementsService.findAllByTemplate(template._id.toString());
 
-      // Apply variables to the PDF
-      await this.applyVariablesToPdf(pdfDoc, editorElements, variables, template);
+      // Apply variables to the PDF (now includes uploadedImagePaths for preview)
+      await this.applyVariablesToPdf(pdfDoc, editorElements, variables, template, uploadedImagePaths);
 
-      // Save modified PDF temporarily
+      // Save modified PDF temporarily with traditional xref for compatibility
       const tempPdfFilename = `temp-${Date.now()}-${Math.round(Math.random() * 1e9)}.pdf`;
       const tempPdfPath = path.join(this.previewsDir, tempPdfFilename);
-      const pdfBytes = await pdfDoc.save();
+      const pdfBytes = await pdfDoc.save({ useObjectStreams: false });
       fs.writeFileSync(tempPdfPath, pdfBytes);
 
       // Convert PDF to images with fallback for missing binaries
@@ -88,7 +88,8 @@ export class PdfGeneratorService {
       // Apply variables to the PDF
       await this.applyVariablesToPdf(pdfDoc, editorElements, variables, template, uploadedImagePaths);
 
-      const finalBytes = await pdfDoc.save();
+      // Force traditional xref table for better PDF.js compatibility
+      const finalBytes = await pdfDoc.save({ useObjectStreams: false });
       const finalFilename = `generated-${Date.now()}-${Math.round(Math.random() * 1e9)}.pdf`;
       const finalPath = path.join(this.uploadsDir, finalFilename);
 
@@ -261,78 +262,118 @@ export class PdfGeneratorService {
   /**
    * Replace image variables in PDF using editor elements
    */
-  private async replaceImageVariables(
-    page: PDFPage,
-    imageElements: EditorElement[],
-    variables: Record<string, any>,
-    template: TemplateDocument,
-    pdfDoc: PDFDocument,
-    uploadedImagePaths?: string[]
-  ): Promise<void> {
-    this.logger.log(`Processing ${imageElements.length} image elements`);
+private async replaceImageVariables(
+  page: PDFPage,
+  imageElements: EditorElement[],
+  variables: Record<string, any>,
+  template: TemplateDocument,
+  pdfDoc: PDFDocument,
+  uploadedImagePaths?: string[]
+): Promise<void> {
+  this.logger.log(`[DEBUG] Processing ${imageElements.length} image elements`);
+  this.logger.log(`[DEBUG] Available variables:`, Object.keys(variables));
+  this.logger.log(`[DEBUG] Uploaded image paths:`, uploadedImagePaths);
 
-    for (const element of imageElements) {
-      if (!element.variableName) {
-        continue;
-      }
+  for (const element of imageElements) {
+    this.logger.log(`[DEBUG] Processing image element:`, {
+      id: element.id,
+      variableName: element.variableName,
+      type: element.type,
+      x: element.x,
+      y: element.y,
+      width: element.width,
+      height: element.height
+    });
 
-      const imageVar = variables[element.variableName];
-      if (!imageVar) {
-        this.logger.warn(`No value found for image variable: ${element.variableName}`);
-        continue;
-      }
+    if (!element.variableName) {
+      this.logger.log(`[DEBUG] Skipping element - no variableName`);
+      continue;
+    }
 
-      let imagePath: string;
-      if (typeof imageVar === 'string' && imageVar.startsWith('cartoon-')) {
-        // Already cartoonified image
-        imagePath = path.join(this.uploadsDir, imageVar);
-      } else if (typeof imageVar === 'string') {
-        // Check if it's an uploaded image path
-        if (uploadedImagePaths && uploadedImagePaths.includes(imageVar)) {
-          // Use the uploaded image directly
-          imagePath = path.join(this.uploadsDir, imageVar);
+    const imageVar = variables[element.variableName];
+    this.logger.log(`[DEBUG] Image variable "${element.variableName}" value:`, imageVar, `type: ${typeof imageVar}`);
+
+    if (!imageVar) {
+      this.logger.warn(`[DEBUG] No value found for image variable: ${element.variableName}`);
+      continue;
+    }
+
+    let imagePath: string;
+
+    // CORRECTION : Logique simplifiée pour trouver le chemin de l'image
+    if (typeof imageVar === 'string') {
+      // Chercher le chemin complet dans uploadedImagePaths
+      if (uploadedImagePaths && uploadedImagePaths.length > 0) {
+        // Extraire le nom de fichier du chemin uploadé pour la comparaison
+        const matchingPath = uploadedImagePaths.find(uploadedPath => {
+          const uploadedFilename = path.basename(uploadedPath);
+          return uploadedFilename === imageVar;
+        });
+
+        if (matchingPath) {
+          imagePath = matchingPath;
+          this.logger.log(`[DEBUG] Found matching uploaded image path: ${imagePath}`);
         } else {
-          // Original image that needs cartoonification
-          try {
-            const cartoonifiedPath = await this.cartoonifyImage(imageVar);
-            imagePath = path.join(this.uploadsDir, cartoonifiedPath);
-          } catch (error) {
-            this.logger.error(`Failed to cartoonify image ${imageVar}: ${error.message}`);
-            continue;
-          }
+          // Fallback: construire le chemin depuis temp-images
+          imagePath = path.join(this.uploadsDir, 'temp-images', imageVar);
+          this.logger.log(`[DEBUG] No direct match, using temp-images path: ${imagePath}`);
         }
       } else {
-        this.logger.warn(`Invalid image variable type for ${element.variableName}`);
+        // Aucun uploadedImagePaths fourni, utiliser temp-images
+        imagePath = path.join(this.uploadsDir, 'temp-images', imageVar);
+        this.logger.log(`[DEBUG] No uploaded paths, using default: ${imagePath}`);
+      }
+    } else {
+      this.logger.warn(`[DEBUG] Invalid image variable type for ${element.variableName}: ${typeof imageVar}`);
+      continue;
+    }
+    this.logger.log(`[DEBUG] Final image path to use: ${imagePath}`);
+    
+    // Vérifier que le fichier existe
+    if (!fs.existsSync(imagePath)) {
+      this.logger.error(`[DEBUG] Image file not found: ${imagePath}`);
+
+      // Log du contenu du dossier pour debug
+      const tempImagesDir = path.join(this.uploadsDir, 'temp-images');
+      if (fs.existsSync(tempImagesDir)) {
+        const files = fs.readdirSync(tempImagesDir);
+        this.logger.error(`[DEBUG] Files in temp-images directory:`, files);
+      }
+      
+      continue;
+    }
+
+    this.logger.log(`[DEBUG] Image file found, proceeding with embedding...`);
+
+    // Calculate absolute positions
+    const pageWidth = template.dimensions?.width || 595;
+    const pageHeight = template.dimensions?.height || 842;
+
+    const x = (element.x / 100) * pageWidth;
+    const y = pageHeight - ((element.y / 100) * pageHeight);
+    const width = (element.width / 100) * pageWidth;
+    const height = (element.height / 100) * pageHeight;
+
+    this.logger.log(`[DEBUG] Calculated position: x=${x}, y=${y}, width=${width}, height=${height}`);
+
+    try {
+      // Load and embed image
+      const imageBytes = fs.readFileSync(imagePath);
+      let pdfImage: PDFImage;
+
+      const fileExt = path.extname(imagePath).toLowerCase();
+      this.logger.log(`[DEBUG] Image file extension: ${fileExt}`);
+
+      if (fileExt === '.png') {
+        pdfImage = await pdfDoc.embedPng(imageBytes);
+        this.logger.log(`[DEBUG] Embedded PNG image`);
+      } else if (fileExt === '.jpg' || fileExt === '.jpeg') {
+        pdfImage = await pdfDoc.embedJpg(imageBytes);
+        this.logger.log(`[DEBUG] Embedded JPG image`);
+      } else {
+        this.logger.warn(`[DEBUG] Unsupported image format: ${imagePath}`);
         continue;
       }
-
-      if (!fs.existsSync(imagePath)) {
-        this.logger.warn(`Image file not found: ${imagePath}`);
-        continue;
-      }
-
-      // Calculate absolute positions
-      const pageWidth = template.dimensions?.width || 595;
-      const pageHeight = template.dimensions?.height || 842;
-
-      const x = (element.x / 100) * pageWidth;
-      const y = pageHeight - ((element.y / 100) * pageHeight);
-      const width = (element.width / 100) * pageWidth;
-      const height = (element.height / 100) * pageHeight;
-
-      try {
-        // Load and embed image
-        const imageBytes = fs.readFileSync(imagePath);
-        let pdfImage: PDFImage;
-
-        if (imagePath.toLowerCase().endsWith('.png')) {
-          pdfImage = await pdfDoc.embedPng(imageBytes);
-        } else if (imagePath.toLowerCase().endsWith('.jpg') || imagePath.toLowerCase().endsWith('.jpeg')) {
-          pdfImage = await pdfDoc.embedJpg(imageBytes);
-        } else {
-          this.logger.warn(`Unsupported image format: ${imagePath}`);
-          continue;
-        }
 
         // Draw image
         page.drawImage(pdfImage, {
@@ -342,9 +383,9 @@ export class PdfGeneratorService {
           height,
         });
 
-        this.logger.debug(`Image element rendered: ${imagePath} at (${x}, ${y})`);
+        this.logger.log(`[DEBUG] Image element rendered successfully: ${imagePath} at (${x}, ${y})`);
       } catch (error) {
-        this.logger.error(`Failed to embed image ${imagePath}: ${error.message}`);
+        this.logger.error(`[DEBUG] Failed to embed image ${imagePath}: ${error.message}`, error);
       }
     }
   }
@@ -368,8 +409,8 @@ export class PdfGeneratorService {
       const { width: pdfWidth, height: pdfHeight } = firstPage.getSize();
 
       // Calculate preview dimensions maintaining aspect ratio
-      const maxPreviewWidth = 800;
-      const maxPreviewHeight = 600;
+      const maxPreviewWidth = 1200;
+      const maxPreviewHeight = 900;
 
       // Calculate scaling factor to fit within max dimensions while preserving aspect ratio
       const widthRatio = maxPreviewWidth / pdfWidth;
@@ -382,7 +423,7 @@ export class PdfGeneratorService {
       this.logger.log(`PDF dimensions: ${pdfWidth}x${pdfHeight}, Preview dimensions: ${previewWidth}x${previewHeight}`);
 
       const convert = pdf2pic.fromPath(pdfPath, {
-        density: 100,
+        density: 200,
         saveFilename: `preview-${Date.now()}`,
         savePath: this.previewsDir,
         format: 'png',
@@ -415,14 +456,14 @@ export class PdfGeneratorService {
   private async cartoonifyImage(imagePath: string): Promise<string> {
     try {
       // TODO: Implement actual cartoonification API call
-      // For now, return the original path as if it was cartoonified
+      // For now, return the original path from temp-images directory
       this.logger.log(`Cartoonifying image: ${imagePath}`);
 
       // Simulate API call delay
       await new Promise(resolve => setTimeout(resolve, 100));
 
-      // In production, this would call the cartoonify service and return the new path
-      return `cartoon-${Date.now()}-${path.basename(imagePath)}`;
+      // Return the path in temp-images directory (original uploaded image)
+      return `temp-images/${imagePath}`;
     } catch (error) {
       this.logger.error(`Cartoonification failed: ${error.message}`);
       throw error;

@@ -76,12 +76,17 @@ export const useHistoiresStore = create<HistoiresState>()(
           const response = await histoireApi.generateHistoire(data);
 
           // Utiliser directement la réponse du backend qui contient maintenant l'objet Histoire complet
-          const newHistoire: Histoire = response;
+          const newHistoire: Histoire = {
+            ...response,
+            previewUrls: response.previewUrls || [],
+            generatedPdfUrl: response.generatedPdfUrl || response.pdfUrl,
+          };
 
-          set(state => ({
-            histoires: [newHistoire, ...state.histoires],
-            isLoading: false
-          }));
+          console.log('Store: newHistoire.generatedPdfUrl:', newHistoire.generatedPdfUrl);
+          console.log('Store: response.generatedPdfUrl:', response.generatedPdfUrl);
+          console.log('Store: response.pdfUrl:', response.pdfUrl);
+
+          set({ isLoading: false });
 
           return newHistoire;
         } catch (error) {

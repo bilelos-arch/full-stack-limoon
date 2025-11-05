@@ -84,10 +84,72 @@ export class HistoiresController {
 
   @Post('preview')
   @UseGuards(JwtAuthGuard)
-  async generatePreview(@Body() previewDto: PreviewHistoireDto, @Request() req) {
+  @UseInterceptors(FileFieldsInterceptor([
+    { name: 'images_photo', maxCount: 1 },
+    { name: 'images_image', maxCount: 1 },
+    { name: 'images_picture', maxCount: 1 }
+  ], {
+    storage: diskStorage({
+      destination: './uploads/temp-images',
+      filename: (req, file, callback) => {
+        const variableName = file.fieldname.replace('images_', '');
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const filename = `${variableName}-${uniqueSuffix}${extname(file.originalname)}`;
+        callback(null, filename);
+      },
+    }),
+    fileFilter: (req, file, callback) => {
+      if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
+        return callback(new BadRequestException('Only image files are allowed!'), false);
+      }
+      callback(null, true);
+    },
+    limits: {
+      fileSize: 5 * 1024 * 1024, // 5MB
+    },
+  }))
+  async generatePreview(@Body() body: any, @UploadedFiles() files: Record<string, Express.Multer.File[]>, @Request() req) {
     const userId = req.user.userId;
-    this.logger.log(`Generating preview for user ${userId}`);
-    const result = await this.histoiresService.generatePreview(userId, previewDto);
+    this.logger.log(`[DEBUG] Generating preview for user ${userId}`);
+
+    // Extract uploaded image paths and map them to variable names
+    const uploadedImagePaths: string[] = [];
+    const imageVariableMapping: Record<string, string> = {};
+
+    if (files) {
+      this.logger.log(`[DEBUG] Processing ${Object.keys(files).length} file fields for preview`);
+      Object.entries(files).forEach(([fieldName, fileArray]) => {
+        if (fieldName.startsWith('images_') && fileArray && fileArray.length > 0) {
+          const variableName = fieldName.replace('images_', '');
+          const file = fileArray[0];
+          uploadedImagePaths.push(file.path);
+          imageVariableMapping[variableName] = file.filename;
+          this.logger.log(`[DEBUG] Mapped preview image variable "${variableName}" to file "${file.filename}" at path "${file.path}"`);
+        }
+      });
+    }
+
+    // Parse variables from form data
+    let variables;
+    try {
+      variables = typeof body.variables === 'string' ? JSON.parse(body.variables) : body.variables;
+    } catch (error) {
+      this.logger.error(`[DEBUG] Failed to parse variables for preview: ${error.message}`);
+      throw new BadRequestException('Variables must be a valid JSON string');
+    }
+
+    // Add image filenames to variables for preview generation
+    Object.entries(imageVariableMapping).forEach(([variableName, filename]) => {
+      variables[variableName] = filename;
+      this.logger.log(`[DEBUG] Added preview image variable "${variableName}" with filename "${filename}"`);
+    });
+
+    const previewDto: PreviewHistoireDto = {
+      templateId: body.templateId,
+      variables,
+    };
+
+    const result = await this.histoiresService.generatePreview(userId, previewDto, uploadedImagePaths);
     return {
       previewUrls: result.previewUrls,
       pdfUrl: result.pdfUrl,
@@ -105,53 +167,105 @@ export class HistoiresController {
 
   @Post('generate')
   @UseGuards(JwtAuthGuard)
-  @UseInterceptors(
-    FileFieldsInterceptor(
-      [
-        { name: 'images', maxCount: 10 }, // Allow up to 10 images
-      ],
-      {
-        storage: diskStorage({
-          destination: './uploads',
-          filename: (req, file, callback) => {
-            const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-            const filename = 'user-image-' + uniqueSuffix + extname(file.originalname);
-            callback(null, filename);
-          },
-        }),
-        fileFilter: (req, file, callback) => {
-          if (!file.mimetype.startsWith('image/')) {
-            return callback(new BadRequestException('Only image files are allowed'), false);
-          }
-          callback(null, true);
-        },
-        limits: {
-          fileSize: 5 * 1024 * 1024, // 5MB per image
-        },
+  @UseInterceptors(FileFieldsInterceptor([
+    { name: 'images_photo', maxCount: 1 },
+    { name: 'images_image', maxCount: 1 },
+    { name: 'images_picture', maxCount: 1 }
+  ], {
+    storage: diskStorage({
+      destination: './uploads/temp-images',
+      filename: (req, file, callback) => {
+        // Extract variable name from field name (e.g., 'images_photo' -> 'photo')
+        const variableName = file.fieldname.replace('images_', '');
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        const filename = `${variableName}-${uniqueSuffix}${extname(file.originalname)}`;
+        callback(null, filename);
       },
-    ),
-  )
+    }),
+    fileFilter: (req, file, callback) => {
+      if (!file.mimetype.match(/\/(jpg|jpeg|png|gif|webp)$/)) {
+        return callback(new BadRequestException('Only image files are allowed!'), false);
+      }
+      callback(null, true);
+    },
+    limits: {
+      fileSize: 5 * 1024 * 1024, // 5MB
+    },
+  }))
   async generateHistoire(
-    @Body() generateDto: GenerateHistoireDto,
+    @Body() body: any,
+    @UploadedFiles() files: Record<string, Express.Multer.File[]>,
     @Request() req,
-    @UploadedFiles() files?: { images?: Express.Multer.File[] },
   ) {
     const userId = req.user.userId;
-    this.logger.log(`Generating complete PDF for template ${generateDto.templateId} by user ${userId}`);
+    this.logger.log(`[DEBUG] Generating complete PDF for template ${body.templateId} by user ${userId}`);
+    this.logger.log(`[DEBUG] Raw request body:`, body);
+    this.logger.log(`[DEBUG] Uploaded files:`, files ? Object.keys(files) : 'none');
+
+    // Extract uploaded image paths and map them to variable names
+    const uploadedImagePaths: string[] = [];
+    const imageVariableMapping: Record<string, string> = {};
+
+    if (files) {
+      this.logger.log(`[DEBUG] Processing ${Object.keys(files).length} file fields`);
+      Object.entries(files).forEach(([fieldName, fileArray]) => {
+        this.logger.log(`[DEBUG] Processing field "${fieldName}" with ${fileArray?.length || 0} files`);
+        if (fieldName.startsWith('images_') && fileArray && fileArray.length > 0) {
+          const variableName = fieldName.replace('images_', '');
+          const file = fileArray[0]; // Take first file if multiple
+          this.logger.log(`[DEBUG] File details: originalname=${file.originalname}, filename=${file.filename}, path=${file.path}, size=${file.size}`);
+          uploadedImagePaths.push(file.path);
+          imageVariableMapping[variableName] = file.filename;
+          this.logger.log(`[DEBUG] Mapped image variable "${variableName}" to file "${file.filename}" at path "${file.path}"`);
+        } else {
+          this.logger.log(`[DEBUG] Skipping field "${fieldName}" - doesn't match image pattern or no files`);
+        }
+      });
+    } else {
+      this.logger.log(`[DEBUG] No files uploaded`);
+    }
+
+    this.logger.log(`[DEBUG] Final uploaded image paths:`, uploadedImagePaths);
+    this.logger.log(`[DEBUG] Image variable mapping:`, imageVariableMapping);
+
+    // Parse variables from form data
+    let variables;
+    try {
+      this.logger.log(`[DEBUG] Parsing variables from body.variables:`, body.variables);
+      variables = typeof body.variables === 'string' ? JSON.parse(body.variables) : body.variables;
+      this.logger.log(`[DEBUG] Parsed variables:`, variables);
+    } catch (error) {
+      this.logger.error(`[DEBUG] Failed to parse variables: ${error.message}`);
+      throw new BadRequestException('Variables must be a valid JSON string');
+    }
+
+    // Add image filenames to variables for PDF generation
+    this.logger.log(`[DEBUG] Adding image filenames to variables...`);
+    Object.entries(imageVariableMapping).forEach(([variableName, filename]) => {
+      variables[variableName] = filename;
+      this.logger.log(`[DEBUG] Added image variable "${variableName}" with filename "${filename}" to variables`);
+    });
+
+    this.logger.log(`[DEBUG] Final variables object:`, variables);
+
+    const generateDto: GenerateHistoireDto = {
+      templateId: body.templateId,
+      variables,
+    };
+
+    this.logger.log(`[DEBUG] Calling histoiresService.generateHistoire with:`, {
+      userId,
+      templateId: generateDto.templateId,
+      variablesCount: Object.keys(generateDto.variables).length,
+      uploadedImagePathsCount: uploadedImagePaths.length
+    });
 
     try {
-      // Handle uploaded images
-      let uploadedImagePaths: string[] = [];
-      if (files?.images) {
-        uploadedImagePaths = files.images.map(file => file.filename);
-        this.logger.log(`Uploaded images: ${uploadedImagePaths.join(', ')}`);
-      }
-
       const result = await this.histoiresService.generateHistoire(userId, generateDto, uploadedImagePaths);
-      this.logger.log(`Histoire generation successful for user ${userId}, histoire ID: ${result._id}`);
+      this.logger.log(`[DEBUG] Histoire generation successful for user ${userId}, histoire ID: ${result._id}`);
       return result;
     } catch (error) {
-      this.logger.error(`Histoire generation failed for user ${userId}: ${error.message}`, error.stack);
+      this.logger.error(`[DEBUG] Histoire generation failed for user ${userId}: ${error.message}`, error.stack);
       throw error; // Re-throw to let NestJS handle the error response
     }
   }

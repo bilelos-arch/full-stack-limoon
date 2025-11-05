@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Button } from '@/components/ui/button';
-import { Menu, X, Sun, Moon, LogOut } from 'lucide-react';
+import { Menu, X, Sun, Moon, LogOut, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, useScroll, useMotionValueEvent, AnimatePresence } from 'framer-motion';
 
@@ -80,26 +80,32 @@ const Navbar: React.FC = () => {
     };
   }, [isMenuOpen]);
 
+  // Close mobile menu when user logs out (including automatic logout)
+  React.useEffect(() => {
+    if (!isAuthenticated && isMenuOpen) {
+      setIsMenuOpen(false);
+    }
+  }, [isAuthenticated, isMenuOpen]);
+
   // Navigation links configuration
   const navLinks = useMemo(() => {
     const publicLinks = [
-      { href: '/', label: 'Accueil' },
-      { href: '/book-store', label: 'Histoires' },
+      { href: '/book-store', label: 'Book Store' },
+      { href: '/le-concept', label: 'Le concept' },
+      { href: '/politique-confidentialite', label: 'Politique de confidentialité' },
       { href: '/login', label: 'Connexion' },
       { href: '/register', label: 'Inscription' },
     ];
 
     const userLinks = [
-      { href: '/', label: 'Accueil' },
-      { href: '/book-store', label: 'Book-Store' },
-      { href: '/histoires', label: 'Mes histoires' },
-      { href: '/dashboard', label: 'Tableau de bord' },
+      { href: '/book-store', label: 'Book Store' },
+            { href: '/le-concept', label: 'Le concept' },
+      { href: '/politique-confidentialite', label: 'Politique de confidentialité' },
     ];
 
     const adminLinks = [
       ...userLinks,
       { href: '/admin', label: 'Administration' },
-      { href: '/admin/templates', label: 'Gestion Templates' },
     ];
 
     if (!isAuthenticated) return publicLinks;
@@ -144,17 +150,29 @@ const Navbar: React.FC = () => {
             {/* Desktop Actions */}
             <div className="hidden md:flex items-center space-x-2">
               <ThemeToggle />
-              
+
               {isAuthenticated && (
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={logout}
-                  className="ml-2 border-gray-300 hover:bg-gray-600 hover:text-white hover:border-gray-400 transition-all duration-300 transform hover:scale-105 shadow-sm hover:shadow-md"
-                >
-                  <LogOut className="h-4 w-4 mr-2" aria-hidden="true" />
-                  Déconnexion
-                </Button>
+                <>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    asChild
+                    className="border-gray-300 hover:bg-gray-600 hover:text-white hover:border-gray-400 transition-all duration-300 transform hover:scale-105 shadow-sm hover:shadow-md"
+                  >
+                    <Link href="/dashboard" aria-label="Profil">
+                      <User className="h-4 w-4" aria-hidden="true" />
+                    </Link>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={logout}
+                    className="border-gray-300 hover:bg-gray-600 hover:text-white hover:border-gray-400 transition-all duration-300 transform hover:scale-105 shadow-sm hover:shadow-md"
+                    aria-label="Déconnexion"
+                  >
+                    <LogOut className="h-4 w-4" aria-hidden="true" />
+                  </Button>
+                </>
               )}
             </div>
 
@@ -208,11 +226,12 @@ const Navbar: React.FC = () => {
                 {isAuthenticated && (
                   <Button
                     variant="outline"
+                    size="icon"
                     className="w-full mt-4 border-gray-300 hover:bg-gray-600 hover:text-white hover:border-gray-400 transition-all duration-300 transform hover:scale-105 shadow-sm"
                     onClick={handleLogout}
+                    aria-label="Déconnexion"
                   >
-                    <LogOut className="h-4 w-4 mr-2" aria-hidden="true" />
-                    Déconnexion
+                    <LogOut className="h-4 w-4" aria-hidden="true" />
                   </Button>
                 )}
               </div>

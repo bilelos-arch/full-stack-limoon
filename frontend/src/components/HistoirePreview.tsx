@@ -9,11 +9,14 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface HistoirePreviewProps {
-  previewImages?: string[];
-  isLoading?: boolean;
-  error?: string | null;
-  onRetry?: () => void;
-  className?: string;
+   previewImages?: string[];
+   isLoading?: boolean;
+   error?: string | null;
+   onRetry?: () => void;
+   className?: string;
+   pdfUrl?: string;
+   onDownload?: () => void;
+   isDownloading?: boolean;
 }
 
 export default function HistoirePreview({
@@ -21,7 +24,10 @@ export default function HistoirePreview({
   isLoading = false,
   error = null,
   onRetry,
-  className
+  className,
+  pdfUrl,
+  onDownload,
+  isDownloading = false
 }: HistoirePreviewProps) {
   const [imageErrors, setImageErrors] = useState<Set<number>>(new Set());
   const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
@@ -39,8 +45,7 @@ export default function HistoirePreview({
     setImageErrors(prev => new Set(prev).add(index));
   }, []);
 
-  const maxPages = Math.min(previewImages.length, 3);
-  const displayedImages = previewImages.slice(0, maxPages);
+  const displayedImages = previewImages;
 
   const handlePrevious = () => {
     setCurrentPage(prev => Math.max(0, prev - 1));
@@ -81,20 +86,20 @@ export default function HistoirePreview({
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className={className}
+        className={`w-full md:w-3/4 lg:w-3/4 xl:w-3/4 mx-auto ${className || ''}`}
       >
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Eye className="h-5 w-5" />
-              Aperçu de l'histoire
+              Votre de l'histoire
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="w-full bg-gradient-to-br from-primary/10 to-secondary/10 rounded-lg flex items-center justify-center py-16">
               <div className="text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Génération de l'aperçu...</p>
+                <p className="text-muted-foreground">Génération de l'histoire...</p>
               </div>
             </div>
           </CardContent>
@@ -108,20 +113,20 @@ export default function HistoirePreview({
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className={`w-full ${className}`}
+        className={`w-full md:w-3/4 lg:w-3/4 xl:w-3/4 mx-auto ${className || ''}`}
       >
         <Card className="w-full">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Eye className="h-5 w-5" />
-              Aperçu de l'histoire
+              Génération de l'histoire
             </CardTitle>
           </CardHeader>
           <CardContent className="w-full">
             <div className="w-full bg-gradient-to-br from-primary/10 to-secondary/10 rounded-lg flex items-center justify-center py-16">
               <div className="text-center text-muted-foreground">
                 <Eye className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Remplissez le formulaire pour voir l'aperçu</p>
+                <p>Remplissez le formulaire pour générér l'histoire</p>
               </div>
             </div>
           </CardContent>
@@ -134,13 +139,13 @@ export default function HistoirePreview({
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className={className}
+      className={`w-full md:w-3/4 lg:w-3/4 xl:w-3/4 mx-auto ${className || ''}`}
     >
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Eye className="h-5 w-5" />
-            Aperçu de l'histoire
+            Génération de l'histoire
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -180,7 +185,7 @@ export default function HistoirePreview({
               className="relative group w-full"
             >
               <Card className="overflow-hidden w-full">
-                <div className="relative w-full">
+                <div className="relative w-full bg-white">
                   {!loadedImages.has(currentPage) && !imageErrors.has(currentPage) && (
                     <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -197,7 +202,12 @@ export default function HistoirePreview({
                     <img
                       src={displayedImages[currentPage]}
                       alt={`Aperçu ${currentPage + 1}`}
-                      className="w-full h-auto object-contain transition-transform duration-200 group-hover:scale-105"
+                      className="w-full h-auto object-contain"
+                      style={{
+                        maxWidth: '100%',
+                        height: 'auto',
+                        filter: 'contrast(1.1) brightness(1.05)'
+                      }}
                       onLoad={() => handleImageLoad(currentPage)}
                       onError={() => handleImageError(currentPage)}
                     />
@@ -215,7 +225,7 @@ export default function HistoirePreview({
           {/* Status */}
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
-              {previewImages.length > 3 ? `${maxPages} pages affichées sur ${previewImages.length} générées` : `${previewImages.length} page${previewImages.length > 1 ? 's' : ''} générée${previewImages.length > 1 ? 's' : ''}`}
+              {previewImages.length} page{previewImages.length > 1 ? 's' : ''} générée{previewImages.length > 1 ? 's' : ''}
             </p>
           </div>
         </CardContent>

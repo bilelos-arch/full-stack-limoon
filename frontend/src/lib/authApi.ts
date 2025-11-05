@@ -25,6 +25,34 @@ class AuthApi {
     withCredentials: true, // Important pour les cookies HTTP-only
   });
 
+  constructor() {
+    // Intercepteur de réponse pour gérer les erreurs 401
+    this.api.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response?.status === 401) {
+          // Déclencher la déconnexion globale
+          this.handleUnauthorized();
+        }
+        return Promise.reject(error);
+      }
+    );
+  }
+
+  private handleUnauthorized() {
+    console.log('authApi.handleUnauthorized: 401 détecté, déclenchement déconnexion globale');
+    // Importer le store ici pour éviter les dépendances circulaires
+    import('@/stores/authStore').then(({ useAuthStore }) => {
+      const { logout } = useAuthStore.getState();
+      logout();
+      // Redirection vers /login
+      if (typeof window !== 'undefined') {
+        console.log('authApi.handleUnauthorized: Redirection vers /login');
+        window.location.href = '/login';
+      }
+    });
+  }
+
   async login(data: LoginData): Promise<AuthResponse> {
     const response = await this.api.post<AuthResponse>('/auth/login', data);
     return response.data;
@@ -36,8 +64,18 @@ class AuthApi {
   }
 
   async logout(): Promise<AuthResponse> {
-    const response = await this.api.post<AuthResponse>('/auth/logout');
-    return response.data;
+    try {
+      const response = await this.api.post<AuthResponse>('/auth/logout');
+      return response.data;
+    } catch (error: any) {
+      // If logout fails with 401, it means the token is already invalid
+      // This is expected behavior, so we don't throw the error
+      if (error.response?.status === 401) {
+        console.warn('Logout: Token already invalid (401), proceeding with local logout');
+        return { message: 'Logout successful' };
+      }
+      throw error;
+    }
   }
 
   async refreshToken(): Promise<AuthResponse> {

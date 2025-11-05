@@ -36,12 +36,19 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: true,
           error: null,
         }),
-      logout: () =>
+      logout: () => {
+        console.log('authStore.logout: Déconnexion initiée');
         set({
           user: null,
           isAuthenticated: false,
           error: null,
-        }),
+        });
+        // Redirection automatique vers /login
+        if (typeof window !== 'undefined') {
+          console.log('authStore.logout: Redirection vers /login');
+          window.location.href = '/login';
+        }
+      },
       setUser: (user: User) => set({ user }),
       setLoading: (loading: boolean) => set({ isLoading: loading }),
       setError: (error: string | null) => set({ error }),
@@ -54,19 +61,10 @@ export const useAuthStore = create<AuthState>()(
           set({ user, isAuthenticated: true, isLoading: false });
         } catch (error) {
           if (error instanceof AxiosError && error.response?.status === 401) {
-            try {
-              console.log('checkAuth: Token expired, attempting refresh...');
-              await authApi.refreshToken();
-              console.log('checkAuth: Token refreshed, retrying getProfile...');
-              const user = await authApi.getProfile();
-              console.log('checkAuth: User profile fetched after refresh:', user);
-              set({ user, isAuthenticated: true, isLoading: false });
-            } catch (refreshError) {
-              console.error('checkAuth: Token refresh failed:', refreshError);
-              // Logout on refresh failure
-              get().logout();
-              set({ isLoading: false });
-            }
+            console.error('checkAuth: 401 error detected, triggering global logout');
+            // Déclencher la déconnexion globale avec redirection
+            get().logout();
+            set({ isLoading: false });
           } else {
             console.error('checkAuth: Failed to fetch user profile:', error);
             // Clear persisted state on failure but don't call logout API

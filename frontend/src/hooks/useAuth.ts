@@ -45,17 +45,18 @@ export const useAuth = () => {
   }, [setLoading, setError, router]);
 
   const handleLogout = useCallback(async () => {
+    console.log('useAuth.handleLogout: Déconnexion manuelle initiée');
     // Only call logout API if user is authenticated
     if (isAuthenticated) {
       try {
         await authApi.logout();
+        console.log('useAuth.handleLogout: API logout réussi');
       } catch (err) {
-        console.error('Erreur lors de la déconnexion:', err);
+        console.error('useAuth.handleLogout: Erreur lors de la déconnexion API:', err);
       }
     }
     logout();
-    router.push('/login');
-  }, [isAuthenticated, logout, router]);
+  }, [isAuthenticated, logout]);
 
   return {
     user,
