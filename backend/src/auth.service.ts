@@ -14,8 +14,8 @@ export class AuthService {
     @InjectModel(RefreshToken.name) private refreshTokenModel: Model<RefreshTokenDocument>,
   ) {}
 
-  async register(name: string, email: string, password: string, role: string) {
-    const user = await this.usersService.create(name, email, password, role);
+  async register(name: string, email: string, password: string, role: 'admin' | 'user') {
+    const user = await this.usersService.create({ name, email, password, role });
     return this.generateTokens(user);
   }
 

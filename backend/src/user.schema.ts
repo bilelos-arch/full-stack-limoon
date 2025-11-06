@@ -15,7 +15,20 @@ export class User {
   passwordHash: string;
 
   @Prop({ required: true, enum: ['admin', 'user'] })
-  role: string;
+  role: 'admin' | 'user';
+
+  @Prop({
+    required: true,
+    enum: ['active', 'inactive', 'suspended'],
+    default: 'active'
+  })
+  status: 'active' | 'inactive' | 'suspended';
+
+  @Prop({ type: Date })
+  lastLogin?: Date;
+
+  @Prop({ type: Date })
+  deletedAt?: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

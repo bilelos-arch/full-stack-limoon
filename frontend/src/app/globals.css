@@ -9,8 +9,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter);
+  --font-mono: system-ui, -apple-system, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -60,44 +60,59 @@
   --gray-800: oklch(0.15 0 0);
   --gray-900: oklch(0.05 0 0);
   
-  /* Couleurs d'Accent Citron (utilisation limitée) */
-  --accent-lemon: oklch(87.3% 0.17854 92.233);
-  --accent-lime: oklch(90.669% 0.18812 99.48);
-  --accent-lemon-light: oklch(0.85 0.30 84);
-  --accent-lime-light: oklch(0.84 0.25 95);
+  /* Palette de couleurs Limoon officielle */
+  --citron: #F7C900;      /* Jaune citron - couleur principale */
+  --menthe: #A7E200;      /* Vert menthe - secondaire */
+  --blanc: #FFFFFF;       /* Blanc pur - fond principal */
+  --gris-doux: #2E2E2E;   /* Gris doux - texte et contrastes */
+  --gris-clair: #F5F5F5;  /* Gris clair - fonds secondaires */
   
-  /* Couleurs principales neutres */
-  --background: var(--gray-50);
-  --foreground: var(--gray-900);
+  /* Couleurs d'Accent Citron (utilisation limitée) */
+  --accent-lemon: var(--citron);
+  --accent-lime: var(--menthe);
+  --accent-lemon-light: #FFF7CC;  /* Version allégée du jaune citron */
+  --accent-lime-light: #F0FFCC;   /* Version allégée du vert menthe */
+
+  /* Nouvelle palette pour la page d'accueil moderne */
+  --primary-dark: #0E0A1C;       /* Noir profond */
+  --secondary-dark: #181433;     /* Violet profond */
+  --accent-violet: #5A4FF0;      /* Violet accent */
+  --accent-orange: #FF6B00;      /* Orange accent */
+  --accent-lime-green: #C6FF00;  /* Vert lime accent */
+  --pure-white: #FFFFFF;         /* Blanc pur */
+  
+  /* Couleurs principales - palette Limoon */
+  --background: var(--blanc);
+  --foreground: var(--gris-doux);
   --card: oklch(1 0 0);
-  --card-foreground: var(--gray-800);
+  --card-foreground: var(--gris-doux);
   --popover: oklch(1 0 0);
-  --popover-foreground: var(--gray-800);
-  --primary: var(--gray-700);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: var(--gray-100);
-  --secondary-foreground: var(--gray-700);
-  --muted: var(--gray-100);
-  --muted-foreground: var(--gray-500);
-  --accent: var(--gray-200);
-  --accent-foreground: var(--gray-800);
+  --popover-foreground: var(--gris-doux);
+  --primary: var(--gris-doux);
+  --primary-foreground: var(--blanc);
+  --secondary: var(--gris-clair);
+  --secondary-foreground: var(--gris-doux);
+  --muted: var(--gris-clair);
+  --muted-foreground: oklch(0.45 0 0);
+  --accent: var(--gris-clair);
+  --accent-foreground: var(--gris-doux);
   --destructive: oklch(0.65 0.25 20);
-  --border: var(--gray-200);
+  --border: var(--gris-clair);
   --input: oklch(1 0 0);
-  --ring: var(--gray-400);
-  --chart-1: var(--gray-600);
-  --chart-2: var(--gray-500);
-  --chart-3: var(--gray-400);
-  --chart-4: var(--gray-300);
+  --ring: var(--citron);
+  --chart-1: var(--gris-doux);
+  --chart-2: oklch(0.45 0 0);
+  --chart-3: oklch(0.65 0 0);
+  --chart-4: var(--gris-clair);
   --chart-5: var(--gray-200);
-  --sidebar: var(--gray-50);
-  --sidebar-foreground: var(--gray-800);
-  --sidebar-primary: var(--gray-700);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: var(--gray-100);
-  --sidebar-accent-foreground: var(--gray-700);
-  --sidebar-border: var(--gray-200);
-  --sidebar-ring: var(--gray-400);
+  --sidebar: var(--blanc);
+  --sidebar-foreground: var(--gris-doux);
+  --sidebar-primary: var(--gris-doux);
+  --sidebar-primary-foreground: var(--blanc);
+  --sidebar-accent: var(--gris-clair);
+  --sidebar-accent-foreground: var(--gris-doux);
+  --sidebar-border: var(--gris-clair);
+  --sidebar-ring: var(--citron);
 }
 
 .dark {
@@ -141,7 +156,9 @@
   }
   body {
     @apply bg-background text-foreground;
-    background-image: 
+    /* Configuration robuste des fallback fonts pour garantir la compatibilité */
+    font-family: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    background-image:
       radial-gradient(circle at 20% 20%, var(--gray-100) 0%, transparent 50%),
       radial-gradient(circle at 80% 80%, var(--gray-50) 0%, transparent 50%),
       radial-gradient(circle at 40% 60%, oklch(0.98 0 0) 0%, transparent 50%);
@@ -149,7 +166,7 @@
   }
   
   .dark body {
-    background-image: 
+    background-image:
       radial-gradient(circle at 20% 20%, var(--gray-800) 0%, transparent 50%),
       radial-gradient(circle at 80% 80%, var(--gray-900) 0%, transparent 50%),
       radial-gradient(circle at 40% 60%, var(--gray-950) 0%, transparent 50%);
@@ -175,25 +192,83 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  
-  .shadow-citron {
-    box-shadow: 0 10px 25px -3px var(--accent-lemon) / 0.1, 
-                0 4px 6px -2px var(--accent-lemon) / 0.05;
+
+  /* Nouvelles utilitaires pour la page d'accueil moderne */
+  .bg-gradient-modern {
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--secondary-dark) 100%);
   }
   
-  .shadow-citron-lg {
-    box-shadow: 0 20px 40px -4px var(--accent-lemon) / 0.15, 
-                0 8px 16px -4px var(--accent-lemon) / 0.1;
+  .bg-gradient-violet {
+    background: linear-gradient(135deg, var(--accent-violet) 0%, var(--secondary-dark) 100%);
   }
   
-  .glass-citron {
-    background: oklch(1 0 0 / 0.25);
-    backdrop-filter: blur(10px);
-    border: 1px solid oklch(1 0 0 / 0.18);
+  .text-gradient-violet {
+    background: linear-gradient(135deg, var(--accent-violet) 0%, var(--accent-orange) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-warm {
+    background: linear-gradient(135deg, var(--accent-orange) 0%, var(--accent-lime-green) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
   
-  .dark .glass-citron {
-    background: var(--gray-800) / 0.25;
-    border: 1px solid var(--gray-700) / 0.2;
+  .shadow-glow-orange {
+    box-shadow: 0 0 30px rgba(255, 107, 0, 0.3), 0 0 60px rgba(255, 107, 0, 0.1);
+  }
+  
+  .shadow-glow-lime {
+    box-shadow: 0 0 30px rgba(198, 255, 0, 0.3), 0 0 60px rgba(198, 255, 0, 0.1);
+  }
+  
+  .shadow-glow-violet {
+    box-shadow: 0 0 30px rgba(90, 79, 240, 0.3), 0 0 60px rgba(90, 79, 240, 0.1);
+  }
+
+  .glass-dark {
+    background: rgba(24, 20, 51, 0.3);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .glass-light {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  /* Animations personnalisées */
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  .animate-pulse-soft {
+    animation: pulse-soft 3s ease-in-out infinite;
+  }
+  
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-20px) rotate(5deg); }
+  }
+  
+  @keyframes pulse-soft {
+    0%, 100% { opacity: 0.7; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.05); }
+  }
+  
+  @keyframes glow {
+    from { 
+      box-shadow: 0 0 20px rgba(90, 79, 240, 0.4), 0 0 40px rgba(90, 79, 240, 0.2);
+    }
+    to { 
+      box-shadow: 0 0 30px rgba(90, 79, 240, 0.6), 0 0 60px rgba(90, 79, 240, 0.3);
+    }
   }
 }

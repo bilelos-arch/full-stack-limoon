@@ -49,11 +49,20 @@ export default function AdminPage() {
                 Templates
               </Button>
             </div>
-            {/* Placeholder for future admin features */}
             <div className="bg-green-50 dark:bg-green-900 p-4 rounded-lg">
               <h2 className="text-xl font-semibold mb-4">Utilisateurs</h2>
               <p className="text-gray-600 dark:text-gray-300 mb-4">
                 Gérer les comptes utilisateurs.
+              </p>
+              <Button onClick={() => router.push('/admin/users')}>
+                Gérer les utilisateurs
+              </Button>
+            </div>
+            {/* Placeholder for future admin features */}
+            <div className="bg-yellow-50 dark:bg-yellow-900 p-4 rounded-lg">
+              <h2 className="text-xl font-semibold mb-4">Histoires</h2>
+              <p className="text-gray-600 dark:text-gray-300 mb-4">
+                Gérer les histoires créées.
               </p>
               <Button variant="outline" disabled>
                 Bientôt disponible
