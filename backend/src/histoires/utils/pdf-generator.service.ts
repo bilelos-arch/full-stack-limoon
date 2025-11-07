@@ -10,6 +10,7 @@ import { EditorElement } from '../../editor-element.schema';
 import { EditorElementsService } from '../../editor-elements.service';
 import { ImageMappingService, ImageMappingResult } from './image-mapping.service';
 import { detectVariables } from '../../utils/variables';
+import { CloudinaryService } from '../../cloudinary.service';
 
 @Injectable()
 export class PdfGeneratorService {
@@ -20,14 +21,15 @@ export class PdfGeneratorService {
 
   constructor(
     private editorElementsService: EditorElementsService,
-    private imageMappingService: ImageMappingService
+    private imageMappingService: ImageMappingService,
+    private cloudinaryService: CloudinaryService
   ) {}
 
-  async generatePreview(template: TemplateDocument, variables: Record<string, any>, uploadedImagePaths?: string[]): Promise<string[]> {
+  async generatePreview(template: TemplateDocument, variables: Record<string, any>, uploadedImageUrls?: string[]): Promise<string[]> {
     try {
       this.logger.log(`[PDF-GENERATOR] Generating preview for template ${template._id}`);
       this.logger.log(`[PDF-GENERATOR] Variables:`, JSON.stringify(variables, null, 2));
-      this.logger.log(`[PDF-GENERATOR] Uploaded image paths:`, uploadedImagePaths);
+      this.logger.log(`[PDF-GENERATOR] Uploaded image URLs:`, uploadedImageUrls);
 
       // Ensure previews directory exists
       if (!fs.existsSync(this.previewsDir)) {
@@ -47,7 +49,7 @@ export class PdfGeneratorService {
       const editorElements = await this.editorElementsService.findAllByTemplate(template._id.toString());
 
       // Apply variables to the PDF (now includes uploadedImagePaths for preview)
-      await this.applyVariablesToPdf(pdfDoc, editorElements, variables, template, uploadedImagePaths);
+      await this.applyVariablesToPdf(pdfDoc, editorElements, variables, template, uploadedImageUrls);
 
       // Save modified PDF temporarily with traditional xref for compatibility
       const tempPdfFilename = `temp-${Date.now()}-${Math.round(Math.random() * 1e9)}.pdf`;
@@ -56,16 +58,16 @@ export class PdfGeneratorService {
       fs.writeFileSync(tempPdfPath, pdfBytes);
 
       // Convert PDF to images with improved error handling
-      let previewImageUrls: string[] = [];
+      let localPreviewImageUrls: string[] = [];
       try {
-        previewImageUrls = await this.convertPdfToImages(tempPdfPath);
+        localPreviewImageUrls = await this.convertPdfToImages(tempPdfPath);
       } catch (error) {
         const errorMessage = error && error.message ? error.message : (error && error.toString) ? error.toString() : 'Unknown error';
         this.logger.error(`PDF to image conversion failed: ${errorMessage}`, error.stack || error);
         // Check if it's a binary missing error
         if (errorMessage.includes('GraphicsMagick') || errorMessage.includes('ImageMagick') || errorMessage.includes('spawn')) {
           this.logger.warn('Image conversion failed due to missing GraphicsMagick/ImageMagick binaries. This is expected in some environments.');
-          previewImageUrls = [];
+          localPreviewImageUrls = [];
         } else {
           // Re-throw for unexpected errors
           throw new BadRequestException(`Failed to convert PDF to images: ${errorMessage}`);
@@ -75,9 +77,46 @@ export class PdfGeneratorService {
       // Clean up temporary PDF
       fs.unlinkSync(tempPdfPath);
 
-      this.logger.log(`[PDF-GENERATOR] Preview generated successfully: ${previewImageUrls.length} images`);
-      this.logger.log(`[PDF-GENERATOR] Preview image URLs:`, previewImageUrls);
-      return previewImageUrls;
+      // Upload preview images to Cloudinary
+      const cloudinary = this.cloudinaryService.getCloudinary();
+      if (!cloudinary) {
+        throw new BadRequestException('Cloudinary service not available');
+      }
+
+      const cloudinaryPreviewUrls: string[] = [];
+      for (const localUrl of localPreviewImageUrls) {
+        const localPath = path.join('.', localUrl);
+        if (fs.existsSync(localPath)) {
+          try {
+            const uploadResult = await new Promise<any>((resolve, reject) => {
+              cloudinary.uploader.upload(localPath, {
+                resource_type: 'image',
+                public_id: `histoires/previews/${path.basename(localPath)}`,
+                folder: 'histoires/previews'
+              }, (error, result) => {
+                if (error) {
+                  reject(error);
+                } else {
+                  resolve(result);
+                }
+              });
+            });
+            cloudinaryPreviewUrls.push(uploadResult.secure_url);
+            // Clean up local file
+            fs.unlinkSync(localPath);
+          } catch (uploadError) {
+            this.logger.error(`Failed to upload preview image ${localPath} to Cloudinary: ${uploadError.message}`);
+            // Keep local URL if upload fails
+            cloudinaryPreviewUrls.push(localUrl);
+          }
+        } else {
+          this.logger.warn(`Local preview image not found: ${localPath}`);
+        }
+      }
+
+      this.logger.log(`[PDF-GENERATOR] Preview generated and uploaded successfully: ${cloudinaryPreviewUrls.length} images`);
+      this.logger.log(`[PDF-GENERATOR] Preview Cloudinary URLs:`, cloudinaryPreviewUrls);
+      return cloudinaryPreviewUrls;
     } catch (error) {
       const errorMessage = error && error.message ? error.message : (error && error.toString) ? error.toString() : 'Unknown error';
       this.logger.error(`Preview generation error: ${errorMessage}`, error.stack || error);
@@ -85,7 +124,7 @@ export class PdfGeneratorService {
     }
   }
 
-  async generateFinalPdf(template: TemplateDocument, variables: Record<string, any>, uploadedImagePaths?: string[]): Promise<string> {
+  async generateFinalPdf(template: TemplateDocument, variables: Record<string, any>, uploadedImageUrls?: string[]): Promise<string> {
     try {
       this.logger.log(`Generating final PDF for template ${template._id}`);
 
@@ -102,7 +141,7 @@ export class PdfGeneratorService {
       const editorElements = await this.editorElementsService.findAllByTemplate(template._id.toString());
 
       // Apply variables to the PDF
-      await this.applyVariablesToPdf(pdfDoc, editorElements, variables, template, uploadedImagePaths);
+      await this.applyVariablesToPdf(pdfDoc, editorElements, variables, template, uploadedImageUrls);
 
       // Force traditional xref table for better PDF.js compatibility
       const finalBytes = await pdfDoc.save({ useObjectStreams: false });
@@ -111,8 +150,32 @@ export class PdfGeneratorService {
 
       fs.writeFileSync(finalPath, finalBytes);
 
-      this.logger.log(`Final PDF generated successfully: ${finalFilename}`);
-      return finalFilename;
+      // Upload to Cloudinary
+      const cloudinary = this.cloudinaryService.getCloudinary();
+      if (!cloudinary) {
+        throw new BadRequestException('Cloudinary service not available');
+      }
+
+      const uploadResult = await new Promise<any>((resolve, reject) => {
+        cloudinary.uploader.upload(finalPath, {
+          resource_type: 'raw',
+          public_id: `histoires/${finalFilename}`,
+          folder: 'histoires/pdfs'
+        }, (error, result) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve(result);
+          }
+        });
+      });
+
+      // Clean up local file
+      fs.unlinkSync(finalPath);
+
+      const cloudinaryUrl = uploadResult.secure_url;
+      this.logger.log(`Final PDF uploaded to Cloudinary successfully: ${cloudinaryUrl}`);
+      return cloudinaryUrl;
     } catch (error) {
       const errorMessage = error && error.message ? error.message : (error && error.toString) ? error.toString() : 'Unknown error';
       this.logger.error(`PDF generation error: ${errorMessage}`, error.stack || error);
@@ -121,7 +184,7 @@ export class PdfGeneratorService {
   }
 
   // Helper method to validate variables against template requirements (ENHANCED)
-  async validateVariables(template: TemplateDocument, variables: Record<string, any>, uploadedImagePaths?: string[]): Promise<{
+  async validateVariables(template: TemplateDocument, variables: Record<string, any>, uploadedImageUrls?: string[]): Promise<{
     valid: boolean;
     missingVariables?: string[];
     missingImages?: string[];
@@ -129,7 +192,7 @@ export class PdfGeneratorService {
   }> {
     this.logger.log(`[VALIDATION] Starting comprehensive validation for template ${template._id}`);
     this.logger.log(`[VALIDATION] Variables provided:`, Object.keys(variables));
-    this.logger.log(`[VALIDATION] Uploaded image paths:`, uploadedImagePaths);
+    this.logger.log(`[VALIDATION] Uploaded image URLs:`, uploadedImageUrls);
     // Get editor elements for the template
     const editorElements = await this.editorElementsService.findAllByTemplate(template._id.toString());
 
@@ -199,7 +262,7 @@ export class PdfGeneratorService {
         const mappingResult = await this.imageMappingService.findImageByVariable(
           imageVarName,
           imageVarValue,
-          uploadedImagePaths
+          uploadedImageUrls
         );
 
         if (!mappingResult.found) {
@@ -241,7 +304,7 @@ export class PdfGeneratorService {
     editorElements: EditorElement[],
     variables: Record<string, any>,
     template: TemplateDocument,
-    uploadedImagePaths?: string[]
+    uploadedImageUrls?: string[]
   ): Promise<void> {
     this.logger.log(`Applying ${Object.keys(variables).length} variables to PDF with ${editorElements.length} elements`);
 
@@ -285,7 +348,7 @@ export class PdfGeneratorService {
 
       // Process image elements
       const imageElements = elements.filter(el => el.type === 'image');
-      await this.replaceImageVariables(page, imageElements, mergedVars, template, pdfDoc, uploadedImagePaths);
+      await this.replaceImageVariables(page, imageElements, mergedVars, template, pdfDoc, uploadedImageUrls);
     }
 
     this.logger.log('Variables applied successfully to PDF');
@@ -370,11 +433,11 @@ export class PdfGeneratorService {
       variables: Record<string, any>,
       template: TemplateDocument,
       pdfDoc: PDFDocument,
-      uploadedImagePaths?: string[]
+      uploadedImageUrls?: string[]
     ): Promise<void> {
       this.logger.log(`[PDF-GENERATOR] Processing ${imageElements.length} image elements with robust mapping`);
       this.logger.log(`[PDF-GENERATOR] Available variables:`, Object.keys(variables));
-      this.logger.log(`[PDF-GENERATOR] Uploaded image paths:`, uploadedImagePaths);
+      this.logger.log(`[PDF-GENERATOR] Uploaded image URLs:`, uploadedImageUrls);
 
       let processedImages = 0;
       let failedImages = 0;
@@ -464,7 +527,7 @@ export class PdfGeneratorService {
             const mappingResult = await this.imageMappingService.findImageByVariable(
               element.variableName,
               imageVar,
-              uploadedImagePaths
+              uploadedImageUrls
             );
 
             if (!mappingResult.found || !mappingResult.imagePath) {

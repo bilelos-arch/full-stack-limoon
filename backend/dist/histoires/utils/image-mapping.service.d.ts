@@ -12,7 +12,7 @@ export declare class ImageMappingService {
     private readonly histoiresImagesDir;
     constructor();
     private ensureDirectoriesExist;
-    findImageByVariable(variableName: string, imageVariableValue: string, uploadedImagePaths?: string[]): Promise<ImageMappingResult>;
+    findImageByVariable(variableName: string, imageVariableValue: string, uploadedImageUrls?: string[]): Promise<ImageMappingResult>;
     private findDirectMatch;
     private findByVariablePrefix;
     private findInTempImages;
@@ -22,7 +22,7 @@ export declare class ImageMappingService {
         valid: boolean;
         error?: string;
     };
-    getImagePath(variableName: string, imageVariableValue: string, uploadedImagePaths?: string[]): Promise<string | null>;
+    getImagePath(variableName: string, imageVariableValue: string, uploadedImageUrls?: string[]): Promise<string | null>;
     private extractBaseFilename;
     private isImageFile;
     listAvailableImages(): {

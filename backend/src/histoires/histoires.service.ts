@@ -80,15 +80,15 @@ export class HistoiresService {
     return savedHistoire;
   }
 
-  async generatePreview(userId: string, previewDto: PreviewHistoireDto, uploadedImagePaths?: string[]): Promise<{ previewUrls: string[], pdfUrl: string, histoireId: string }> {
+  async generatePreview(userId: string, previewDto: PreviewHistoireDto, uploadedImageUrls?: string[]): Promise<{ previewUrls: string[], pdfUrl: string, histoireId: string }> {
     this.logger.log(`[SERVICE] Generating preview for user ${userId} with template ${previewDto.templateId}`);
     this.logger.log(`[SERVICE] Preview DTO:`, JSON.stringify(previewDto, null, 2));
-    this.logger.log(`[SERVICE] Uploaded image paths:`, uploadedImagePaths);
+    this.logger.log(`[SERVICE] Uploaded image URLs:`, uploadedImageUrls);
 
     const { templateId, variables } = previewDto;
 
     // Validate variables before generation (no default values for images)
-    const validation = await this.pdfGeneratorService.validateVariables(await this.templatesService.findOne(templateId), variables, uploadedImagePaths);
+    const validation = await this.pdfGeneratorService.validateVariables(await this.templatesService.findOne(templateId), variables, uploadedImageUrls);
     if (!validation.valid) {
       const errors = [];
       if (validation.missingVariables?.length) errors.push(`Missing variables: ${validation.missingVariables.join(', ')}`);
@@ -119,13 +119,13 @@ export class HistoiresService {
       throw new BadRequestException('User not found');
     }
 
-    // Generate preview images (now includes uploadedImagePaths)
-    const previewUrls = await this.pdfGeneratorService.generatePreview(template, mergedVariables, uploadedImagePaths);
+    // Generate preview images (now includes uploadedImageUrls)
+    const previewUrls = await this.pdfGeneratorService.generatePreview(template, mergedVariables, uploadedImageUrls);
     this.logger.log(`[SERVICE] Preview generated successfully: ${previewUrls.length} images`);
     this.logger.log(`[SERVICE] Preview URLs:`, previewUrls);
 
     // Generate PDF with same variables (no defaults)
-    const pdfUrl = await this.pdfGeneratorService.generateFinalPdf(template, mergedVariables, uploadedImagePaths);
+    const pdfUrl = await this.pdfGeneratorService.generateFinalPdf(template, mergedVariables, uploadedImageUrls);
     this.logger.log(`[SERVICE] PDF preview generated successfully: ${pdfUrl}`);
 
     // Create histoire record with preview URLs and PDF URL
@@ -311,11 +311,11 @@ export class HistoiresService {
     this.logger.log(`Histoire ${id} deleted successfully`);
   }
 
-  async generateHistoire(userId: string, generateDto: GenerateHistoireDto, uploadedImagePaths?: string[]): Promise<HistoireDocument> {
+  async generateHistoire(userId: string, generateDto: GenerateHistoireDto, uploadedImageUrls?: string[]): Promise<HistoireDocument> {
     this.logger.log(`[DEBUG] Starting generateHistoire for user ${userId} with template ${generateDto.templateId}`);
     this.logger.log(`[DEBUG] Raw generateDto: ${JSON.stringify(generateDto, null, 2)}`);
-    this.logger.log(`[DEBUG] Uploaded image paths: ${uploadedImagePaths ? uploadedImagePaths.join(', ') : 'none'}`);
-    uploadedImagePaths = uploadedImagePaths || [];
+    this.logger.log(`[DEBUG] Uploaded image URLs: ${uploadedImageUrls ? uploadedImageUrls.join(', ') : 'none'}`);
+    uploadedImageUrls = uploadedImageUrls || [];
 
     const { templateId, variables: rawVariables } = generateDto;
     this.logger.log(`[DEBUG] Extracted templateId: ${templateId}`);
@@ -386,7 +386,7 @@ export class HistoiresService {
       this.logger.log('[DEBUG] Validating required variables against template');
       this.logger.log('[DEBUG] Template for validation:', JSON.stringify(template, null, 2));
       this.logger.log('[DEBUG] Variables for validation:', JSON.stringify(variables, null, 2));
-      const validation = await this.pdfGeneratorService.validateVariables(template, variables, uploadedImagePaths);
+      const validation = await this.pdfGeneratorService.validateVariables(template, variables, uploadedImageUrls);
       this.logger.log('[DEBUG] Validation result:', validation);
       if (!validation.valid) {
         const errors = [];
@@ -424,8 +424,8 @@ export class HistoiresService {
       this.logger.log('[DEBUG] Generating final PDF');
       this.logger.log('[DEBUG] Template for PDF:', template._id || template.id);
       this.logger.log('[DEBUG] Variables for PDF:', JSON.stringify(variables, null, 2));
-      this.logger.log('[DEBUG] Uploaded image paths for PDF:', uploadedImagePaths);
-      pdfUrl = await this.pdfGeneratorService.generateFinalPdf(template, variables, uploadedImagePaths);
+      this.logger.log('[DEBUG] Uploaded image URLs for PDF:', uploadedImageUrls);
+      pdfUrl = await this.pdfGeneratorService.generateFinalPdf(template, variables, uploadedImageUrls);
       this.logger.log(`[DEBUG] Final PDF generated: ${pdfUrl}`);
     } catch (error) {
       this.logger.error(`[DEBUG] PDF generation failed: ${error.message}`);

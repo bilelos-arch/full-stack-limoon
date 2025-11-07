@@ -16,6 +16,7 @@ const pdf_generator_service_1 = require("./utils/pdf-generator.service");
 const image_mapping_service_1 = require("./utils/image-mapping.service");
 const templates_module_1 = require("../templates.module");
 const users_module_1 = require("../users.module");
+const cloudinary_service_1 = require("../cloudinary.service");
 let HistoiresModule = class HistoiresModule {
 };
 exports.HistoiresModule = HistoiresModule;
@@ -27,7 +28,7 @@ exports.HistoiresModule = HistoiresModule = __decorate([
             (0, common_1.forwardRef)(() => users_module_1.UsersModule),
         ],
         controllers: [histoires_controller_1.HistoiresController],
-        providers: [histoires_service_1.HistoiresService, pdf_generator_service_1.PdfGeneratorService, image_mapping_service_1.ImageMappingService],
+        providers: [histoires_service_1.HistoiresService, pdf_generator_service_1.PdfGeneratorService, image_mapping_service_1.ImageMappingService, cloudinary_service_1.CloudinaryService],
         exports: [histoires_service_1.HistoiresService, pdf_generator_service_1.PdfGeneratorService, image_mapping_service_1.ImageMappingService],
     })
 ], HistoiresModule);

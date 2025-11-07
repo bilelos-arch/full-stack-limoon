@@ -21,12 +21,14 @@ const create_histoire_dto_1 = require("./dto/create-histoire.dto");
 const update_histoire_dto_1 = require("./dto/update-histoire.dto");
 const jwt_auth_guard_1 = require("../jwt-auth.guard");
 const platform_express_1 = require("@nestjs/platform-express");
-const multer_1 = require("multer");
-const path_1 = require("path");
+const multer_storage_cloudinary_1 = require("multer-storage-cloudinary");
+const cloudinary_service_1 = require("../cloudinary.service");
+const cloudinary_1 = require("cloudinary");
 let HistoiresController = HistoiresController_1 = class HistoiresController {
-    constructor(histoiresService, templatesService) {
+    constructor(histoiresService, templatesService, cloudinaryService) {
         this.histoiresService = histoiresService;
         this.templatesService = templatesService;
+        this.cloudinaryService = cloudinaryService;
         this.logger = new common_1.Logger(HistoiresController_1.name);
     }
     async findByTemplate(templateId) {
@@ -70,7 +72,7 @@ let HistoiresController = HistoiresController_1 = class HistoiresController {
         if (!body.variables) {
             throw new common_1.BadRequestException('Variables object is required');
         }
-        const uploadedImagePaths = [];
+        const uploadedImageUrls = [];
         const imageVariableMapping = {};
         const fileProcessingErrors = [];
         if (files && Object.keys(files).length > 0) {
@@ -80,15 +82,15 @@ let HistoiresController = HistoiresController_1 = class HistoiresController {
                     if (fieldName.startsWith('images_') && fileArray && fileArray.length > 0) {
                         const variableName = fieldName.replace('images_', '');
                         const file = fileArray[0];
-                        if (!file || !file.filename || !file.path) {
+                        if (!file || !file.path) {
                             const errorMsg = `Invalid file data for field "${fieldName}"`;
                             this.logger.error(`[CONTROLLER] ${errorMsg}`);
                             fileProcessingErrors.push(errorMsg);
                             continue;
                         }
-                        uploadedImagePaths.push(file.path);
-                        imageVariableMapping[variableName] = file.filename;
-                        this.logger.log(`[CONTROLLER] ✅ Mapped preview image variable "${variableName}" to file "${file.filename}" (${file.size} bytes) at path "${file.path}"`);
+                        uploadedImageUrls.push(file.path);
+                        imageVariableMapping[variableName] = file.path;
+                        this.logger.log(`[CONTROLLER] ✅ Mapped preview image variable "${variableName}" to Cloudinary URL "${file.path}"`);
                     }
                 }
                 catch (error) {
@@ -101,7 +103,7 @@ let HistoiresController = HistoiresController_1 = class HistoiresController {
         else {
             this.logger.log(`[CONTROLLER] No image files uploaded for preview`);
         }
-        this.logger.log(`[CONTROLLER] 📊 File processing summary: ${uploadedImagePaths.length} files processed, ${fileProcessingErrors.length} errors`);
+        this.logger.log(`[CONTROLLER] 📊 File processing summary: ${uploadedImageUrls.length} files processed, ${fileProcessingErrors.length} errors`);
         let variables;
         try {
             variables = typeof body.variables === 'string' ? JSON.parse(body.variables) : body.variables;
@@ -127,7 +129,7 @@ let HistoiresController = HistoiresController_1 = class HistoiresController {
             variables,
         };
         try {
-            const result = await this.histoiresService.generatePreview(userId, previewDto, uploadedImagePaths);
+            const result = await this.histoiresService.generatePreview(userId, previewDto, uploadedImageUrls);
             this.logger.log(`[CONTROLLER] ✅ Preview generation successful: ${result.previewUrls?.length || 0} preview URLs generated`);
             this.logger.log(`[CONTROLLER] 📋 Preview URLs:`, result.previewUrls);
             this.logger.log(`[CONTROLLER] 📄 PDF URL:`, result.pdfUrl);
@@ -138,7 +140,7 @@ let HistoiresController = HistoiresController_1 = class HistoiresController {
                 pdfUrl: result.pdfUrl,
                 histoireId: result.histoireId,
                 processingSummary: {
-                    uploadedImages: uploadedImagePaths.length,
+                    uploadedImages: uploadedImageUrls.length,
                     mappedVariables: addedImageVars,
                     fileErrors: fileProcessingErrors.length > 0 ? fileProcessingErrors : undefined
                 }
@@ -163,7 +165,7 @@ let HistoiresController = HistoiresController_1 = class HistoiresController {
         if (!body.variables) {
             throw new common_1.BadRequestException('Variables object is required');
         }
-        const uploadedImagePaths = [];
+        const uploadedImageUrls = [];
         const imageVariableMapping = {};
         const fileProcessingErrors = [];
         if (files && Object.keys(files).length > 0) {
@@ -173,15 +175,15 @@ let HistoiresController = HistoiresController_1 = class HistoiresController {
                     if (fieldName.startsWith('images_') && fileArray && fileArray.length > 0) {
                         const variableName = fieldName.replace('images_', '');
                         const file = fileArray[0];
-                        if (!file || !file.filename || !file.path) {
+                        if (!file || !file.path) {
                             const errorMsg = `Invalid file data for field "${fieldName}"`;
                             this.logger.error(`[CONTROLLER] ${errorMsg}`);
                             fileProcessingErrors.push(errorMsg);
                             continue;
                         }
-                        uploadedImagePaths.push(file.path);
-                        imageVariableMapping[variableName] = file.filename;
-                        this.logger.log(`[CONTROLLER] ✅ Mapped generation image variable "${variableName}" to file "${file.filename}" (${file.size} bytes) at path "${file.path}"`);
+                        uploadedImageUrls.push(file.path);
+                        imageVariableMapping[variableName] = file.path;
+                        this.logger.log(`[CONTROLLER] ✅ Mapped generation image variable "${variableName}" to Cloudinary URL "${file.path}"`);
                     }
                 }
                 catch (error) {
@@ -194,7 +196,7 @@ let HistoiresController = HistoiresController_1 = class HistoiresController {
         else {
             this.logger.log(`[CONTROLLER] No image files uploaded for generation`);
         }
-        this.logger.log(`[CONTROLLER] 📊 File processing summary: ${uploadedImagePaths.length} files processed, ${fileProcessingErrors.length} errors`);
+        this.logger.log(`[CONTROLLER] 📊 File processing summary: ${uploadedImageUrls.length} files processed, ${fileProcessingErrors.length} errors`);
         let variables;
         try {
             variables = typeof body.variables === 'string' ? JSON.parse(body.variables) : body.variables;
@@ -223,16 +225,16 @@ let HistoiresController = HistoiresController_1 = class HistoiresController {
             userId,
             templateId: generateDto.templateId,
             variablesCount: Object.keys(generateDto.variables).length,
-            uploadedImagePathsCount: uploadedImagePaths.length
+            uploadedImageUrlsCount: uploadedImageUrls.length
         });
         try {
-            const result = await this.histoiresService.generateHistoire(userId, generateDto, uploadedImagePaths);
+            const result = await this.histoiresService.generateHistoire(userId, generateDto, uploadedImageUrls);
             this.logger.log(`[CONTROLLER] ✅ Histoire generation successful for user ${userId}, histoire ID: ${result._id}`);
             return {
                 success: true,
                 histoire: result,
                 processingSummary: {
-                    uploadedImages: uploadedImagePaths.length,
+                    uploadedImages: uploadedImageUrls.length,
                     mappedVariables: addedImageVars,
                     fileErrors: fileProcessingErrors.length > 0 ? fileProcessingErrors : undefined
                 }
@@ -327,19 +329,16 @@ __decorate([
         { name: 'images_objet', maxCount: 1 },
         { name: 'images_autre', maxCount: 1 }
     ], {
-        storage: (0, multer_1.diskStorage)({
-            destination: './uploads/temp-images',
-            filename: (req, file, callback) => {
-                const logger = req.res?.locals?.logger || new common_1.Logger('FileUpload');
-                const variableName = (file.fieldname || '').replace('images_', '');
-                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-                const originalExt = file.originalname ? (0, path_1.extname)(file.originalname) : '.jpg';
-                const filename = `${variableName}-${uniqueSuffix}${originalExt}`;
-                if (filename) {
-                    const logMessage = `Generated filename: ${filename} for variable: ${variableName}`;
-                    logger.log(`[CONTROLLER] ${logMessage}`);
-                }
-                callback(null, filename || 'unknown');
+        storage: new multer_storage_cloudinary_1.CloudinaryStorage({
+            cloudinary: cloudinary_1.v2,
+            params: {
+                folder: 'limoon/temp-images',
+                allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+                public_id: (req, file) => {
+                    const variableName = (file.fieldname || '').replace('images_', '');
+                    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+                    return `${variableName}-${uniqueSuffix}`;
+                },
             },
         }),
         fileFilter: (req, file, callback) => {
@@ -392,19 +391,16 @@ __decorate([
         { name: 'images_objet', maxCount: 1 },
         { name: 'images_autre', maxCount: 1 }
     ], {
-        storage: (0, multer_1.diskStorage)({
-            destination: './uploads/temp-images',
-            filename: (req, file, callback) => {
-                const logger = req.res?.locals?.logger || new common_1.Logger('FileUpload');
-                const variableName = (file.fieldname || '').replace('images_', '');
-                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-                const originalExt = file.originalname ? (0, path_1.extname)(file.originalname) : '.jpg';
-                const filename = `${variableName}-${uniqueSuffix}${originalExt}`;
-                if (filename) {
-                    const logMessage = `Generated filename: ${filename} for variable: ${variableName}`;
-                    logger.log(`[CONTROLLER] ${logMessage}`);
-                }
-                callback(null, filename || 'unknown');
+        storage: new multer_storage_cloudinary_1.CloudinaryStorage({
+            cloudinary: cloudinary_1.v2,
+            params: {
+                folder: 'limoon/temp-images',
+                allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
+                public_id: (req, file) => {
+                    const variableName = (file.fieldname || '').replace('images_', '');
+                    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+                    return `${variableName}-${uniqueSuffix}`;
+                },
             },
         }),
         fileFilter: (req, file, callback) => {
@@ -444,6 +440,7 @@ __decorate([
 exports.HistoiresController = HistoiresController = HistoiresController_1 = __decorate([
     (0, common_1.Controller)('histoires'),
     __metadata("design:paramtypes", [histoires_service_1.HistoiresService,
-        templates_service_1.TemplatesService])
+        templates_service_1.TemplatesService,
+        cloudinary_service_1.CloudinaryService])
 ], HistoiresController);
 //# sourceMappingURL=histoires.controller.js.map

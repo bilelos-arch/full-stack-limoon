@@ -18,7 +18,7 @@ export declare class HistoiresService {
     constructor(histoireModel: Model<HistoireDocument>, pdfGeneratorService: PdfGeneratorService, templatesService: TemplatesService, usersService: UsersService, editorElementsService: EditorElementsService);
     findByTemplate(templateId: string): Promise<HistoireDocument[]>;
     create(userId: string, createHistoireDto: CreateHistoireDto): Promise<HistoireDocument>;
-    generatePreview(userId: string, previewDto: PreviewHistoireDto, uploadedImagePaths?: string[]): Promise<{
+    generatePreview(userId: string, previewDto: PreviewHistoireDto, uploadedImageUrls?: string[]): Promise<{
         previewUrls: string[];
         pdfUrl: string;
         histoireId: string;
@@ -28,5 +28,5 @@ export declare class HistoiresService {
     findByUser(userId: string): Promise<HistoireDocument[]>;
     update(id: string, userId: string, updateHistoireDto: UpdateHistoireDto): Promise<HistoireDocument>;
     remove(id: string, userId: string): Promise<void>;
-    generateHistoire(userId: string, generateDto: GenerateHistoireDto, uploadedImagePaths?: string[]): Promise<HistoireDocument>;
+    generateHistoire(userId: string, generateDto: GenerateHistoireDto, uploadedImageUrls?: string[]): Promise<HistoireDocument>;
 }

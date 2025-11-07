@@ -7,6 +7,7 @@ import { PdfGeneratorService } from './utils/pdf-generator.service';
 import { ImageMappingService } from './utils/image-mapping.service';
 import { TemplatesModule } from '../templates.module';
 import { UsersModule } from '../users.module';
+import { CloudinaryService } from '../cloudinary.service';
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { UsersModule } from '../users.module';
     forwardRef(() => UsersModule),
   ],
   controllers: [HistoiresController],
-  providers: [HistoiresService, PdfGeneratorService, ImageMappingService],
+  providers: [HistoiresService, PdfGeneratorService, ImageMappingService, CloudinaryService],
   exports: [HistoiresService, PdfGeneratorService, ImageMappingService],
 })
 export class HistoiresModule {}

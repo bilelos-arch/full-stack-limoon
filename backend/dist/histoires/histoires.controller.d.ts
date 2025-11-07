@@ -2,11 +2,13 @@ import { HistoiresService } from './histoires.service';
 import { TemplatesService } from '../templates.service';
 import { CreateHistoireDto } from './dto/create-histoire.dto';
 import { UpdateHistoireDto } from './dto/update-histoire.dto';
+import { CloudinaryService } from '../cloudinary.service';
 export declare class HistoiresController {
     private readonly histoiresService;
     private readonly templatesService;
+    private readonly cloudinaryService;
     private readonly logger;
-    constructor(histoiresService: HistoiresService, templatesService: TemplatesService);
+    constructor(histoiresService: HistoiresService, templatesService: TemplatesService, cloudinaryService: CloudinaryService);
     findByTemplate(templateId: string): Promise<import("./schemas/histoire.schema").HistoireDocument[]>;
     findByUser(req: any): Promise<import("./schemas/histoire.schema").HistoireDocument[]>;
     findOne(id: string, req: any): Promise<any>;

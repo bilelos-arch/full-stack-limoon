@@ -40,17 +40,17 @@ export class ImageMappingService {
    * Trouver une image par nom de variable avec recherche multi-méthodes
    */
   async findImageByVariable(
-    variableName: string, 
-    imageVariableValue: string, 
-    uploadedImagePaths: string[] = []
+    variableName: string,
+    imageVariableValue: string,
+    uploadedImageUrls: string[] = []
   ): Promise<ImageMappingResult> {
     this.logger.log(`[IMAGE-MAPPING] Searching for image: variable="${variableName}", value="${imageVariableValue}"`);
-    this.logger.log(`[IMAGE-MAPPING] Available uploaded paths:`, uploadedImagePaths);
+    this.logger.log(`[IMAGE-MAPPING] Available uploaded URLs:`, uploadedImageUrls);
 
     try {
-      // MÉTHODE 1: Recherche directe dans uploadedImagePaths avec correspondance exacte
-      if (uploadedImagePaths && uploadedImagePaths.length > 0) {
-        const directMatch = this.findDirectMatch(imageVariableValue, uploadedImagePaths);
+      // MÉTHODE 1: Recherche directe dans uploadedImageUrls avec correspondance exacte
+      if (uploadedImageUrls && uploadedImageUrls.length > 0) {
+        const directMatch = this.findDirectMatch(imageVariableValue, uploadedImageUrls);
         if (directMatch.found) {
           this.logger.log(`[IMAGE-MAPPING] ✅ Direct match found: ${directMatch.imagePath}`);
           return directMatch;
@@ -58,8 +58,8 @@ export class ImageMappingService {
       }
 
       // MÉTHODE 2: Recherche par préfixe de variable dans les fichiers uploaded
-      if (uploadedImagePaths && uploadedImagePaths.length > 0) {
-        const prefixMatch = this.findByVariablePrefix(variableName, uploadedImagePaths);
+      if (uploadedImageUrls && uploadedImageUrls.length > 0) {
+        const prefixMatch = this.findByVariablePrefix(variableName, uploadedImageUrls);
         if (prefixMatch.found) {
           this.logger.log(`[IMAGE-MAPPING] ✅ Prefix match found: ${prefixMatch.imagePath}`);
           return prefixMatch;
@@ -106,8 +106,8 @@ export class ImageMappingService {
   /**
    * MÉTHODE 1: Recherche directe avec correspondance exacte
    */
-  private findDirectMatch(imageVariableValue: string, uploadedImagePaths: string[]): ImageMappingResult {
-    for (const uploadedPath of uploadedImagePaths) {
+  private findDirectMatch(imageVariableValue: string, uploadedImageUrls: string[]): ImageMappingResult {
+    for (const uploadedPath of uploadedImageUrls) {
       const uploadedFilename = path.basename(uploadedPath);
       
       // Correspondance exacte du nom de fichier
@@ -136,8 +136,8 @@ export class ImageMappingService {
   /**
    * MÉTHODE 2: Recherche par préfixe de variable
    */
-  private findByVariablePrefix(variableName: string, uploadedImagePaths: string[]): ImageMappingResult {
-    for (const uploadedPath of uploadedImagePaths) {
+  private findByVariablePrefix(variableName: string, uploadedImageUrls: string[]): ImageMappingResult {
+    for (const uploadedPath of uploadedImageUrls) {
       const uploadedFilename = path.basename(uploadedPath);
       
       // Vérifier si le fichier commence par le nom de variable
@@ -308,8 +308,8 @@ export class ImageMappingService {
   /**
    * Obtenir le chemin d'image pour une variable
    */
-  getImagePath(variableName: string, imageVariableValue: string, uploadedImagePaths: string[] = []): Promise<string | null> {
-    return this.findImageByVariable(variableName, imageVariableValue, uploadedImagePaths)
+  getImagePath(variableName: string, imageVariableValue: string, uploadedImageUrls: string[] = []): Promise<string | null> {
+    return this.findImageByVariable(variableName, imageVariableValue, uploadedImageUrls)
       .then(result => result.found ? result.imagePath || null : null);
   }
 
