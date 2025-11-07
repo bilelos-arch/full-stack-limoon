@@ -9,7 +9,11 @@ async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     app.use(cookieParser());
     app.enableCors({
-        origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+        origin: [
+            'https://full-stack-limoon-t4jt.vercel.app',
+            'http://localhost:3000',
+        ],
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
         credentials: true,
     });
     app.use('/uploads', express.static((0, path_1.join)(process.cwd(), 'uploads')));

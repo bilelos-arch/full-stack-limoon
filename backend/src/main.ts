@@ -9,10 +9,15 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   app.use(cookieParser());
-  app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+app.enableCors({
+    origin: [
+      'https://full-stack-limoon-t4jt.vercel.app', // ton frontend
+      'http://localhost:3000',                      // pour tests locaux
+    ],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     credentials: true,
   });
+
 
   // Servir les fichiers statiques depuis le dossier uploads
   app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
