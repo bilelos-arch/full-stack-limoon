@@ -27,18 +27,22 @@ const nextConfig: NextConfig = {
       {
         protocol: process.env.NEXT_PUBLIC_API_URL?.startsWith('https') ? 'https' : 'http',
         hostname: process.env.NEXT_PUBLIC_API_URL ? new URL(process.env.NEXT_PUBLIC_API_URL).hostname : 'localhost',
-        port: process.env.NEXT_PUBLIC_API_URL ? new URL(process.env.NEXT_PUBLIC_API_URL).port : '3001',
+        port: process.env.NEXT_PUBLIC_API_URL ? new URL(process.env.NEXT_PUBLIC_API_URL).port : '10000',
+      },
+      {
+        protocol: 'https',
+        hostname: 'full-stack-limoon-backend.onrender.com',
       },
     ],
   },
   turbopack: {},
   async rewrites() {
-    return [
+    return process.env.NEXT_PUBLIC_API_URL ? [
       {
         source: '/uploads/:path*',
         destination: `${process.env.NEXT_PUBLIC_API_URL}/uploads/:path*`,
       },
-    ];
+    ] : [];
   },
   async redirects() {
     return [

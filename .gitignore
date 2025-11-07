@@ -32,7 +32,7 @@ headers.txt
 response.json
 
 # Build outputs (general)
-dist/
+# dist/  # Removed to allow committing backend/dist
 build/
 
 # Coverage (if not project-specific)
