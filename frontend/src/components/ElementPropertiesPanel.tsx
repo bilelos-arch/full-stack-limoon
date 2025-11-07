@@ -11,7 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import axios from 'axios';
 import googleFonts from '@/data/googleFonts.json';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 interface EditorElement {
   id: string;

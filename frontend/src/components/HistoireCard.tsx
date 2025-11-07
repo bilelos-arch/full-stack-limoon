@@ -98,7 +98,7 @@ export default function HistoireCard({
           
           {template?.coverPath ? (
             <img
-              src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/uploads/${template.coverPath}`}
+              src={`${process.env.NEXT_PUBLIC_API_URL}/uploads/${template.coverPath}`}
               alt={template.title}
               className="w-full h-full object-cover transition-all duration-300 group-hover:scale-110 group-hover:brightness-110"
               loading="lazy"

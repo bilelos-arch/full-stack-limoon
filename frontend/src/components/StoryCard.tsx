@@ -16,7 +16,7 @@ interface StoryCardProps {
 }
 
 export function StoryCard({ template, onPreview, onCustomize }: StoryCardProps) {
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL
   const router = useRouter()
 
   // Logs de débogage pour diagnostiquer la navigation

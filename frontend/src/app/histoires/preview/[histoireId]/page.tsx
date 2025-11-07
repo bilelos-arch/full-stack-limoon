@@ -293,7 +293,7 @@ export default function PreviewHistoirePage() {
     );
   }
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
   return (
     <div className="min-h-screen bg-background">

@@ -1,7 +1,7 @@
 //frontend/src/lib/templatesApi.ts
 import axios from 'axios';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export interface EditorElement {
   id: string;

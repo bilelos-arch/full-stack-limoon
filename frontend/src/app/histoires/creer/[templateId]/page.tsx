@@ -329,7 +329,7 @@ export default function CreerHistoirePage() {
 
     try {
       // Build the full URL for the PDF file
-      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
       const fullPdfUrl = `${apiBaseUrl}/uploads/${generatedHistoire.generatedPdfUrl}`;
       console.log('Fetching PDF from:', fullPdfUrl);
 

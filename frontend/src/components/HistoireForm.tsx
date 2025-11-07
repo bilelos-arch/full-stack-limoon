@@ -330,7 +330,7 @@ export default function HistoireForm({
 
       try {
         // Upload images and generate histoire
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
         const endpoint = `${apiUrl}/histoires/generate`;
         console.log('[DEBUG] [HistoireForm] Making request to:', endpoint);
 
@@ -405,7 +405,7 @@ export default function HistoireForm({
       {template?.coverPath && (
         <div className="mb-6">
           <img
-            src={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/uploads/${template.coverPath}`}
+            src={`${process.env.NEXT_PUBLIC_API_URL}/uploads/${template.coverPath}`}
             alt={`Couverture de ${template.title}`}
             className="w-full h-auto rounded-lg shadow-md"
             onError={(e) => {

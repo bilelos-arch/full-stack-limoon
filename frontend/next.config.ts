@@ -25,9 +25,9 @@ const nextConfig: NextConfig = {
     unoptimized: process.env.NODE_ENV === 'development',
     remotePatterns: [
       {
-        protocol: 'http',
-        hostname: 'localhost',
-        port: '3001',
+        protocol: process.env.NEXT_PUBLIC_API_URL?.startsWith('https') ? 'https' : 'http',
+        hostname: process.env.NEXT_PUBLIC_API_URL ? new URL(process.env.NEXT_PUBLIC_API_URL).hostname : 'localhost',
+        port: process.env.NEXT_PUBLIC_API_URL ? new URL(process.env.NEXT_PUBLIC_API_URL).port : '3001',
       },
     ],
   },
@@ -36,7 +36,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/uploads/:path*',
-        destination: 'http://localhost:3001/uploads/:path*',
+        destination: `${process.env.NEXT_PUBLIC_API_URL}/uploads/:path*`,
       },
     ];
   },

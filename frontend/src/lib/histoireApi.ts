@@ -42,7 +42,7 @@ export interface GenerateHistoireResponse {
   };
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 class HistoireApi {
   private api = axios.create({
