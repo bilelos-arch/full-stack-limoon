@@ -15,12 +15,13 @@ async function bootstrap() {
         ],
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
         credentials: true,
+        allowedHeaders: 'Content-Type, Authorization',
     });
     app.use('/uploads', express.static((0, path_1.join)(process.cwd(), 'uploads')));
     app.use('/uploads/previews', express.static((0, path_1.join)(process.cwd(), 'uploads/previews')));
     app.use('/uploads/temp-previews', express.static((0, path_1.join)(process.cwd(), 'uploads/temp-previews')));
     app.use('/temp-previews', express.static((0, path_1.join)(process.cwd(), 'uploads/temp-previews')));
-    await app.listen(process.env.PORT || 3001);
+    await app.listen(process.env.PORT || 10000);
 }
 bootstrap();
 //# sourceMappingURL=main.js.map

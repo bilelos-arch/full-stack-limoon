@@ -16,6 +16,7 @@ app.enableCors({
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     credentials: true,
+    allowedHeaders: 'Content-Type, Authorization',
   });
 
 
@@ -28,6 +29,6 @@ app.enableCors({
   app.use('/temp-previews', express.static(join(process.cwd(), 'uploads/temp-previews')));
 
 
-  await app.listen(process.env.PORT || 3001);
+  await app.listen(process.env.PORT || 10000);
 }
 bootstrap();
