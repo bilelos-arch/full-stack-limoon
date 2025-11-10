@@ -30,14 +30,115 @@ export class UsersController {
   async getProfile(@Req() req: any) {
     console.log('Users Controller: getProfile called');
     const user = await this.usersService.findById(req.user.userId);
-    
+
     if (!user) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
 
     const { passwordHash, ...profile } = user.toObject();
     console.log('Users Controller: Returning profile for user:', user.email);
-    return profile;
+    return {
+      _id: profile._id,
+      fullName: profile.fullName,
+      email: profile.email,
+      phone: profile.phone,
+      avatarUrl: profile.avatarUrl,
+      birthDate: profile.birthDate,
+      country: profile.country,
+      city: profile.city,
+      settings: profile.settings,
+      storyHistory: profile.storyHistory,
+      purchaseHistory: profile.purchaseHistory,
+      role: profile.role,
+      status: profile.status,
+      createdAt: profile.createdAt,
+      updatedAt: profile.updatedAt,
+      lastLogin: profile.lastLogin
+    };
+  }
+
+  @Get('profile/:id')
+  async getUserProfileById(@Param('id') id: string, @Req() req: any) {
+    console.log('Users Controller: getUserProfileById called for id:', id);
+    console.log('Users Controller: Request user object:', req.user);
+    console.log('Users Controller: Request user userId:', req.user?.userId);
+    console.log('Users Controller: Request user role:', req.user?.role);
+
+    // Allow users to view their own profile or admins to view any profile
+    if (req.user.userId !== id && req.user.role !== 'admin') {
+      console.log('Users Controller: Access denied - userId mismatch or not admin');
+      throw new HttpException('Access denied', HttpStatus.FORBIDDEN);
+    }
+
+    const user = await this.usersService.findById(id);
+
+    if (!user) {
+      console.log('Users Controller: User not found for id:', id);
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    const { passwordHash, ...profile } = user.toObject();
+    console.log('Users Controller: Returning profile for user:', user.email);
+    return {
+      _id: profile._id,
+      fullName: profile.fullName,
+      email: profile.email,
+      phone: profile.phone,
+      avatarUrl: profile.avatarUrl,
+      birthDate: profile.birthDate,
+      country: profile.country,
+      city: profile.city,
+      settings: profile.settings,
+      storyHistory: profile.storyHistory,
+      purchaseHistory: profile.purchaseHistory,
+      role: profile.role,
+      status: profile.status,
+      createdAt: profile.createdAt,
+      updatedAt: profile.updatedAt,
+      lastLogin: profile.lastLogin
+    };
+  }
+
+  @Put('profile')
+  async updateProfile(@Req() req: any, @Body() updateData: any) {
+    console.log('Users Controller: updateProfile called');
+    console.log('Users Controller: Request user:', req.user);
+    console.log('Users Controller: Update data received:', updateData);
+
+    const user = await this.usersService.update(req.user.userId, updateData);
+    console.log('Users Controller: Update result:', user);
+
+    if (!user) {
+      console.log('Users Controller: Update failed - no user returned');
+      throw new HttpException('Failed to update profile', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    console.log('Users Controller: Profile updated successfully for user:', user.email);
+    return user;
+  }
+
+  @Get('profile/stories')
+  async getUserStories(@Req() req: any) {
+    console.log('Users Controller: getUserStories called');
+    const user = await this.usersService.findById(req.user.userId);
+
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    return user.storyHistory || [];
+  }
+
+  @Get('profile/purchases')
+  async getUserPurchases(@Req() req: any) {
+    console.log('Users Controller: getUserPurchases called');
+    const user = await this.usersService.findById(req.user.userId);
+
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    return user.purchaseHistory || [];
   }
 
   // Endpoints administrateur
@@ -45,6 +146,30 @@ export class UsersController {
   @Get()
   async getAllUsers(@Query() query: QueryUsersDto): Promise<PaginatedUsersResponse> {
     return this.usersService.findAll(query);
+  }
+
+  @Roles('admin')
+  @Get(':id/stories')
+  async getUserStoriesAdmin(@Param('id') id: string) {
+    const user = await this.usersService.findById(id);
+
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    return user.storyHistory || [];
+  }
+
+  @Roles('admin')
+  @Get(':id/purchases')
+  async getUserPurchasesAdmin(@Param('id') id: string) {
+    const user = await this.usersService.findById(id);
+
+    if (!user) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    return user.purchaseHistory || [];
   }
 
   @Roles('admin')
@@ -69,8 +194,7 @@ export class UsersController {
     }
 
     const user = await this.usersService.create(createUserDto);
-    const { passwordHash, ...userResponse } = user.toObject();
-    return userResponse;
+    return this.usersService.findOne(user._id.toString());
   }
 
   @Roles('admin')
@@ -80,7 +204,7 @@ export class UsersController {
     @Body() updateUserDto: UpdateUserDto
   ): Promise<UserResponse> {
     // Vérifier si l'utilisateur existe
-    const existingUser = await this.usersService.findOne(id);
+    const existingUser = await this.usersService.findById(id);
     if (!existingUser) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
@@ -94,7 +218,7 @@ export class UsersController {
     }
 
     const updatedUser = await this.usersService.update(id, updateUserDto);
-    
+
     if (!updatedUser) {
       throw new HttpException('Failed to update user', HttpStatus.INTERNAL_SERVER_ERROR);
     }

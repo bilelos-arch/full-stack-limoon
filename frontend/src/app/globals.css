@@ -4,12 +4,63 @@
 @import '@react-pdf-viewer/default-layout/lib/styles/index.css';
 
 
-@custom-variant dark (&:is(.dark *));
+.font-poppins {
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Hauteur spécifique pour la navbar */
+.h-25 {
+  height: 100px;
+}
+
+/* Styles pour les boutons de la navbar */
+.btn-primary-outline {
+  all: unset;
+  align-items: center;
+  border: 1px solid;
+  border-color: var(--warning-1);
+  border-radius: 50px;
+  box-sizing: border-box;
+  display: flex;
+  height: 50px;
+  justify-content: center;
+  padding: 10px;
+  position: relative;
+  width: 150px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-primary-outline:hover {
+  background-color: var(--warning-1);
+  color: white;
+}
+
+.btn-primary {
+  all: unset;
+  align-items: center;
+  background-color: var(--warning-1);
+  border-radius: 50px;
+  box-sizing: border-box;
+  display: flex;
+  height: 50px;
+  justify-content: center;
+  padding: 10px;
+  position: relative;
+  width: 150px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background-color: #e6b800;
+}
+
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter);
+  --font-sans: var(--font-poppins);
   --font-mono: system-ui, -apple-system, sans-serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -59,6 +110,8 @@
   --gray-700: oklch(0.25 0 0);
   --gray-800: oklch(0.15 0 0);
   --gray-900: oklch(0.05 0 0);
+  --title: #2E2E2E;
+  --warning-1: #F7C900;
   
   /* Palette de couleurs Limoon officielle */
   --citron: #F7C900;      /* Jaune citron - couleur principale */
@@ -73,33 +126,35 @@
   --accent-lemon-light: #FFF7CC;  /* Version allégée du jaune citron */
   --accent-lime-light: #F0FFCC;   /* Version allégée du vert menthe */
 
-  /* Nouvelle palette pour la page d'accueil moderne */
-  --primary-dark: #0E0A1C;       /* Noir profond */
-  --secondary-dark: #181433;     /* Violet profond */
-  --accent-violet: #5A4FF0;      /* Violet accent */
-  --accent-orange: #FF6B00;      /* Orange accent */
-  --accent-lime-green: #C6FF00;  /* Vert lime accent */
-  --pure-white: #FFFFFF;         /* Blanc pur */
+  /* Palette "Rêve vif" pour LIM∞N */
+  --corail: #FF7B54;             /* Orange corail vif et chaleureux */
+  --bleu-vif: #3E7BFA;           /* Bleu vif et rassurant */
+  --vert-menthe: #00B894;        /* Vert menthe frais */
+  --blanc-casse: #FDFBF9;        /* Blanc cassé doux et lumineux */
+  --lavande-pale: #F4F0FF;       /* Lavande pâle pour alterner les sections */
+  --gris-noir: #1A1A1A;          /* Gris-noir élégant et lisible */
+  --blanc-pur: #FFFFFF;          /* Blanc pur pour contraste */
+  --jaune-miel: #FFD93D;         /* Jaune miel pour accents décoratifs */
   
   /* Couleurs principales - palette Limoon */
-  --background: var(--blanc);
-  --foreground: var(--gris-doux);
+  --background: var(--blanc-casse);
+  --foreground: var(--gris-noir);
   --card: oklch(1 0 0);
   --card-foreground: var(--gris-doux);
   --popover: oklch(1 0 0);
   --popover-foreground: var(--gris-doux);
-  --primary: var(--gris-doux);
-  --primary-foreground: var(--blanc);
-  --secondary: var(--gris-clair);
-  --secondary-foreground: var(--gris-doux);
-  --muted: var(--gris-clair);
+  --primary: var(--bleu-vif);
+  --primary-foreground: var(--blanc-pur);
+  --secondary: var(--lavande-pale);
+  --secondary-foreground: var(--gris-noir);
+  --muted: var(--lavande-pale);
   --muted-foreground: oklch(0.45 0 0);
-  --accent: var(--gris-clair);
-  --accent-foreground: var(--gris-doux);
+  --accent: var(--lavande-pale);
+  --accent-foreground: var(--gris-noir);
   --destructive: oklch(0.65 0.25 20);
-  --border: var(--gris-clair);
+  --border: var(--lavande-pale);
   --input: oklch(1 0 0);
-  --ring: var(--citron);
+  --ring: var(--bleu-vif);
   --chart-1: var(--gris-doux);
   --chart-2: oklch(0.45 0 0);
   --chart-3: oklch(0.65 0 0);
@@ -115,40 +170,6 @@
   --sidebar-ring: var(--citron);
 }
 
-.dark {
-  /* Mode sombre avec palette neutre */
-  --background: var(--gray-900);
-  --foreground: var(--gray-100);
-  --card: var(--gray-800);
-  --card-foreground: var(--gray-100);
-  --popover: var(--gray-800);
-  --popover-foreground: var(--gray-100);
-  --primary: var(--gray-300);
-  --primary-foreground: var(--gray-900);
-  --secondary: var(--gray-800);
-  --secondary-foreground: var(--gray-200);
-  --muted: var(--gray-800);
-  --muted-foreground: var(--gray-400);
-  --accent: var(--gray-700);
-  --accent-foreground: var(--gray-200);
-  --destructive: oklch(0.65 0.25 20);
-  --border: var(--gray-700);
-  --input: var(--gray-800);
-  --ring: var(--gray-500);
-  --chart-1: var(--gray-400);
-  --chart-2: var(--gray-500);
-  --chart-3: var(--gray-600);
-  --chart-4: var(--gray-700);
-  --chart-5: var(--gray-800);
-  --sidebar: var(--gray-800);
-  --sidebar-foreground: var(--gray-200);
-  --sidebar-primary: var(--gray-300);
-  --sidebar-primary-foreground: var(--gray-900);
-  --sidebar-accent: var(--gray-700);
-  --sidebar-accent-foreground: var(--gray-200);
-  --sidebar-border: var(--gray-700);
-  --sidebar-ring: var(--gray-500);
-}
 
 @layer base {
   * {
@@ -157,20 +178,14 @@
   body {
     @apply bg-background text-foreground;
     /* Configuration robuste des fallback fonts pour garantir la compatibilité */
-    font-family: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    font-family: var(--font-poppins), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
     background-image:
-      radial-gradient(circle at 20% 20%, var(--gray-100) 0%, transparent 50%),
-      radial-gradient(circle at 80% 80%, var(--gray-50) 0%, transparent 50%),
+      radial-gradient(circle at 20% 20%, var(--lavande-pale) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, var(--blanc-casse) 0%, transparent 50%),
       radial-gradient(circle at 40% 60%, oklch(0.98 0 0) 0%, transparent 50%);
     background-attachment: fixed;
   }
   
-  .dark body {
-    background-image:
-      radial-gradient(circle at 20% 20%, var(--gray-800) 0%, transparent 50%),
-      radial-gradient(circle at 80% 80%, var(--gray-900) 0%, transparent 50%),
-      radial-gradient(circle at 40% 60%, var(--gray-950) 0%, transparent 50%);
-  }
 }
 
 @layer utilities {
@@ -193,24 +208,17 @@
     background-clip: text;
   }
 
-  /* Nouvelles utilitaires pour la page d'accueil moderne */
-  .bg-gradient-modern {
-    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--secondary-dark) 100%);
-  }
-  
-  .bg-gradient-violet {
-    background: linear-gradient(135deg, var(--accent-violet) 0%, var(--secondary-dark) 100%);
-  }
-  
-  .text-gradient-violet {
-    background: linear-gradient(135deg, var(--accent-violet) 0%, var(--accent-orange) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+  /* Utilitaires pour la palette "Rêve vif" */
+  .bg-gradient-hero {
+    background: linear-gradient(135deg, var(--blanc-casse) 0%, var(--lavande-pale) 100%);
   }
 
-  .text-gradient-warm {
-    background: linear-gradient(135deg, var(--accent-orange) 0%, var(--accent-lime-green) 100%);
+  .bg-gradient-cta {
+    background: linear-gradient(135deg, var(--bleu-vif) 0%, var(--corail) 100%);
+  }
+
+  .text-gradient-corail {
+    background: linear-gradient(135deg, var(--corail) 0%, var(--bleu-vif) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;

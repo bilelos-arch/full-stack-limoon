@@ -33,10 +33,105 @@ let UsersController = class UsersController {
         }
         const { passwordHash, ...profile } = user.toObject();
         console.log('Users Controller: Returning profile for user:', user.email);
-        return profile;
+        return {
+            _id: profile._id,
+            fullName: profile.fullName,
+            email: profile.email,
+            phone: profile.phone,
+            avatarUrl: profile.avatarUrl,
+            birthDate: profile.birthDate,
+            country: profile.country,
+            city: profile.city,
+            settings: profile.settings,
+            storyHistory: profile.storyHistory,
+            purchaseHistory: profile.purchaseHistory,
+            role: profile.role,
+            status: profile.status,
+            createdAt: profile.createdAt,
+            updatedAt: profile.updatedAt,
+            lastLogin: profile.lastLogin
+        };
+    }
+    async getUserProfileById(id, req) {
+        console.log('Users Controller: getUserProfileById called for id:', id);
+        console.log('Users Controller: Request user object:', req.user);
+        console.log('Users Controller: Request user userId:', req.user?.userId);
+        console.log('Users Controller: Request user role:', req.user?.role);
+        if (req.user.userId !== id && req.user.role !== 'admin') {
+            console.log('Users Controller: Access denied - userId mismatch or not admin');
+            throw new common_1.HttpException('Access denied', common_1.HttpStatus.FORBIDDEN);
+        }
+        const user = await this.usersService.findById(id);
+        if (!user) {
+            console.log('Users Controller: User not found for id:', id);
+            throw new common_1.HttpException('User not found', common_1.HttpStatus.NOT_FOUND);
+        }
+        const { passwordHash, ...profile } = user.toObject();
+        console.log('Users Controller: Returning profile for user:', user.email);
+        return {
+            _id: profile._id,
+            fullName: profile.fullName,
+            email: profile.email,
+            phone: profile.phone,
+            avatarUrl: profile.avatarUrl,
+            birthDate: profile.birthDate,
+            country: profile.country,
+            city: profile.city,
+            settings: profile.settings,
+            storyHistory: profile.storyHistory,
+            purchaseHistory: profile.purchaseHistory,
+            role: profile.role,
+            status: profile.status,
+            createdAt: profile.createdAt,
+            updatedAt: profile.updatedAt,
+            lastLogin: profile.lastLogin
+        };
+    }
+    async updateProfile(req, updateData) {
+        console.log('Users Controller: updateProfile called');
+        console.log('Users Controller: Request user:', req.user);
+        console.log('Users Controller: Update data received:', updateData);
+        const user = await this.usersService.update(req.user.userId, updateData);
+        console.log('Users Controller: Update result:', user);
+        if (!user) {
+            console.log('Users Controller: Update failed - no user returned');
+            throw new common_1.HttpException('Failed to update profile', common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+        console.log('Users Controller: Profile updated successfully for user:', user.email);
+        return user;
+    }
+    async getUserStories(req) {
+        console.log('Users Controller: getUserStories called');
+        const user = await this.usersService.findById(req.user.userId);
+        if (!user) {
+            throw new common_1.HttpException('User not found', common_1.HttpStatus.NOT_FOUND);
+        }
+        return user.storyHistory || [];
+    }
+    async getUserPurchases(req) {
+        console.log('Users Controller: getUserPurchases called');
+        const user = await this.usersService.findById(req.user.userId);
+        if (!user) {
+            throw new common_1.HttpException('User not found', common_1.HttpStatus.NOT_FOUND);
+        }
+        return user.purchaseHistory || [];
     }
     async getAllUsers(query) {
         return this.usersService.findAll(query);
+    }
+    async getUserStoriesAdmin(id) {
+        const user = await this.usersService.findById(id);
+        if (!user) {
+            throw new common_1.HttpException('User not found', common_1.HttpStatus.NOT_FOUND);
+        }
+        return user.storyHistory || [];
+    }
+    async getUserPurchasesAdmin(id) {
+        const user = await this.usersService.findById(id);
+        if (!user) {
+            throw new common_1.HttpException('User not found', common_1.HttpStatus.NOT_FOUND);
+        }
+        return user.purchaseHistory || [];
     }
     async getUserById(id) {
         const user = await this.usersService.findOne(id);
@@ -51,11 +146,10 @@ let UsersController = class UsersController {
             throw new common_1.HttpException('Email already exists', common_1.HttpStatus.CONFLICT);
         }
         const user = await this.usersService.create(createUserDto);
-        const { passwordHash, ...userResponse } = user.toObject();
-        return userResponse;
+        return this.usersService.findOne(user._id.toString());
     }
     async updateUser(id, updateUserDto) {
-        const existingUser = await this.usersService.findOne(id);
+        const existingUser = await this.usersService.findById(id);
         if (!existingUser) {
             throw new common_1.HttpException('User not found', common_1.HttpStatus.NOT_FOUND);
         }
@@ -95,6 +189,36 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "getProfile", null);
 __decorate([
+    (0, common_1.Get)('profile/:id'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "getUserProfileById", null);
+__decorate([
+    (0, common_1.Put)('profile'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "updateProfile", null);
+__decorate([
+    (0, common_1.Get)('profile/stories'),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "getUserStories", null);
+__decorate([
+    (0, common_1.Get)('profile/purchases'),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "getUserPurchases", null);
+__decorate([
     (0, roles_decorator_1.Roles)('admin'),
     (0, common_1.Get)(),
     __param(0, (0, common_1.Query)()),
@@ -102,6 +226,22 @@ __decorate([
     __metadata("design:paramtypes", [query_users_dto_1.QueryUsersDto]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "getAllUsers", null);
+__decorate([
+    (0, roles_decorator_1.Roles)('admin'),
+    (0, common_1.Get)(':id/stories'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "getUserStoriesAdmin", null);
+__decorate([
+    (0, roles_decorator_1.Roles)('admin'),
+    (0, common_1.Get)(':id/purchases'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "getUserPurchasesAdmin", null);
 __decorate([
     (0, roles_decorator_1.Roles)('admin'),
     (0, common_1.Get)(':id'),

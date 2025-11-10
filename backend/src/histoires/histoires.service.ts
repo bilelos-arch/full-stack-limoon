@@ -354,7 +354,7 @@ export class HistoiresService {
         this.logger.error(`[DEBUG] User ${userId} not found - returned null/undefined`);
         throw new NotFoundException('User not found');
       }
-      this.logger.log(`[DEBUG] User ${userId} found: ${user.name || 'No name'}`);
+      this.logger.log(`[DEBUG] User ${userId} found: ${user.fullName || 'No name'}`);
       this.logger.log(`[DEBUG] User object: ${JSON.stringify(user, null, 2)}`);
     } catch (error) {
       this.logger.error(`[DEBUG] User ${userId} not found: ${error.message}`);

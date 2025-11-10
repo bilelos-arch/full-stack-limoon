@@ -18,8 +18,8 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
     constructor(usersService) {
         super({
             jwtFromRequest: passport_jwt_1.ExtractJwt.fromExtractors([
-                (req) => req.cookies?.accessToken,
                 passport_jwt_1.ExtractJwt.fromAuthHeaderAsBearerToken(),
+                (req) => req.cookies?.accessToken,
             ]),
             ignoreExpiration: false,
             secretOrKey: process.env.JWT_SECRET || 'default-secret',
@@ -28,6 +28,7 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
     }
     async validate(payload) {
         console.log('JWT Strategy: Validating token payload:', payload);
+        console.log('JWT Strategy: Payload sub (userId):', payload.sub);
         const user = await this.usersService.findById(payload.sub);
         console.log('JWT Strategy: User found:', !!user);
         if (!user) {
@@ -35,6 +36,7 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
             throw new common_1.UnauthorizedException();
         }
         console.log('JWT Strategy: Validation successful for user:', user.email);
+        console.log('JWT Strategy: Returning user object:', { userId: payload.sub, email: payload.email, role: payload.role });
         return { userId: payload.sub, email: payload.email, role: payload.role };
     }
 };

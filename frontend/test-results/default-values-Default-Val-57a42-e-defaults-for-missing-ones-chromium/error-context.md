@@ -1,0 +1,146 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - link "LIM∞N" [ref=e4] [cursor=pointer]:
+      - /url: /
+      - generic [ref=e5]: LIM∞N
+    - generic [ref=e6]:
+      - link "Accueil" [ref=e7] [cursor=pointer]:
+        - /url: /
+      - link "Histoires" [ref=e8] [cursor=pointer]:
+        - /url: /histoires
+      - link "Créer" [ref=e9] [cursor=pointer]:
+        - /url: /creer
+      - link "À propos" [ref=e10] [cursor=pointer]:
+        - /url: /le-concept
+      - link "Contact" [ref=e11] [cursor=pointer]:
+        - /url: /contact
+    - generic [ref=e13]:
+      - link "Connexion" [ref=e14] [cursor=pointer]:
+        - /url: /login
+      - link "S'inscrire" [ref=e15] [cursor=pointer]:
+        - /url: /register
+  - generic [ref=e17]:
+    - generic [ref=e18]:
+      - generic [ref=e19]: Inscription
+      - paragraph [ref=e20]: Créez votre compte
+    - generic [ref=e22]:
+      - generic [ref=e23]:
+        - generic [ref=e24]: Email
+        - textbox "Email" [ref=e25]:
+          - /placeholder: votre@email.com
+          - text: admin-test@example.com
+      - generic [ref=e26]:
+        - generic [ref=e27]: Mot de passe
+        - textbox "Mot de passe" [ref=e28]:
+          - /placeholder: Votre mot de passe
+          - text: password123
+      - generic [ref=e29]:
+        - generic [ref=e30]: Nom
+        - textbox "Nom" [ref=e31]:
+          - /placeholder: Votre nom
+          - text: Admin Test User
+      - generic [ref=e32]:
+        - generic [ref=e33]: Confirmer le mot de passe
+        - textbox "Confirmer le mot de passe" [ref=e34]:
+          - /placeholder: Confirmer votre mot de passe
+          - text: password123
+      - generic [ref=e35]:
+        - generic [ref=e36]: Rôle
+        - combobox "Rôle" [ref=e37]:
+          - option "Utilisateur" [selected]
+          - option "Administrateur"
+      - paragraph [ref=e39]: Internal server error
+      - button "S'inscrire" [ref=e40]
+      - paragraph [ref=e42]:
+        - text: Déjà un compte ?
+        - link "Se connecter" [ref=e43] [cursor=pointer]:
+          - /url: /login
+  - contentinfo [ref=e44]:
+    - generic [ref=e45]:
+      - generic [ref=e46]:
+        - link "Limoon" [ref=e48] [cursor=pointer]:
+          - /url: /
+          - img [ref=e50]
+          - heading "Limoon" [level=2] [ref=e53]
+        - paragraph [ref=e54]: Le livre libre — chaque histoire est unique.
+        - paragraph [ref=e55]: Chaque histoire commence par un prénom.
+      - generic [ref=e56]:
+        - generic [ref=e57]:
+          - heading "Navigation" [level=3] [ref=e58]:
+            - img [ref=e59]
+            - text: Navigation
+          - list [ref=e61]:
+            - listitem [ref=e62]:
+              - link "Le Concept" [ref=e63] [cursor=pointer]:
+                - /url: /le-concept
+                - img [ref=e64]
+                - generic [ref=e66]: Le Concept
+            - listitem [ref=e67]:
+              - link "Créer une histoire" [ref=e68] [cursor=pointer]:
+                - /url: /histoires/creer
+                - img [ref=e69]
+                - generic [ref=e71]: Créer une histoire
+            - listitem [ref=e72]:
+              - link "Boutique" [ref=e73] [cursor=pointer]:
+                - /url: /book-store
+                - img [ref=e74]
+                - generic [ref=e77]: Boutique
+            - listitem [ref=e78]:
+              - link "Contact" [ref=e79] [cursor=pointer]:
+                - /url: /contact
+                - img [ref=e80]
+                - generic [ref=e83]: Contact
+        - generic [ref=e84]:
+          - heading "Légal" [level=3] [ref=e85]:
+            - img [ref=e86]
+            - text: Légal
+          - list [ref=e91]:
+            - listitem [ref=e92]:
+              - link "Politique de confidentialité" [ref=e93] [cursor=pointer]:
+                - /url: /politique-confidentialite
+            - listitem [ref=e94]:
+              - link "Conditions d'utilisation" [ref=e95] [cursor=pointer]:
+                - /url: /conditions-utilisation
+            - listitem [ref=e96]:
+              - link "Mentions légales" [ref=e97] [cursor=pointer]:
+                - /url: /mentions-legales
+        - generic [ref=e98]:
+          - heading "Suivez-nous" [level=3] [ref=e99]:
+            - img [ref=e100]
+            - text: Suivez-nous
+          - generic [ref=e102]:
+            - link "Suivez-nous sur Instagram" [ref=e103] [cursor=pointer]:
+              - /url: https://instagram.com/limoon
+              - img [ref=e104]
+            - link "Suivez-nous sur TikTok" [ref=e107] [cursor=pointer]:
+              - /url: https://tiktok.com/@limoon
+              - img [ref=e108]
+            - link "Suivez-nous sur Facebook" [ref=e112] [cursor=pointer]:
+              - /url: https://facebook.com/limoon
+              - img [ref=e113]
+        - generic [ref=e115]:
+          - heading "Notre Mission" [level=3] [ref=e116]:
+            - img [ref=e117]
+            - text: Notre Mission
+          - paragraph [ref=e119]: Créer des récits uniques qui donnent vie à l'imagination de chaque enfant, transformant leurs prénoms en aventures extraordinaires.
+      - img [ref=e125]
+      - paragraph [ref=e128]:
+        - generic [ref=e129]: © 2025 Liverté — Tous droits réservés.
+        - img [ref=e132]
+  - region "Notifications alt+T"
+  - generic [ref=e138] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=e139]:
+      - img [ref=e140]
+    - generic [ref=e143]:
+      - button "Open issues overlay" [ref=e144]:
+        - generic [ref=e145]:
+          - generic [ref=e146]: "0"
+          - generic [ref=e147]: "1"
+        - generic [ref=e148]: Issue
+      - button "Collapse issues badge" [ref=e149]:
+        - img [ref=e150]
+  - alert [ref=e152]
+```

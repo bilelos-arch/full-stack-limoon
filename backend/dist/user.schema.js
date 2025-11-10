@@ -17,17 +17,77 @@ exports.User = User;
 __decorate([
     (0, mongoose_1.Prop)({ required: true }),
     __metadata("design:type", String)
-], User.prototype, "name", void 0);
+], User.prototype, "fullName", void 0);
 __decorate([
     (0, mongoose_1.Prop)({ required: true, unique: true }),
     __metadata("design:type", String)
 ], User.prototype, "email", void 0);
 __decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], User.prototype, "phone", void 0);
+__decorate([
     (0, mongoose_1.Prop)({ required: true }),
     __metadata("design:type", String)
 ], User.prototype, "passwordHash", void 0);
 __decorate([
-    (0, mongoose_1.Prop)({ required: true, enum: ['admin', 'user'] }),
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], User.prototype, "avatarUrl", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ type: Date }),
+    __metadata("design:type", Date)
+], User.prototype, "birthDate", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], User.prototype, "country", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], User.prototype, "city", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({
+        type: {
+            language: { type: String, default: 'fr' },
+            theme: { type: String, default: 'light' },
+            notifications: { type: Boolean, default: true }
+        },
+        default: {}
+    }),
+    __metadata("design:type", Object)
+], User.prototype, "settings", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({
+        type: [{
+                id: String,
+                title: String,
+                createdAt: Date,
+                category: String,
+                language: String,
+                link: String
+            }],
+        default: []
+    }),
+    __metadata("design:type", Array)
+], User.prototype, "storyHistory", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({
+        type: [{
+                id: String,
+                productName: String,
+                price: Number,
+                date: Date,
+                paymentMethod: String,
+                status: String,
+                invoiceUrl: String
+            }],
+        default: []
+    }),
+    __metadata("design:type", Array)
+], User.prototype, "purchaseHistory", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ required: true, enum: ['admin', 'user'], default: 'user' }),
     __metadata("design:type", String)
 ], User.prototype, "role", void 0);
 __decorate([

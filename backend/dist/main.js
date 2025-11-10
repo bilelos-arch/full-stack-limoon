@@ -10,7 +10,6 @@ async function bootstrap() {
     app.use(cookieParser());
     app.enableCors({
         origin: [
-            'https://full-stack-limoon-t4jt.vercel.app',
             'http://localhost:3000',
         ],
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],

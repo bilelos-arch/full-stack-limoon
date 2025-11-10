@@ -11,7 +11,6 @@ async function bootstrap() {
   app.use(cookieParser());
 app.enableCors({
     origin: [
-      'https://full-stack-limoon-t4jt.vercel.app', // ton frontend
       'http://localhost:3000',                      // pour tests locaux
     ],
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],

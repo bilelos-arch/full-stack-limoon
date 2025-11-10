@@ -45,7 +45,7 @@ let UsersService = class UsersService {
         const filter = { deletedAt: { $exists: false } };
         if (search) {
             filter.$or = [
-                { name: { $regex: search, $options: 'i' } },
+                { fullName: { $regex: search, $options: 'i' } },
                 { email: { $regex: search, $options: 'i' } }
             ];
         }
@@ -84,17 +84,28 @@ let UsersService = class UsersService {
         return user ? this.transformUserResponse(user) : null;
     }
     async update(id, updateUserDto) {
+        console.log('Users Service: update called with id:', id);
+        console.log('Users Service: updateUserDto:', updateUserDto);
         const existingUser = await this.userModel.findOne({ _id: id, deletedAt: { $exists: false } }).exec();
+        console.log('Users Service: existingUser found:', !!existingUser);
         if (!existingUser) {
+            console.log('Users Service: User not found, returning null');
             return null;
         }
         const { password, ...updateData } = updateUserDto;
+        console.log('Users Service: updateData after password removal:', updateData);
         if (password) {
             updateData.passwordHash = await bcrypt.hash(password, 10);
+            console.log('Users Service: Password hashed and added to updateData');
         }
+        console.log('Users Service: Final updateData to apply:', { ...updateData, updatedAt: new Date() });
         const user = await this.userModel
             .findByIdAndUpdate(id, { ...updateData, updatedAt: new Date() }, { new: true })
             .exec();
+        console.log('Users Service: Update result:', user ? 'success' : 'failed');
+        if (user) {
+            console.log('Users Service: Updated user email:', user.email);
+        }
         return user ? this.transformUserResponse(user) : null;
     }
     async remove(id) {
@@ -117,14 +128,21 @@ let UsersService = class UsersService {
         const userObject = user.toObject();
         return {
             _id: userObject._id.toString(),
-            name: userObject.name,
+            fullName: userObject.fullName,
             email: userObject.email,
+            phone: userObject.phone,
+            avatarUrl: userObject.avatarUrl,
+            birthDate: userObject.birthDate,
+            country: userObject.country,
+            city: userObject.city,
+            settings: userObject.settings,
+            storyHistory: userObject.storyHistory || [],
+            purchaseHistory: userObject.purchaseHistory || [],
             role: userObject.role,
             status: userObject.status,
             createdAt: userObject.createdAt,
             updatedAt: userObject.updatedAt,
-            lastLogin: userObject.lastLogin,
-            storiesCount: userObject.storiesCount || 0
+            lastLogin: userObject.lastLogin
         };
     }
 };

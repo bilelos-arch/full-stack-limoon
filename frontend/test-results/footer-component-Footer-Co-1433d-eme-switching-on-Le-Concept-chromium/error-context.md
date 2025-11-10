@@ -1,0 +1,192 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - link "LIM∞N" [ref=e4] [cursor=pointer]:
+      - /url: /
+      - generic [ref=e5]: LIM∞N
+    - generic [ref=e6]:
+      - link "Accueil" [ref=e7] [cursor=pointer]:
+        - /url: /
+      - link "Histoires" [ref=e8] [cursor=pointer]:
+        - /url: /histoires
+      - link "Créer" [ref=e9] [cursor=pointer]:
+        - /url: /creer
+      - link "À propos" [ref=e10] [cursor=pointer]:
+        - /url: /le-concept
+      - link "Contact" [ref=e11] [cursor=pointer]:
+        - /url: /contact
+    - generic [ref=e13]:
+      - link "Connexion" [ref=e14] [cursor=pointer]:
+        - /url: /login
+      - link "S'inscrire" [ref=e15] [cursor=pointer]:
+        - /url: /register
+  - generic [ref=e16]:
+    - banner [ref=e17]:
+      - generic [ref=e18]:
+        - generic [ref=e19]:
+          - img [ref=e20]:
+            - generic [ref=e25]: Liverté
+          - generic [ref=e26]:
+            - heading "Le concept — Liverté" [level=1] [ref=e27]
+            - paragraph [ref=e28]: "Le livre libre : des histoires qui portent le prénom et le cœur de votre enfant."
+        - generic [ref=e29]:
+          - link "Découvrir les histoires" [ref=e30] [cursor=pointer]:
+            - /url: /story
+            - button "Découvrir les histoires" [ref=e31]
+          - link "Mes histoires" [ref=e32] [cursor=pointer]:
+            - /url: /histoires
+            - button "Mes histoires" [ref=e33]
+    - main [ref=e34]:
+      - generic [ref=e35]:
+        - generic [ref=e36]:
+          - heading "Des histoires faites pour eux — et par vous" [level=2] [ref=e37]
+          - paragraph [ref=e38]:
+            - text: Chez
+            - strong [ref=e39]: Liverté
+            - text: ", nous transformons un prénom, une photo ou quelques détails en une aventure sur-mesure. Loin d’un simple remplissage de champs, chaque récit est pensé pour toucher, rassurer, étonner et faire rire votre enfant."
+          - generic [ref=e40]:
+            - generic [ref=e41]:
+              - heading "Rapide & ludique" [level=4] [ref=e42]
+              - paragraph [ref=e43]: En quelques clics, créez une histoire unique et téléchargez le PDF.
+            - generic [ref=e44]:
+              - heading "Sûr & confidentiel" [level=4] [ref=e45]
+              - paragraph [ref=e46]: Les photos et prénoms sont supprimés dès la génération — rien n'est réutilisé.
+          - generic [ref=e47]:
+            - link "Personnaliser une histoire" [ref=e48] [cursor=pointer]:
+              - /url: /story
+              - button "Personnaliser une histoire" [ref=e49]
+            - link "En savoir plus" [ref=e50] [cursor=pointer]:
+              - /url: /about
+              - button "En savoir plus" [ref=e51]
+        - generic [ref=e56]:
+          - generic [ref=e58]: 📘
+          - generic [ref=e59]:
+            - heading "Titre exemple" [level=3] [ref=e60]
+            - paragraph [ref=e61]: Un aperçu de l'histoire personnalisée — prénom, âge, petite phrase.
+            - generic [ref=e62]:
+              - generic [ref=e63]: 3–6 ans
+              - generic [ref=e64]: Aventure
+      - generic [ref=e67]:
+        - article [ref=e68]:
+          - heading "1 — Vous personnalisez" [level=4] [ref=e69]
+          - paragraph [ref=e70]: Prénom, âge, petite photo facultative et quelques choix d’univers. Tout est simple et guidé.
+        - article [ref=e71]:
+          - heading "2 — Nous assemblons" [level=4] [ref=e72]
+          - paragraph [ref=e73]: Notre moteur replace intelligemment les variables dans le texte et adapte la mise en page pour que tout tienne parfaitement.
+        - article [ref=e74]:
+          - heading "3 — Vous recevez" [level=4] [ref=e75]
+          - paragraph [ref=e76]: PDF téléchargeable, aperçu interactif et possibilité d’imprimer ou partager — en toute confidentialité.
+      - generic [ref=e78]:
+        - heading "Une technologie au service des émotions" [level=3] [ref=e79]
+        - paragraph [ref=e80]: "Liverté n'est pas une usine à histoires : c'est un atelier où chaque récit est pensé pour être doux, respectueux et porteur de sens. Les parents choisissent, les enfants vivent l'aventure."
+      - generic [ref=e82]:
+        - generic [ref=e83]:
+          - heading "Confidentialité" [level=4] [ref=e84]
+          - paragraph [ref=e85]: Les données sensibles (photos, prénoms) sont utilisées uniquement pour générer l'histoire et supprimées immédiatement après. Vous gardez le contrôle.
+        - generic [ref=e86]:
+          - heading "Qualité" [level=4] [ref=e87]
+          - paragraph [ref=e88]: Nous travaillons avec des auteurs et des pédagogues pour garantir que chaque histoire soit adaptée à l'âge et bien écrite.
+    - contentinfo [ref=e89]:
+      - generic [ref=e90]:
+        - generic [ref=e91]:
+          - img [ref=e92]:
+            - generic [ref=e97]: Liverté
+          - generic [ref=e98]:
+            - heading "Liverté — Le livre libre" [level=3] [ref=e99]
+            - paragraph [ref=e100]: Histoires personnalisées pour petits héros
+        - navigation [ref=e101]:
+          - link "Accueil" [ref=e102] [cursor=pointer]:
+            - /url: /
+          - link "Histoires" [ref=e103] [cursor=pointer]:
+            - /url: /story
+          - link "Politique de confidentialité" [ref=e104] [cursor=pointer]:
+            - /url: /legal/privacy
+      - generic [ref=e105]: © 2025 Liverté. Tous droits réservés.
+  - contentinfo [ref=e106]:
+    - generic [ref=e107]:
+      - generic [ref=e108]:
+        - link "Limoon" [ref=e110] [cursor=pointer]:
+          - /url: /
+          - img [ref=e112]
+          - heading "Limoon" [level=2] [ref=e115]
+        - paragraph [ref=e116]: Le livre libre — chaque histoire est unique.
+        - paragraph [ref=e117]: Chaque histoire commence par un prénom.
+      - generic [ref=e118]:
+        - generic [ref=e119]:
+          - heading "Navigation" [level=3] [ref=e120]:
+            - img [ref=e121]
+            - text: Navigation
+          - list [ref=e123]:
+            - listitem [ref=e124]:
+              - link "Le Concept" [ref=e125] [cursor=pointer]:
+                - /url: /le-concept
+                - img [ref=e126]
+                - generic [ref=e128]: Le Concept
+            - listitem [ref=e129]:
+              - link "Créer une histoire" [ref=e130] [cursor=pointer]:
+                - /url: /histoires/creer
+                - img [ref=e131]
+                - generic [ref=e133]: Créer une histoire
+            - listitem [ref=e134]:
+              - link "Boutique" [ref=e135] [cursor=pointer]:
+                - /url: /book-store
+                - img [ref=e136]
+                - generic [ref=e139]: Boutique
+            - listitem [ref=e140]:
+              - link "Contact" [ref=e141] [cursor=pointer]:
+                - /url: /contact
+                - img [ref=e142]
+                - generic [ref=e145]: Contact
+        - generic [ref=e146]:
+          - heading "Légal" [level=3] [ref=e147]:
+            - img [ref=e148]
+            - text: Légal
+          - list [ref=e153]:
+            - listitem [ref=e154]:
+              - link "Politique de confidentialité" [ref=e155] [cursor=pointer]:
+                - /url: /politique-confidentialite
+            - listitem [ref=e156]:
+              - link "Conditions d'utilisation" [ref=e157] [cursor=pointer]:
+                - /url: /conditions-utilisation
+            - listitem [ref=e158]:
+              - link "Mentions légales" [ref=e159] [cursor=pointer]:
+                - /url: /mentions-legales
+        - generic [ref=e160]:
+          - heading "Suivez-nous" [level=3] [ref=e161]:
+            - img [ref=e162]
+            - text: Suivez-nous
+          - generic [ref=e164]:
+            - link "Suivez-nous sur Instagram" [ref=e165] [cursor=pointer]:
+              - /url: https://instagram.com/limoon
+              - img [ref=e166]
+            - link "Suivez-nous sur TikTok" [ref=e169] [cursor=pointer]:
+              - /url: https://tiktok.com/@limoon
+              - img [ref=e170]
+            - link "Suivez-nous sur Facebook" [ref=e174] [cursor=pointer]:
+              - /url: https://facebook.com/limoon
+              - img [ref=e175]
+        - generic [ref=e177]:
+          - heading "Notre Mission" [level=3] [ref=e178]:
+            - img [ref=e179]
+            - text: Notre Mission
+          - paragraph [ref=e181]: Créer des récits uniques qui donnent vie à l'imagination de chaque enfant, transformant leurs prénoms en aventures extraordinaires.
+      - img [ref=e187]
+      - paragraph [ref=e190]:
+        - generic [ref=e191]: © 2025 Liverté — Tous droits réservés.
+        - img [ref=e194]
+  - region "Notifications alt+T"
+  - generic [ref=e200] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=e201]:
+      - img [ref=e202]
+    - generic [ref=e205]:
+      - button "Open issues overlay" [ref=e206]:
+        - generic [ref=e207]:
+          - generic [ref=e208]: "0"
+          - generic [ref=e209]: "1"
+        - generic [ref=e210]: Issue
+      - button "Collapse issues badge" [ref=e211]:
+        - img [ref=e212]
+  - alert [ref=e214]
+```

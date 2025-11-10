@@ -1,9 +1,36 @@
 import { Document, Types } from 'mongoose';
 export type UserDocument = User & Document;
 export declare class User {
-    name: string;
+    fullName: string;
     email: string;
+    phone?: string;
     passwordHash: string;
+    avatarUrl?: string;
+    birthDate?: Date;
+    country?: string;
+    city?: string;
+    settings: {
+        language: string;
+        theme: string;
+        notifications: boolean;
+    };
+    storyHistory: {
+        id: string;
+        title: string;
+        createdAt: Date;
+        category: string;
+        language: string;
+        link: string;
+    }[];
+    purchaseHistory: {
+        id: string;
+        productName: string;
+        price: number;
+        date: Date;
+        paymentMethod: string;
+        status: string;
+        invoiceUrl: string;
+    }[];
     role: 'admin' | 'user';
     status: 'active' | 'inactive' | 'suspended';
     lastLogin?: Date;

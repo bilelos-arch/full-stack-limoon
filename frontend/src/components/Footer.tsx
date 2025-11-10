@@ -2,10 +2,9 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { useTheme } from '@/contexts/ThemeContext';
-import { 
-  Instagram, 
-  Facebook, 
+import {
+  Instagram,
+  Facebook,
   BookOpen,
   Heart,
   Sparkles,
@@ -16,9 +15,7 @@ import {
 } from 'lucide-react';
 
 export default function Footer() {
-  const { resolvedTheme } = useTheme();
-
-  const isDark = resolvedTheme === 'dark';
+  const isDark = false;
   
   const bgColor = isDark ? 'bg-gray-900' : 'bg-white';
   const textColor = isDark ? 'text-gray-300' : 'text-gray-700';

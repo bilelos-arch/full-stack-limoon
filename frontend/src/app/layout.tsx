@@ -5,7 +5,6 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { initializeDOMMatrix } from "@/lib/domMatrixPolyfill-safe"; // Polyfill DOMMatrix pour PDF.js
 import { AuthProvider } from "@/components/AuthProvider";
-import { ThemeProvider } from "@/contexts/ThemeContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Toaster } from "sonner";
@@ -54,14 +53,12 @@ export default function RootLayout({
         className={`${inter.variable} font-sans antialiased`}
       >
         <QueryClientProviderWrapper>
-          <ThemeProvider>
-            <AuthProvider>
-              <Navbar />
-              {children}
-              <Footer />
-              <Toaster position="top-right" richColors />
-            </AuthProvider>
-          </ThemeProvider>
+          <AuthProvider>
+             <Navbar />
+             {children}
+             <Footer />
+             <Toaster position="top-right" richColors />
+           </AuthProvider>
         </QueryClientProviderWrapper>
       </body>
     </html>

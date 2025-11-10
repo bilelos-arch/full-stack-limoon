@@ -1,0 +1,270 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - link "LIM∞N" [ref=e4] [cursor=pointer]:
+      - /url: /
+      - generic [ref=e5]: LIM∞N
+    - generic [ref=e6]:
+      - link "Accueil" [ref=e7] [cursor=pointer]:
+        - /url: /
+      - link "Histoires" [ref=e8] [cursor=pointer]:
+        - /url: /histoires
+      - link "Créer" [ref=e9] [cursor=pointer]:
+        - /url: /creer
+      - link "À propos" [ref=e10] [cursor=pointer]:
+        - /url: /le-concept
+      - link "Contact" [ref=e11] [cursor=pointer]:
+        - /url: /contact
+    - generic [ref=e13]:
+      - link "Connexion" [ref=e14] [cursor=pointer]:
+        - /url: /login
+      - link "S'inscrire" [ref=e15] [cursor=pointer]:
+        - /url: /register
+  - generic [ref=e16]:
+    - generic [ref=e19]:
+      - generic [ref=e20]:
+        - generic [ref=e22]: ✨ Magie personnalisée pour chaque enfant
+        - heading "Créez une histoire magique, où votre enfant devient le héros." [level=1] [ref=e23]:
+          - generic [ref=e24]: Créez une histoire
+          - text: magique, où votre
+          - generic [ref=e25]: enfant devient le héros.
+        - paragraph [ref=e26]: Offrez-lui une aventure unique, personnalisée à son image.
+        - generic [ref=e27]:
+          - link "Commencer maintenant" [ref=e28] [cursor=pointer]:
+            - /url: /register
+            - img
+            - text: Commencer maintenant
+            - img
+          - link "Découvrir les histoires" [ref=e29] [cursor=pointer]:
+            - /url: /le-concept
+            - img
+            - text: Découvrir les histoires
+        - generic [ref=e30]:
+          - generic [ref=e31]:
+            - img [ref=e32]
+            - generic [ref=e35]: Livraison en 72h
+          - generic [ref=e36]:
+            - img [ref=e37]
+            - generic [ref=e39]: 4.9/5 par les parents
+          - generic [ref=e40]:
+            - img [ref=e41]
+            - generic [ref=e43]: Impression éco-responsable
+      - generic [ref=e47]:
+        - generic [ref=e48]: 📚
+        - paragraph [ref=e49]: Illustration animée
+        - paragraph [ref=e50]: Enfant lisant une histoire
+    - generic [ref=e52]:
+      - generic [ref=e53]:
+        - generic [ref=e54]: Comment ça marche
+        - heading "Simple comme 1, 2, 3" [level=2] [ref=e55]
+        - paragraph [ref=e56]: Créer une histoire personnalisée est maintenant à la portée de tous. En trois étapes simples, transformez l'imagination de votre enfant en réalité.
+      - generic [ref=e57]:
+        - generic [ref=e59]:
+          - generic [ref=e60]:
+            - generic [ref=e62]: "01"
+            - img [ref=e64]
+            - generic [ref=e67]: Choisissez une histoire
+          - generic [ref=e69]: Parcourez notre bibliothèque d'histoires et sélectionnez celle qui correspond aux goûts de votre enfant.
+        - generic [ref=e71]:
+          - generic [ref=e72]:
+            - generic [ref=e74]: "02"
+            - img [ref=e76]
+            - generic [ref=e82]: Personnalisez les personnages
+          - generic [ref=e84]: Entrez le prénom de votre enfant et personnalisez les personnages selon ses préférences.
+        - generic [ref=e86]:
+          - generic [ref=e87]:
+            - generic [ref=e89]: "03"
+            - img [ref=e91]
+            - generic [ref=e93]: Recevez votre livre
+          - generic [ref=e95]: Votre histoire personnalisée est livrée chez vous en 72h, prête à être lue et imprimée.
+    - generic [ref=e97]:
+      - generic [ref=e98]:
+        - generic [ref=e99]: Nos histoires
+        - heading "Découvrez nos histoires personnalisées" [level=2] [ref=e100]
+        - paragraph [ref=e101]: Découvrez quelques-unes des histoires exceptionnelles créées pour les enfants du monde entier.
+      - generic [ref=e102]:
+        - generic [ref=e104]:
+          - generic [ref=e105]:
+            - generic [ref=e106]: 🐉
+            - generic [ref=e107]: Aventure & Magie
+          - generic [ref=e108]:
+            - heading "Emma et le Dragon Magique" [level=3] [ref=e109]
+            - paragraph [ref=e110]: Une aventure où Emma découvre qu'elle peut communiquer avec les dragons de la vallée enchantée.
+            - button "Personnaliser" [ref=e111]
+        - generic [ref=e113]:
+          - generic [ref=e114]:
+            - generic [ref=e115]: 🏝️
+            - generic [ref=e116]: Exploration
+          - generic [ref=e117]:
+            - heading "Lucas et l'Île aux Trésors" [level=3] [ref=e118]
+            - paragraph [ref=e119]: Lucas part à la recherche d'un trésor perdu dans une île mystérieuse avec son ami机器人.
+            - button "Personnaliser" [ref=e120]
+        - generic [ref=e122]:
+          - generic [ref=e123]:
+            - generic [ref=e124]: 🌲✨
+            - generic [ref=e125]: Fantaisie
+          - generic [ref=e126]:
+            - heading "Léa et la Forêt des Rêves" [level=3] [ref=e127]
+            - paragraph [ref=e128]: Léa explore une forêt magique où tous les arbres racontent des histoires extraordinaires.
+            - button "Personnaliser" [ref=e129]
+    - generic [ref=e131]:
+      - generic [ref=e132]:
+        - generic [ref=e133]: Témoignages
+        - heading "Ils ont adoré leurs histoires" [level=2] [ref=e134]
+        - paragraph [ref=e135]: Découvrez comment Limoon crée des moments magiques dans les foyers du monde entier.
+      - generic [ref=e136]:
+        - generic [ref=e139]:
+          - generic [ref=e140]:
+            - generic [ref=e141]: 👩‍🦰
+            - generic [ref=e142]:
+              - heading "Sophie Martin" [level=4] [ref=e143]
+              - paragraph [ref=e144]: Maman d'Emma, 6 ans
+          - img [ref=e145]
+          - paragraph [ref=e148]: "\"Emma se reconnaît immédiatement dans chaque histoire ! C'est magique de voir ses yeux briller quand elle devient l'héroïne de sa propre aventure.\""
+          - generic [ref=e149]:
+            - img [ref=e150]
+            - img [ref=e152]
+            - img [ref=e154]
+            - img [ref=e156]
+            - img [ref=e158]
+        - generic [ref=e162]:
+          - generic [ref=e163]:
+            - generic [ref=e164]: 👨‍🦱
+            - generic [ref=e165]:
+              - heading "Marc Dubois" [level=4] [ref=e166]
+              - paragraph [ref=e167]: Papa de Lucas, 8 ans
+          - img [ref=e168]
+          - paragraph [ref=e171]: "\"Les histoires Limoon ont créé un rituel magnifique avant le coucher. Lucas attend avec impatience sa nouvelle aventure chaque semaine.\""
+          - generic [ref=e172]:
+            - img [ref=e173]
+            - img [ref=e175]
+            - img [ref=e177]
+            - img [ref=e179]
+            - img [ref=e181]
+        - generic [ref=e185]:
+          - generic [ref=e186]:
+            - generic [ref=e187]: 👩‍🦳
+            - generic [ref=e188]:
+              - heading "Camille Leroy" [level=4] [ref=e189]
+              - paragraph [ref=e190]: Maman de jumeaux
+          - img [ref=e191]
+          - paragraph [ref=e194]: "\"Enfin une façon créative de faire aimer la lecture à mes enfants ! Ils peuvent être ensemble dans la même histoire tout en ayant chacun leur moment.\""
+          - generic [ref=e195]:
+            - img [ref=e196]
+            - img [ref=e198]
+            - img [ref=e200]
+            - img [ref=e202]
+            - img [ref=e204]
+    - generic [ref=e207]:
+      - heading "Limoon en chiffres" [level=2] [ref=e209]
+      - generic [ref=e210]:
+        - generic [ref=e211]:
+          - generic [ref=e212]: 📚
+          - generic [ref=e213]: "+100"
+          - generic [ref=e214]: histoires personnalisées
+        - generic [ref=e215]:
+          - generic [ref=e216]: 🚚
+          - generic [ref=e217]: 72h
+          - generic [ref=e218]: livraison
+        - generic [ref=e219]:
+          - generic [ref=e220]: ⭐
+          - generic [ref=e221]: 4.9/5
+          - generic [ref=e222]: note moyenne
+      - link "Créer mon histoire maintenant" [ref=e224] [cursor=pointer]:
+        - /url: /register
+        - img
+        - text: Créer mon histoire maintenant
+        - img
+    - generic [ref=e226]:
+      - heading "Prêt à vivre une aventure unique ?" [level=2] [ref=e227]
+      - paragraph [ref=e228]: Chaque histoire commence par un prénom. Le vôtre.
+      - link "Commencer maintenant" [ref=e229] [cursor=pointer]:
+        - /url: /register
+  - contentinfo [ref=e230]:
+    - generic [ref=e231]:
+      - generic [ref=e232]:
+        - link "Limoon" [ref=e234] [cursor=pointer]:
+          - /url: /
+          - img [ref=e236]
+          - heading "Limoon" [level=2] [ref=e239]
+        - paragraph [ref=e240]: Le livre libre — chaque histoire est unique.
+        - paragraph [ref=e241]: Chaque histoire commence par un prénom.
+      - generic [ref=e242]:
+        - generic [ref=e243]:
+          - heading "Navigation" [level=3] [ref=e244]:
+            - img [ref=e245]
+            - text: Navigation
+          - list [ref=e247]:
+            - listitem [ref=e248]:
+              - link "Le Concept" [ref=e249] [cursor=pointer]:
+                - /url: /le-concept
+                - img [ref=e250]
+                - generic [ref=e252]: Le Concept
+            - listitem [ref=e253]:
+              - link "Créer une histoire" [ref=e254] [cursor=pointer]:
+                - /url: /histoires/creer
+                - img [ref=e255]
+                - generic [ref=e257]: Créer une histoire
+            - listitem [ref=e258]:
+              - link "Boutique" [ref=e259] [cursor=pointer]:
+                - /url: /book-store
+                - img [ref=e260]
+                - generic [ref=e263]: Boutique
+            - listitem [ref=e264]:
+              - link "Contact" [ref=e265] [cursor=pointer]:
+                - /url: /contact
+                - img [ref=e266]
+                - generic [ref=e269]: Contact
+        - generic [ref=e270]:
+          - heading "Légal" [level=3] [ref=e271]:
+            - img [ref=e272]
+            - text: Légal
+          - list [ref=e277]:
+            - listitem [ref=e278]:
+              - link "Politique de confidentialité" [ref=e279] [cursor=pointer]:
+                - /url: /politique-confidentialite
+            - listitem [ref=e280]:
+              - link "Conditions d'utilisation" [ref=e281] [cursor=pointer]:
+                - /url: /conditions-utilisation
+            - listitem [ref=e282]:
+              - link "Mentions légales" [ref=e283] [cursor=pointer]:
+                - /url: /mentions-legales
+        - generic [ref=e284]:
+          - heading "Suivez-nous" [level=3] [ref=e285]:
+            - img [ref=e286]
+            - text: Suivez-nous
+          - generic [ref=e288]:
+            - link "Suivez-nous sur Instagram" [ref=e289] [cursor=pointer]:
+              - /url: https://instagram.com/limoon
+              - img [ref=e290]
+            - link "Suivez-nous sur TikTok" [ref=e293] [cursor=pointer]:
+              - /url: https://tiktok.com/@limoon
+              - img [ref=e294]
+            - link "Suivez-nous sur Facebook" [ref=e298] [cursor=pointer]:
+              - /url: https://facebook.com/limoon
+              - img [ref=e299]
+        - generic [ref=e301]:
+          - heading "Notre Mission" [level=3] [ref=e302]:
+            - img [ref=e303]
+            - text: Notre Mission
+          - paragraph [ref=e305]: Créer des récits uniques qui donnent vie à l'imagination de chaque enfant, transformant leurs prénoms en aventures extraordinaires.
+      - img [ref=e311]
+      - paragraph [ref=e314]:
+        - generic [ref=e315]: © 2025 Liverté — Tous droits réservés.
+        - img [ref=e318]
+  - region "Notifications alt+T"
+  - generic [ref=e324] [cursor=pointer]:
+    - button "Open Next.js Dev Tools" [ref=e325]:
+      - img [ref=e326]
+    - generic [ref=e329]:
+      - button "Open issues overlay" [ref=e330]:
+        - generic [ref=e331]:
+          - generic [ref=e332]: "0"
+          - generic [ref=e333]: "1"
+        - generic [ref=e334]: Issue
+      - button "Collapse issues badge" [ref=e335]:
+        - img [ref=e336]
+  - alert [ref=e338]
+```
