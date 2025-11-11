@@ -10,6 +10,8 @@ export declare class ImageMappingService {
     private readonly uploadsDir;
     private readonly tempImagesDir;
     private readonly histoiresImagesDir;
+    private readonly previewsDir;
+    private readonly pdfsDir;
     constructor();
     private ensureDirectoriesExist;
     findImageByVariable(variableName: string, imageVariableValue: string, uploadedImageUrls?: string[]): Promise<ImageMappingResult>;

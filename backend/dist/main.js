@@ -19,7 +19,11 @@ async function bootstrap() {
     app.use('/uploads', express.static((0, path_1.join)(process.cwd(), 'uploads')));
     app.use('/uploads/previews', express.static((0, path_1.join)(process.cwd(), 'uploads/previews')));
     app.use('/uploads/temp-previews', express.static((0, path_1.join)(process.cwd(), 'uploads/temp-previews')));
+    app.use('/uploads/temp-images', express.static((0, path_1.join)(process.cwd(), 'uploads/temp-images')));
+    app.use('/uploads/pdfs', express.static((0, path_1.join)(process.cwd(), 'uploads/pdfs')));
     app.use('/temp-previews', express.static((0, path_1.join)(process.cwd(), 'uploads/temp-previews')));
+    app.use(express.json({ limit: '50mb' }));
+    app.use(express.urlencoded({ limit: '50mb', extended: true }));
     await app.listen(process.env.PORT || 10000);
 }
 bootstrap();

@@ -21,14 +21,13 @@ const create_histoire_dto_1 = require("./dto/create-histoire.dto");
 const update_histoire_dto_1 = require("./dto/update-histoire.dto");
 const jwt_auth_guard_1 = require("../jwt-auth.guard");
 const platform_express_1 = require("@nestjs/platform-express");
-const multer_storage_cloudinary_1 = require("multer-storage-cloudinary");
-const cloudinary_service_1 = require("../cloudinary.service");
-const cloudinary_1 = require("cloudinary");
+const multer_1 = require("multer");
+const path_1 = require("path");
+const fs_1 = require("fs");
 let HistoiresController = HistoiresController_1 = class HistoiresController {
-    constructor(histoiresService, templatesService, cloudinaryService) {
+    constructor(histoiresService, templatesService) {
         this.histoiresService = histoiresService;
         this.templatesService = templatesService;
-        this.cloudinaryService = cloudinaryService;
         this.logger = new common_1.Logger(HistoiresController_1.name);
     }
     async findByTemplate(templateId) {
@@ -90,7 +89,7 @@ let HistoiresController = HistoiresController_1 = class HistoiresController {
                         }
                         uploadedImageUrls.push(file.path);
                         imageVariableMapping[variableName] = file.path;
-                        this.logger.log(`[CONTROLLER] ✅ Mapped preview image variable "${variableName}" to Cloudinary URL "${file.path}"`);
+                        this.logger.log(`[CONTROLLER] ✅ Mapped preview image variable "${variableName}" to local path "${file.path}"`);
                     }
                 }
                 catch (error) {
@@ -183,7 +182,7 @@ let HistoiresController = HistoiresController_1 = class HistoiresController {
                         }
                         uploadedImageUrls.push(file.path);
                         imageVariableMapping[variableName] = file.path;
-                        this.logger.log(`[CONTROLLER] ✅ Mapped generation image variable "${variableName}" to Cloudinary URL "${file.path}"`);
+                        this.logger.log(`[CONTROLLER] ✅ Mapped generation image variable "${variableName}" to local path "${file.path}"`);
                     }
                 }
                 catch (error) {
@@ -329,16 +328,22 @@ __decorate([
         { name: 'images_objet', maxCount: 1 },
         { name: 'images_autre', maxCount: 1 }
     ], {
-        storage: new multer_storage_cloudinary_1.CloudinaryStorage({
-            cloudinary: cloudinary_1.v2,
-            params: {
-                folder: 'limoon/temp-images',
-                allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
-                public_id: (req, file) => {
-                    const variableName = (file.fieldname || '').replace('images_', '');
-                    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-                    return `${variableName}-${uniqueSuffix}`;
-                },
+        storage: (0, multer_1.diskStorage)({
+            destination: (req, file, callback) => {
+                const uploadPath = (0, path_1.join)(process.cwd(), 'uploads', 'temp-images');
+                try {
+                    (0, fs_1.mkdirSync)(uploadPath, { recursive: true });
+                    callback(null, uploadPath);
+                }
+                catch (error) {
+                    callback(error, uploadPath);
+                }
+            },
+            filename: (req, file, callback) => {
+                const variableName = (file.fieldname || '').replace('images_', '');
+                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+                const extension = (0, path_1.extname)(file.originalname);
+                callback(null, `${variableName}-${uniqueSuffix}${extension}`);
             },
         }),
         fileFilter: (req, file, callback) => {
@@ -356,7 +361,7 @@ __decorate([
             callback(null, true);
         },
         limits: {
-            fileSize: 5 * 1024 * 1024,
+            fileSize: 50 * 1024 * 1024,
             files: 10,
         },
     })),
@@ -391,16 +396,22 @@ __decorate([
         { name: 'images_objet', maxCount: 1 },
         { name: 'images_autre', maxCount: 1 }
     ], {
-        storage: new multer_storage_cloudinary_1.CloudinaryStorage({
-            cloudinary: cloudinary_1.v2,
-            params: {
-                folder: 'limoon/temp-images',
-                allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
-                public_id: (req, file) => {
-                    const variableName = (file.fieldname || '').replace('images_', '');
-                    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-                    return `${variableName}-${uniqueSuffix}`;
-                },
+        storage: (0, multer_1.diskStorage)({
+            destination: (req, file, callback) => {
+                const uploadPath = (0, path_1.join)(process.cwd(), 'uploads', 'temp-images');
+                try {
+                    (0, fs_1.mkdirSync)(uploadPath, { recursive: true });
+                    callback(null, uploadPath);
+                }
+                catch (error) {
+                    callback(error, uploadPath);
+                }
+            },
+            filename: (req, file, callback) => {
+                const variableName = (file.fieldname || '').replace('images_', '');
+                const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+                const extension = (0, path_1.extname)(file.originalname);
+                callback(null, `${variableName}-${uniqueSuffix}${extension}`);
             },
         }),
         fileFilter: (req, file, callback) => {
@@ -418,7 +429,7 @@ __decorate([
             callback(null, true);
         },
         limits: {
-            fileSize: 5 * 1024 * 1024,
+            fileSize: 50 * 1024 * 1024,
             files: 10,
         },
     })),
@@ -440,7 +451,6 @@ __decorate([
 exports.HistoiresController = HistoiresController = HistoiresController_1 = __decorate([
     (0, common_1.Controller)('histoires'),
     __metadata("design:paramtypes", [histoires_service_1.HistoiresService,
-        templates_service_1.TemplatesService,
-        cloudinary_service_1.CloudinaryService])
+        templates_service_1.TemplatesService])
 ], HistoiresController);
 //# sourceMappingURL=histoires.controller.js.map

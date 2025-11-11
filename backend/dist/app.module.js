@@ -13,6 +13,10 @@ const auth_module_1 = require("./auth.module");
 const users_module_1 = require("./users.module");
 const templates_module_1 = require("./templates.module");
 const histoires_module_1 = require("./histoires/histoires.module");
+const admin_controller_1 = require("./admin.controller");
+const histoire_schema_1 = require("./histoires/schemas/histoire.schema");
+const user_schema_1 = require("./user.schema");
+const template_schema_1 = require("./template.schema");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -20,11 +24,17 @@ exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
             mongoose_1.MongooseModule.forRoot(process.env.MONGODB_URI || 'mongodb+srv://bilelos00:Kaspersky002@myapp.h9fam1j.mongodb.net/'),
+            mongoose_1.MongooseModule.forFeature([
+                { name: histoire_schema_1.Histoire.name, schema: histoire_schema_1.HistoireSchema },
+                { name: user_schema_1.User.name, schema: user_schema_1.UserSchema },
+                { name: template_schema_1.Template.name, schema: template_schema_1.TemplateSchema }
+            ]),
             auth_module_1.AuthModule,
             users_module_1.UsersModule,
             templates_module_1.TemplatesModule,
             histoires_module_1.HistoiresModule,
         ],
+        controllers: [admin_controller_1.AdminController],
     })
 ], AppModule);
 //# sourceMappingURL=app.module.js.map

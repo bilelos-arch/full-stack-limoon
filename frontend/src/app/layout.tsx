@@ -3,7 +3,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { initializeDOMMatrix } from "@/lib/domMatrixPolyfill-safe"; // Polyfill DOMMatrix pour PDF.js
+import { initializeDOMMatrix } from "@/lib/domMatrixPolyfill-safe";
 import { AuthProvider } from "@/components/AuthProvider";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -16,14 +16,13 @@ if (typeof window !== 'undefined') {
   initializeDOMMatrix();
 }
 
-// Police Inter - Alternative moderne à Elms Sans pour une typographie harmonisée
+// Police Inter uniquement - optimisée pour le marché tunisien
 const inter = Inter({
   variable: "--font-inter",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"], // Poids常用的 pour optimiser le chargement
-  display: "swap", // Améliorer les performances de chargement
+  subsets: ["latin", "latin-ext"], // Support pour caractères français
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
 });
-
 
 export default function RootLayout({
   children,
@@ -31,16 +30,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr">
+    <html lang="fr-Tn">
       <head>
-        {/* Preload de la police Inter pour optimiser les performances */}
-        <link
-          rel="preload"
-          href="https://fonts.gstatic.com/s/inter/v12/UcC73Fwr-21i3V4DhGtb_X5Zf87.woff2"
-          as="font"
-          type="font/woff2"
-          crossOrigin="anonymous"
-        />
+        <meta property="og:locale" content="fr_Tn"/>
+        <meta name="keywords" content="histoires personnalisées, livres enfants Tunisie, cadeau Tunisie, lecture enfants" />
         <link
           rel="preload"
           href="https://fonts.gstatic.com/s/inter/v12/UcCO3FwrK3iLTeHuS_fvQtMwCp50KnMw2boKoduKmMEVuLyfAZ9hiA.woff2"
@@ -49,16 +42,24 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
       </head>
-      <body
-        className={`${inter.variable} font-sans antialiased`}
-      >
+      <body className={`${inter.variable} font-sans antialiased`}>
         <QueryClientProviderWrapper>
           <AuthProvider>
-             <Navbar />
-             {children}
-             <Footer />
-             <Toaster position="top-right" richColors />
-           </AuthProvider>
+            <Navbar />
+            <main id="main-content" className="min-h-screen">
+              {children}
+            </main>
+            <Footer />
+            <Toaster 
+              position="top-right" 
+              richColors 
+              toastOptions={{
+                style: {
+                  fontFamily: 'var(--font-sans)',
+                }
+              }}
+            />
+          </AuthProvider>
         </QueryClientProviderWrapper>
       </body>
     </html>
@@ -69,8 +70,9 @@ function QueryClientProviderWrapper({ children }: { children: React.ReactNode })
   const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
       queries: {
-        staleTime: 5 * 60 * 1000, // 5 minutes
-        gcTime: 10 * 60 * 1000, // 10 minutes
+        staleTime: 5 * 60 * 1000,
+        gcTime: 10 * 60 * 1000,
+        refetchOnWindowFocus: false, // Optimisation pour mobile Tunisie
       },
     },
   }));

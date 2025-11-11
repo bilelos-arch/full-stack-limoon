@@ -1,16 +1,16 @@
 import { TemplateDocument } from '../../template.schema';
 import { EditorElementsService } from '../../editor-elements.service';
 import { ImageMappingService } from './image-mapping.service';
-import { CloudinaryService } from '../../cloudinary.service';
 export declare class PdfGeneratorService {
     private editorElementsService;
     private imageMappingService;
-    private cloudinaryService;
     private readonly logger;
     private uploadsDir;
+    private tempImagesDir;
     private previewsDir;
+    private pdfsDir;
     private cartoonifyServiceUrl;
-    constructor(editorElementsService: EditorElementsService, imageMappingService: ImageMappingService, cloudinaryService: CloudinaryService);
+    constructor(editorElementsService: EditorElementsService, imageMappingService: ImageMappingService);
     generatePreview(template: TemplateDocument, variables: Record<string, any>, uploadedImageUrls?: string[]): Promise<string[]>;
     generateFinalPdf(template: TemplateDocument, variables: Record<string, any>, uploadedImageUrls?: string[]): Promise<string>;
     validateVariables(template: TemplateDocument, variables: Record<string, any>, uploadedImageUrls?: string[]): Promise<{
@@ -23,7 +23,10 @@ export declare class PdfGeneratorService {
     private replaceTextVariables;
     private replaceImageVariables;
     private convertPdfToImages;
+    private convertPdfToImagesOptimized;
     private cartoonifyImage;
+    private validateDataUrl;
+    private decodeBase64Data;
     private validatePngBuffer;
     private hexToRgb;
 }

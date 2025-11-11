@@ -20,10 +20,12 @@ let ImageMappingService = ImageMappingService_1 = class ImageMappingService {
         this.uploadsDir = './uploads';
         this.tempImagesDir = './uploads/temp-images';
         this.histoiresImagesDir = './uploads/histoires-images';
+        this.previewsDir = './uploads/previews';
+        this.pdfsDir = './uploads/pdfs';
         this.ensureDirectoriesExist();
     }
     ensureDirectoriesExist() {
-        const directories = [this.uploadsDir, this.tempImagesDir, this.histoiresImagesDir];
+        const directories = [this.uploadsDir, this.tempImagesDir, this.histoiresImagesDir, this.previewsDir, this.pdfsDir];
         directories.forEach(dir => {
             if (!fs.existsSync(dir)) {
                 fs.mkdirSync(dir, { recursive: true });
@@ -32,21 +34,35 @@ let ImageMappingService = ImageMappingService_1 = class ImageMappingService {
         });
     }
     async findImageByVariable(variableName, imageVariableValue, uploadedImageUrls = []) {
-        this.logger.log(`[IMAGE-MAPPING] Searching for image: variable="${variableName}", value="${imageVariableValue}"`);
-        this.logger.log(`[IMAGE-MAPPING] Available uploaded URLs:`, uploadedImageUrls);
+        this.logger.log(`[IMAGE-MAPPING] 🔍 Starting image search: variable="${variableName}", value="${imageVariableValue}"`);
+        this.logger.log(`[IMAGE-MAPPING] 📁 Available uploaded URLs:`, uploadedImageUrls);
+        this.logger.log(`[IMAGE-MAPPING] 📂 Current working directory: ${process.cwd()}`);
+        this.logger.log(`[IMAGE-MAPPING] 📂 Uploads dir: ${this.uploadsDir}, exists: ${fs.existsSync(this.uploadsDir)}`);
+        this.logger.log(`[IMAGE-MAPPING] 📂 Temp images dir: ${this.tempImagesDir}, exists: ${fs.existsSync(this.tempImagesDir)}`);
         try {
             if (uploadedImageUrls && uploadedImageUrls.length > 0) {
+                this.logger.log(`[IMAGE-MAPPING] 🔍 Method 1: Direct match search in ${uploadedImageUrls.length} uploaded URLs`);
                 const directMatch = this.findDirectMatch(imageVariableValue, uploadedImageUrls);
                 if (directMatch.found) {
                     this.logger.log(`[IMAGE-MAPPING] ✅ Direct match found: ${directMatch.imagePath}`);
                     return directMatch;
                 }
+                else {
+                    this.logger.log(`[IMAGE-MAPPING] ❌ No direct match found in uploaded URLs`);
+                }
+            }
+            else {
+                this.logger.log(`[IMAGE-MAPPING] ⚠️ No uploaded URLs provided, skipping direct match`);
             }
             if (uploadedImageUrls && uploadedImageUrls.length > 0) {
+                this.logger.log(`[IMAGE-MAPPING] 🔍 Method 2: Prefix match search for variable "${variableName}"`);
                 const prefixMatch = this.findByVariablePrefix(variableName, uploadedImageUrls);
                 if (prefixMatch.found) {
                     this.logger.log(`[IMAGE-MAPPING] ✅ Prefix match found: ${prefixMatch.imagePath}`);
                     return prefixMatch;
+                }
+                else {
+                    this.logger.log(`[IMAGE-MAPPING] ❌ No prefix match found for "${variableName}"`);
                 }
             }
             const tempImagesMatch = await this.findInTempImages(variableName, imageVariableValue);
@@ -158,7 +174,9 @@ let ImageMappingService = ImageMappingService_1 = class ImageMappingService {
         const searchDirectories = [
             this.uploadsDir,
             this.tempImagesDir,
-            this.histoiresImagesDir
+            this.histoiresImagesDir,
+            this.previewsDir,
+            this.pdfsDir
         ];
         for (const searchDir of searchDirectories) {
             if (!fs.existsSync(searchDir)) {
@@ -246,7 +264,9 @@ let ImageMappingService = ImageMappingService_1 = class ImageMappingService {
         const directories = [
             { path: this.tempImagesDir, name: 'temp-images' },
             { path: this.histoiresImagesDir, name: 'histoires-images' },
-            { path: this.uploadsDir, name: 'uploads' }
+            { path: this.uploadsDir, name: 'uploads' },
+            { path: this.previewsDir, name: 'previews' },
+            { path: this.pdfsDir, name: 'pdfs' }
         ];
         return directories.map(dir => {
             let files = [];

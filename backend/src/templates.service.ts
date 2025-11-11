@@ -198,7 +198,7 @@ export class TemplatesService {
     console.log('Generated PDF filename:', tempPdfFilename);
 
     // Move to temp previews directory
-    const tempPdfPath = path.join('./uploads', tempPdfFilename);
+    const tempPdfPath = path.join('.', tempPdfFilename);
     const finalTempPath = path.join(this.tempPreviewsDir, `preview-${templateId}-${Date.now()}-${Math.round(Math.random() * 1e9)}.pdf`);
 
     console.log('Moving PDF from:', tempPdfPath, 'to:', finalTempPath);

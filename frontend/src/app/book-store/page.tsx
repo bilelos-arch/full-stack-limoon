@@ -607,7 +607,11 @@ function StoryPageClient({ initialTemplates }: { initialTemplates: Template[] })
         onClose={handleModalClose}
         template={selectedTemplate}
         onCustomize={handleCustomize}
-        pdfUrl={selectedTemplate?.pdfUrl ? `${process.env.NEXT_PUBLIC_API_URL}/uploads/${selectedTemplate.pdfUrl}` : undefined}
+        pdfUrl={selectedTemplate?.pdfUrl ? (selectedTemplate.pdfUrl.includes('res.cloudinary.com')
+          ? `${process.env.NEXT_PUBLIC_API_URL}/uploads/${selectedTemplate.pdfUrl.split('/').pop()?.split('.')[0]}.pdf`
+          : selectedTemplate.pdfUrl.startsWith('http')
+          ? selectedTemplate.pdfUrl
+          : `${process.env.NEXT_PUBLIC_API_URL}${selectedTemplate.pdfUrl}`) : undefined}
       />
     </div>
   );

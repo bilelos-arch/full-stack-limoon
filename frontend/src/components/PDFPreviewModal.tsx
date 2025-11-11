@@ -26,7 +26,7 @@ export default function PDFPreviewModal({
   const [pdfDoc, setPdfDoc] = useState<PDFDocumentProxy | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [numPages, setNumPages] = useState(0);
-  const [scale, setScale] = useState(1.0);
+  const [scale, setScale] = useState(1.2);
   const [isFullscreen, setIsFullscreen] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -108,17 +108,54 @@ export default function PDFPreviewModal({
     setIsLoading(true);
     try {
       const { getDocument } = await import('pdfjs-dist');
-      const pdfUrl = customPdfUrl || `${API_BASE_URL}/uploads/${template.pdfPath}`;
+
+      // Debugging logs for API_BASE_URL and customPdfUrl
+      console.log('loadPDF called with customPdfUrl:', customPdfUrl);
+      console.log('API_BASE_URL value:', API_BASE_URL);
+
+      // Explicit check for API_BASE_URL if no customPdfUrl provided
+      if (!customPdfUrl && !API_BASE_URL) {
+        console.error('API_BASE_URL is not defined, cannot construct PDF URL');
+        throw new Error('API_BASE_URL is not defined. Please check your environment variables.');
+      }
+
+      let pdfUrl = customPdfUrl || `${API_BASE_URL?.replace(/\/$/, '')}/uploads/${template.pdfPath}`;
+
+      // Convert Cloudinary URLs to local URLs if needed
+      if (pdfUrl.includes('res.cloudinary.com')) {
+        // Extract filename from Cloudinary URL
+        const urlParts = pdfUrl.split('/');
+        const filename = urlParts[urlParts.length - 1].split('.')[0];
+        pdfUrl = `${API_BASE_URL}/uploads/pdfs/${filename}.pdf`;
+      } else {
+        // Ensure API_BASE_URL is defined before using it
+        if (!API_BASE_URL) {
+          console.error('API_BASE_URL is undefined in Cloudinary URL handling');
+          throw new Error('API_BASE_URL is not defined. Please check your environment variables.');
+        }
+      }
+
+      // Ensure we use local storage URLs
+      if (API_BASE_URL && !pdfUrl.startsWith(API_BASE_URL)) {
+        console.log('Adjusting PDF URL to use API_BASE_URL:', API_BASE_URL);
+        pdfUrl = `${API_BASE_URL}${pdfUrl.startsWith('/') ? '' : '/'}${pdfUrl}`;
+      } else if (!API_BASE_URL) {
+        console.error('API_BASE_URL is undefined, cannot adjust PDF URL');
+      }
+
       console.log('Loading PDF from URL:', pdfUrl);
       console.log('Template pdfPath:', template.pdfPath);
       console.log('API_BASE_URL:', API_BASE_URL);
       console.log('process.env.NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
+      console.log('About to call getDocument with URL:', pdfUrl);
       const loadingTask = getDocument({url: pdfUrl});
+      console.log('getDocument called successfully, waiting for promise');
       const pdf = await loadingTask.promise;
+      console.log('PDF loaded successfully, numPages:', pdf.numPages);
       setPdfDoc(pdf);
       setNumPages(pdf.numPages);
       setCurrentPage(1);
-      setScale(1.0);
+      setScale(1.2);
     } catch (error) {
       console.error('Error loading PDF:', error);
       console.error('Failed URL:', customPdfUrl || `${API_BASE_URL}/uploads/${template.pdfPath}`);

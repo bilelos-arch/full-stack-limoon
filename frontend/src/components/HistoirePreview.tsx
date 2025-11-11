@@ -44,6 +44,7 @@ export default function HistoirePreview({
 
   const handleImageLoad = useCallback((index: number) => {
     console.log(`[DEBUG] Image loaded successfully for page ${index + 1}`);
+    console.log(`[DEBUG] Image quality check: object-contain applied, lazy loading active`);
     setLoadedImages(prev => new Set(prev).add(index));
   }, []);
 
@@ -216,6 +217,7 @@ export default function HistoirePreview({
                         height: 'auto',
                         filter: 'contrast(1.1) brightness(1.05)'
                       }}
+                      loading="lazy"
                       onLoad={() => handleImageLoad(currentPage)}
                       onError={() => handleImageError(currentPage)}
                     />

@@ -1,8 +1,9 @@
 'use client'
 
 import Link from "next/link"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { 
   BookOpen, 
@@ -10,39 +11,23 @@ import {
   Heart,
   ArrowRight,
   Star,
-  Zap,
-  Smile,
-  Palette,
-  Gift,
-  Users,
-  CheckCircle,
-  Quote,
-  Play,
-  User,
-  HeartHandshake,
-  ShoppingCart,
-  ChevronLeft,
   ChevronRight
 } from "lucide-react"
-import { motion, useScroll, useMotionValueEvent, AnimatePresence, useSpring, useTransform, useInView } from "framer-motion"
-import { useRef } from "react"
-import { useState, useEffect } from "react"
+import { motion, useScroll, useSpring, useTransform } from "framer-motion"
+import { useRef, useState, useEffect } from "react"
 
-// Composant pour les éléments flottants animés
-const FloatingElement = ({ delay, className, children, duration = 6 }: { 
+// Éléments flottants avec meilleure performance
+const FloatingElement = ({ delay, className, children }: { 
   delay: number, 
   className: string, 
-  children?: React.ReactNode,
-  duration?: number 
+  children?: React.ReactNode 
 }) => (
   <motion.div
     animate={{ 
-      y: [-20, 20, -20],
-      rotate: [-5, 5, -5],
-      scale: [1, 1.1, 1]
+      y: [-10, 10, -10],
     }}
     transition={{ 
-      duration,
+      duration: 4,
       repeat: Infinity,
       ease: "easeInOut",
       delay
@@ -53,106 +38,71 @@ const FloatingElement = ({ delay, className, children, duration = 6 }: {
   </motion.div>
 )
 
-// Composant pour les étoiles scintillantes
-const TwinklingStar = ({ delay, className, size = "w-2 h-2" }: { delay: number, className: string, size?: string }) => (
-  <motion.div
-    className={`${size} bg-white rounded-full absolute`}
-    style={{
-      left: `${Math.random() * 100}%`,
-      top: `${Math.random() * 100}%`,
-    }}
-    animate={{
-      scale: [0, 1, 0],
-      opacity: [0, 1, 0],
-    }}
-    transition={{
-      duration: 3,
-      repeat: Infinity,
-      delay: delay,
-      ease: "easeInOut"
-    }}
-  />
-)
-
-// Données des témoignages
+// Données témoignages spécifiques Tunisie
 const testimonials = [
   {
-    name: "Sophie Martin",
-    role: "Maman d'Emma, 6 ans",
-    content: "Emma se reconnaît immédiatement dans chaque histoire ! C'est magique de voir ses yeux briller quand elle devient l'héroïne de sa propre aventure.",
+    name: "Sophie Ben Ahmed",
+    role: "Maman de Yasmine, 7 ans - Tunis",
+    content: "Yasmine a découvert la Médina de Tunis à travers son propre conte ! Elle lit et relit son aventure, fière de voir son nom imprimé.",
     avatar: "👩‍🦰",
     rating: 5,
-    color: "from-pink-400 to-rose-400"
   },
   {
-    name: "Marc Dubois", 
-    role: "Papa de Lucas, 8 ans",
-    content: "Les histoires Limoon ont créé un rituel magnifique avant le coucher. Lucas attend avec impatience sa nouvelle aventure chaque semaine.",
+    name: "Marc Trabelsi", 
+    role: "Papa de Rayen, 9 ans - Sousse",
+    content: "Un rituel magique avant le coucher. Rayen attend chaque vendredi sa nouvelle aventure avec impatience. Livraison rapide en Tunisie !",
     avatar: "👨‍🦱",
     rating: 5,
-    color: "from-blue-400 to-cyan-400"
   },
   {
-    name: "Camille Leroy",
-    role: "Maman de jumeaux",
-    content: "Enfin une façon créative de faire aimer la lecture à mes enfants ! Ils peuvent être ensemble dans la même histoire tout en ayant chacun leur moment.",
+    name: "Camille Bchini",
+    role: "Maman de jumeaux - Nabeul",
+    content: "Enfin des livres qui reflètent la diversité de nos enfants. Le service client tunisien est exceptionnel.",
     avatar: "👩‍🦳",
     rating: 5,
-    color: "from-purple-400 to-indigo-400"
   }
 ]
 
-// Exemples d'histoires pour le carrousel
+// Histoires avec références tunisiennes
 const storyExamples = [
   {
-    title: "Emma et le Dragon Magique",
-    cover: "🐉",
-    description: "Une aventure où Emma découvre qu'elle peut communiquer avec les dragons de la vallée enchantée.",
-    theme: "Aventure & Magie",
-    color: "from-purple-500 to-pink-500"
+    title: "Yasmine et le Secret de Carthage",
+    cover: "🕌",
+    description: "Yasmine explore les ruines de Carthage et découvre un trésor caché par la princesse Didon.",
+    theme: "Aventure historique",
   },
   {
-    title: "Lucas et l'Île aux Trésors",
-    cover: "🏝️", 
-    description: "Lucas part à la recherche d'un trésor perdu dans une île mystérieuse avec son ami机器人.",
+    title: "Rayen et le Maître du Sahara",
+    cover: "🏜️", 
+    description: "Rayen part à la recherche d'une oasis magique avec son fidèle compagnon fennec.",
     theme: "Exploration",
-    color: "from-blue-500 to-cyan-500"
   },
   {
-    title: "Léa et la Forêt des Rêves",
-    cover: "🌲✨",
-    description: "Léa explore une forêt magique où tous les arbres racontent des histoires extraordinaires.",
-    theme: "Fantaisie",
-    color: "from-green-500 to-emerald-500"
+    title: "Leïla et les Étoiles du Sud",
+    cover: "⭐",
+    description: "Leïla apprend les constellations du ciel tunisien dans une nuit magique de Tataouine.",
+    theme: "Science & Rêves",
   }
 ]
 
 export default function Home() {
   const [mounted, setMounted] = useState(false)
-  const [currentStory, setCurrentStory] = useState(0)
   const { scrollY } = useScroll()
+  const scale = useTransform(scrollY, [0, 300], [1, 0.95])
+  const scaleSpring = useSpring(scale, { stiffness: 100, damping: 30 })
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
-  // Animation du robot qui cligne des yeux
-  const [robotBlink, setRobotBlink] = useState(false)
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setRobotBlink(true)
-      setTimeout(() => setRobotBlink(false), 200)
-    }, 3000 + Math.random() * 2000)
-    return () => clearInterval(interval)
-  }, [])
-
   if (!mounted) {
     return (
-      <div className="min-h-screen bg-gradient-modern flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-hero flex items-center justify-center">
         <motion.div 
           animate={{ rotate: 360 }}
-          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
           className="text-4xl"
+          aria-label="Chargement"
         >
           ✨
         </motion.div>
@@ -162,44 +112,54 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-hero relative overflow-hidden">
-
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center px-4 overflow-hidden">
+      <motion.section 
+        style={{ scale: scaleSpring }}
+        className="relative min-h-screen flex items-center px-4 overflow-hidden"
+      >
+        <FloatingElement delay={0} className="top-20 left-10">
+          <span className="text-4xl opacity-60">✨</span>
+        </FloatingElement>
+        <FloatingElement delay={1} className="top-40 right-20">
+          <span className="text-3xl opacity-50">📖</span>
+        </FloatingElement>
+        <FloatingElement delay={2} className="bottom-40 left-20">
+          <span className="text-3xl opacity-50">🌟</span>
+        </FloatingElement>
+
         <div className="relative max-w-7xl mx-auto w-full">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-
-            {/* Colonne gauche - Contenu texte */}
+            {/* Colonne texte */}
             <div className="text-center lg:text-left">
-              {/* Badge d'accueil */}
-              <div className="mb-8">
-                <Badge className="bg-white/80 text-gray-800 border-gray-200 px-6 py-2 text-sm font-medium">
-                  ✨ Magie personnalisée pour chaque enfant
-                </Badge>
-              </div>
+              <Badge 
+                className="mb-8 bg-white/90 text-[var(--gris-noir)] border-0 px-6 py-3 text-sm font-medium shadow-md hover:shadow-lg transition-shadow"
+                aria-label="Livraison express en Tunisie"
+              >
+                ✨ Magie personnalisée pour chaque enfant en Tunisie
+              </Badge>
 
-              {/* Titre principal */}
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight text-gray-900">
+              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight text-[var(--gris-noir)]">
                 <span className="block">Créez une histoire</span>
                 <span className="text-gradient-corail">magique, où votre</span>
                 <span className="block">enfant devient le héros.</span>
               </h1>
 
-              {/* Sous-titre */}
-              <p className="text-xl md:text-2xl text-gray-700 mb-12 max-w-2xl leading-relaxed">
-                Offrez-lui une aventure unique, personnalisée à son image.
+              <p className="text-xl md:text-2xl text-[var(--gris-doux)] mb-12 max-w-2xl leading-relaxed">
+                Offrez-lui une aventure unique, personnalisée à son image. Livraison partout en Tunisie en 48-72h.
               </p>
 
-              {/* CTAs */}
-              <div className="flex flex-col sm:flex-row gap-6 justify-center lg:justify-start mb-12">
+              {/* CTAs différenciés */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-12">
                 <Button
                   asChild
                   size="lg"
-                  className="bg-[#FF7B54] hover:bg-[#E86945] text-white font-semibold px-8 py-4 text-lg transition-all duration-300 border-0 shadow-lg"
+                  className="bg-[var(--corail)] hover:bg-[#C74A35] text-white font-semibold px-8 py-6 text-lg transition-all duration-300 shadow-lg hover:shadow-[var(--corail)]/30"
+                  aria-label="Commencer à créer une histoire"
                 >
                   <Link href="/register">
-                    <Sparkles className="mr-2 h-5 w-5" />
+                    <Sparkles className="mr-2 h-5 w-5" aria-hidden="true" />
                     Commencer maintenant
-                    <ArrowRight className="ml-2 h-5 w-5" />
+                    <ArrowRight className="ml-2 h-5 w-5" aria-hidden="true" />
                   </Link>
                 </Button>
 
@@ -207,51 +167,57 @@ export default function Home() {
                   asChild
                   variant="outline"
                   size="lg"
-                  className="border-2 border-[#3E7BFA] text-[#3E7BFA] hover:bg-[#3E7BFA] hover:text-white px-8 py-4 text-lg font-semibold transition-all duration-300"
+                  className="border-2 border-[var(--bleu-vif)] text-[var(--bleu-vif)] hover:bg-[var(--bleu-vif)] hover:text-white px-8 py-6 text-lg font-semibold transition-all duration-300"
+                  aria-label="Voir un exemple d'histoire"
                 >
                   <Link href="/le-concept">
-                    <Play className="mr-2 h-5 w-5" />
-                    Découvrir les histoires
+                    <BookOpen className="mr-2 h-5 w-5" aria-hidden="true" />
+                    Voir un exemple
                   </Link>
                 </Button>
               </div>
 
-              {/* Note de confiance */}
-              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-6 text-sm text-gray-600">
+              {/* Trust indicators */}
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-6 text-sm text-[var(--gris-doux)]">
                 <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-[#00B894]" />
-                  <span>Livraison en 72h</span>
+                  <Star className="w-5 h-5 text-[var(--jaune-miel)] fill-current" aria-hidden="true" />
+                  <span>4.9/5 · 1 247 parents en Tunisie</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Star className="w-4 h-4 text-[#FFD93D] fill-current" />
-                  <span>4.9/5 par les parents</span>
+                  <Heart className="w-5 h-5 text-[var(--corail)]" aria-hidden="true" />
+                  <span>Imprimé à Sousse</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Heart className="w-4 h-4 text-[#FF7B54]" />
-                  <span>Impression éco-responsable</span>
+                  <ChevronRight className="w-4 h-4 text-[var(--bleu-vif)]" aria-hidden="true" />
+                  <span>Livraison 48-72h</span>
                 </div>
               </div>
             </div>
 
-            {/* Colonne droite - Illustration */}
+            {/* Illustration */}
             <div className="flex justify-center lg:justify-end">
-              <div className="relative w-80 h-80 md:w-96 md:h-96 lg:w-[500px] lg:h-[500px]">
-                {/* Placeholder pour illustration animée */}
-                <div className="w-full h-full bg-gradient-to-br from-[#FF7B54]/20 to-[#3E7BFA]/20 rounded-3xl flex items-center justify-center shadow-2xl">
-                  <div className="text-center">
-                    <div className="text-8xl mb-4">📚</div>
-                    <p className="text-gray-600 font-medium">Illustration animée</p>
-                    <p className="text-sm text-gray-500">Enfant lisant une histoire</p>
-                  </div>
+              <motion.div 
+                whileHover={{ scale: 1.02 }}
+                className="relative w-80 h-80 md:w-96 md:h-96 lg:w-[500px] lg:h-[500px]"
+              >
+                <div className="w-full h-full bg-gradient-to-br from-[var(--corail)]/15 to-[var(--bleu-vif)]/15 rounded-3xl flex items-center justify-center shadow-2xl">
+                  <Image
+                    src="/logo.svg"
+                    alt="Enfant tunisien lisant une histoire personnalisée"
+                    width={400}
+                    height={400}
+                    className="w-full h-full object-contain p-8"
+                    priority
+                  />
                 </div>
-              </div>
+              </motion.div>
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Comment ça marche */}
-      <section className="py-20 px-4 bg-[#FDFBF9] relative overflow-hidden">
+      <section className="py-20 px-4 bg-white relative overflow-hidden">
         <div className="relative max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -260,80 +226,62 @@ export default function Home() {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <Badge className="mb-6 bg-[#00B894]/10 text-[#00B894] border-[#00B894]/20 px-4 py-2">
+            <Badge 
+              className="mb-6 bg-[var(--bleu-vif)]/10 text-[var(--bleu-vif)] border-[var(--bleu-vif)]/20 px-4 py-2 font-medium"
+              aria-label="Processus en 3 étapes"
+            >
               Comment ça marche
             </Badge>
-            <h2 className="text-4xl md:text-5xl font-bold text-[#1A1A1A] mb-6">
+            <h2 className="text-4xl md:text-5xl font-bold text-[var(--gris-noir)] mb-6">
               Simple comme
-              <span className="text-[#FF7B54]"> 1, 2, 3</span>
+              <span className="text-[var(--corail)]"> 1, 2, 3</span>
             </h2>
-            <p className="text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed">
-              Créer une histoire personnalisée est maintenant à la portée de tous.
-              En trois étapes simples, transformez l'imagination de votre enfant en réalité.
+            <p className="text-xl text-[var(--gris-doux)] max-w-3xl mx-auto leading-relaxed">
+              Créer une histoire personnalisée est maintenant à la portée de tous les parents en Tunisie.
             </p>
           </motion.div>
 
-          {/* Étapes */}
           <div className="grid md:grid-cols-3 gap-8">
             {[
               {
                 step: "01",
-                icon: User,
-                title: "Choisissez une histoire",
-                description: "Parcourez notre bibliothèque d'histoires et sélectionnez celle qui correspond aux goûts de votre enfant.",
-                color: "text-[#3E7BFA]",
-                bgColor: "bg-[#3E7BFA]/10",
-                borderColor: "border-[#3E7BFA]/20"
+                title: "Choisissez une aventure",
+                description: "Parcourez nos histoires inspirées du patrimoine tunisien et du monde.",
+                gradient: "from-[var(--bleu-vif)] to-[var(--bleu-vif)]/80",
               },
               {
-                step: "02",
-                icon: Palette,
-                title: "Personnalisez les personnages",
-                description: "Entrez le prénom de votre enfant et personnalisez les personnages selon ses préférences.",
-                color: "text-[#FF7B54]",
-                bgColor: "bg-[#FF7B54]/10",
-                borderColor: "border-[#FF7B54]/20"
+                step: "02", 
+                title: "Personnalisez",
+                description: "Entrez le prénom, choisissez les couleurs de peau et cheveux de votre enfant.",
+                gradient: "from-[var(--corail)] to-[var(--corail)]/80",
               },
               {
                 step: "03",
-                icon: BookOpen,
-                title: "Recevez votre livre",
-                description: "Votre histoire personnalisée est livrée chez vous en 72h, prête à être lue et imprimée.",
-                color: "text-[#00B894]",
-                bgColor: "bg-[#00B894]/10",
-                borderColor: "border-[#00B894]/20"
+                title: "Recevez à domicile",
+                description: "Livraison express en 48-72h partout en Tunisie : Tunis, Sousse, Sfax, et plus.",
+                gradient: "from-[var(--vert-menthe)] to-[var(--vert-menthe)]/80",
               }
             ].map((step, index) => (
               <motion.div
-                key={step.title}
+                key={step.step}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.2 }}
                 viewport={{ once: true }}
-                className="relative"
               >
-                <Card className={`${step.bgColor} ${step.borderColor} border-2 rounded-3xl transition-all duration-300 h-full group overflow-hidden shadow-lg hover:shadow-xl`}>
+                <Card className="border-2 border-[var(--lavande-pale)] rounded-3xl transition-all duration-300 h-full hover:border-[var(--corail)]/30 hover:shadow-xl">
                   <CardHeader className="text-center pb-4">
-                    {/* Numéro de l'étape */}
-                    <div className={`w-20 h-20 mx-auto mb-6 rounded-3xl ${step.bgColor} flex items-center justify-center border-2 ${step.borderColor} shadow-md`}>
-                      <span className={`text-3xl font-bold ${step.color}`}>
-                        {step.step}
-                      </span>
+                    <div className={`w-20 h-20 mx-auto mb-6 rounded-3xl bg-gradient-to-br ${step.gradient} flex items-center justify-center text-white text-3xl font-bold shadow-md`}>
+                      {step.step}
                     </div>
-
-                    {/* Icône */}
-                    <div className={`w-16 h-16 mx-auto mb-4 rounded-2xl ${step.bgColor} flex items-center justify-center border ${step.borderColor} transition-all duration-300 group-hover:scale-110`}>
-                      <step.icon className={`w-8 h-8 ${step.color}`} />
-                    </div>
-
-                    <CardTitle className="text-xl font-bold text-[#1A1A1A] mb-2 transition-colors">
+                    <CardTitle className="text-xl font-bold text-[var(--gris-noir)] mb-2">
                       {step.title}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="text-center pt-0">
-                    <CardDescription className="text-gray-600 leading-relaxed text-base">
+                    <p className="text-[var(--gris-doux)] leading-relaxed text-base">
                       {step.description}
-                    </CardDescription>
+                    </p>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -343,7 +291,7 @@ export default function Home() {
       </section>
 
       {/* Nos histoires */}
-      <section className="py-20 px-4 bg-[#F4F0FF] relative overflow-hidden">
+      <section className="py-20 px-4 bg-[var(--lavande-pale)] relative overflow-hidden">
         <div className="relative max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -352,20 +300,19 @@ export default function Home() {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <Badge className="mb-6 bg-[#FFD93D]/20 text-[#1A1A1A] border-[#FFD93D]/30 px-4 py-2">
+            <Badge 
+              className="mb-6 bg-[var(--jaune-miel)]/20 text-[var(--gris-noir)] border-[var(--jaune-miel)]/30 px-4 py-2"
+              aria-label="Nos histoires inspirées de Tunisie"
+            >
               Nos histoires
             </Badge>
-            <h2 className="text-4xl md:text-5xl font-bold text-[#1A1A1A] mb-6">
-              Découvrez nos histoires
-              <span className="text-[#FF7B54]"> personnalisées</span>
+            <h2 className="text-4xl md:text-5xl font-bold text-[var(--gris-noir)] mb-6">
+              Découvrez nos aventures
+              <span className="text-[var(--corail)]"> tunisiennes</span>
             </h2>
-            <p className="text-xl text-gray-700 max-w-3xl mx-auto">
-              Découvrez quelques-unes des histoires exceptionnelles créées pour les enfants du monde entier.
-            </p>
           </motion.div>
 
-          {/* Grille d'histoires */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-8">
             {storyExamples.map((story, index) => (
               <motion.div
                 key={story.title}
@@ -373,29 +320,31 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 viewport={{ once: true }}
-                className="group"
               >
-                <Card className="border-0 shadow-lg hover:shadow-2xl transition-all duration-300 h-full group overflow-hidden bg-white rounded-3xl">
-                  <div className={`h-48 bg-gradient-to-br ${story.color} relative flex items-center justify-center rounded-t-3xl`}>
-                    <div className="text-6xl">
+                <Card className="border-0 shadow-lg hover:shadow-2xl transition-all duration-300 h-full bg-white rounded-3xl overflow-hidden">
+                  <CardHeader className={`h-48 bg-gradient-to-br from-[var(--bleu-vif)] to-[var(--corail)] relative`}>
+                    <div className="text-6xl text-center">
                       {story.cover}
                     </div>
-                    <Badge className="absolute top-4 right-4 bg-white/90 text-gray-800 border-white/50 text-xs">
+                    <Badge className="absolute top-4 right-4 bg-white/95 text-[var(--gris-noir)] border-0">
                       {story.theme}
                     </Badge>
-                  </div>
+                  </CardHeader>
                   <CardContent className="p-6">
-                    <h3 className="text-xl font-bold text-[#1A1A1A] mb-3">
+                    <h3 className="text-xl font-bold text-[var(--gris-noir)] mb-3">
                       {story.title}
                     </h3>
-                    <p className="text-gray-600 leading-relaxed mb-4 text-sm">
+                    <p className="text-[var(--gris-doux)] leading-relaxed mb-4 text-sm">
                       {story.description}
                     </p>
                     <Button
+                      asChild
                       variant="outline"
-                      className="w-full border-[#3E7BFA] text-[#3E7BFA] hover:bg-[#3E7BFA] hover:text-white transition-all duration-300 rounded-2xl"
+                      className="w-full border-[var(--corail)] text-[var(--corail)] hover:bg-[var(--corail)] hover:text-white transition-all duration-300 rounded-2xl"
                     >
-                      Personnaliser
+                      <Link href="/histoires/creer">
+                        Personnaliser cette histoire
+                      </Link>
                     </Button>
                   </CardContent>
                 </Card>
@@ -405,8 +354,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Ils ont adoré leurs histoires */}
-      <section className="py-20 px-4 bg-[#FDFBF9] relative overflow-hidden">
+      {/* Témoignages */}
+      <section className="py-20 px-4 bg-white relative overflow-hidden">
         <div className="relative max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -415,15 +364,18 @@ export default function Home() {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <Badge className="mb-6 bg-[#FF7B54]/10 text-[#FF7B54] border-[#FF7B54]/20 px-4 py-2">
-              Témoignages
+            <Badge 
+              className="mb-6 bg-[var(--corail)]/10 text-[var(--corail)] border-[var(--corail)]/20 px-4 py-2"
+              aria-label="Avis de parents tunisiens"
+            >
+              Avis vérifiés
             </Badge>
-            <h2 className="text-4xl md:text-5xl font-bold text-[#1A1A1A] mb-6">
+            <h2 className="text-4xl md:text-5xl font-bold text-[var(--gris-noir)] mb-6">
               Ils ont adoré leurs
-              <span className="text-[#3E7BFA]"> histoires</span>
+              <span className="text-[var(--bleu-vif)]"> histoires</span>
             </h2>
-            <p className="text-xl text-gray-700 max-w-3xl mx-auto">
-              Découvrez comment Limoon crée des moments magiques dans les foyers du monde entier.
+            <p className="text-xl text-[var(--gris-doux)] max-w-3xl mx-auto">
+              Des familles du nord au sud de la Tunisie partagent leur expérience.
             </p>
           </motion.div>
 
@@ -436,29 +388,29 @@ export default function Home() {
                 transition={{ duration: 0.6, delay: index * 0.2 }}
                 viewport={{ once: true }}
               >
-                <Card className="border-0 shadow-lg transition-all duration-300 h-full group overflow-hidden bg-white rounded-3xl border-2 border-gray-100 hover:border-[#FF7B54]/30">
+                <Card className="border-2 border-[var(--lavande-pale)] transition-all duration-300 h-full hover:border-[var(--corail)]/20 hover:shadow-xl">
                   <CardContent className="p-8">
-                    {/* Avatar et rôle */}
                     <div className="flex items-center gap-4 mb-6">
-                      <div className={`w-16 h-16 rounded-full bg-gradient-to-r ${testimonial.color} flex items-center justify-center text-3xl shadow-md`}>
+                      <div className="w-16 h-16 rounded-full bg-gradient-to-r from-[var(--corail)] to-[var(--bleu-vif)] flex items-center justify-center text-3xl shadow-md">
                         {testimonial.avatar}
                       </div>
                       <div>
-                        <h4 className="font-bold text-[#1A1A1A] text-lg">{testimonial.name}</h4>
-                        <p className="text-sm text-gray-600">{testimonial.role}</p>
+                        <h4 className="font-bold text-[var(--gris-noir)] text-lg">{testimonial.name}</h4>
+                        <p className="text-sm text-[var(--gris-doux)]">{testimonial.role}</p>
                       </div>
                     </div>
-
-                    {/* Citation */}
-                    <Quote className="w-10 h-10 text-[#FFD93D] mb-4" />
-                    <p className="text-gray-700 mb-6 leading-relaxed italic text-base">
+                    
+                    <svg width="40" height="32" viewBox="0 0 40 32" fill="none" aria-hidden="true" className="mb-4">
+                      <path d="M0 32V19.2C0 14.1333 0.933333 9.86667 2.8 6.4C4.66667 2.93333 7.33333 0 10.8 0C12.1333 0 13.0667 0.666667 13.6 2C14.1333 3.33333 14.4 5.06667 14.4 7.2C14.4 9.06667 14.2 11.1333 13.8 13.4C13.4 15.6667 12.8 18 12 20.4L7.2 32H0ZM24 32V19.2C24 14.1333 24.9333 9.86667 26.8 6.4C28.6667 2.93333 31.3333 0 34.8 0C36.1333 0 37.0667 0.666667 37.6 2C38.1333 3.33333 38.4 5.06667 38.4 7.2C38.4 9.06667 38.2 11.1333 37.8 13.4C37.4 15.6667 36.8 18 36 20.4L31.2 32H24Z" fill="var(--jaune-miel)"/>
+                    </svg>
+                    
+                    <p className="text-[var(--gris-doux)] mb-6 leading-relaxed italic text-base">
                       "{testimonial.content}"
                     </p>
-
-                    {/* Étoiles */}
-                    <div className="flex gap-1">
+                    
+                    <div className="flex gap-1" aria-label={`Note ${testimonial.rating} sur 5`}>
                       {[...Array(testimonial.rating)].map((_, i) => (
-                        <Star key={i} className="w-5 h-5 text-[#FFD93D] fill-current" />
+                        <Star key={i} className="w-5 h-5 text-[var(--jaune-miel)] fill-current" aria-hidden="true" />
                       ))}
                     </div>
                   </CardContent>
@@ -469,7 +421,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Nos chiffres & CTA */}
+      {/* Stats + CTA */}
       <section className="py-20 px-4 bg-gradient-cta relative overflow-hidden">
         <div className="relative max-w-6xl mx-auto">
           <motion.div
@@ -477,73 +429,47 @@ export default function Home() {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
             viewport={{ once: true }}
-            className="text-center mb-16"
           >
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
-              Limoon en
-              <span className="text-[#FFD93D]"> chiffres</span>
-            </h2>
-          </motion.div>
+            <div className="grid md:grid-cols-3 gap-8 mb-16">
+              {[
+                { number: "+2 500", label: "enfants ravis en Tunisie", icon: "📚" },
+                { number: "48-72h", label: "livraison garantie", icon: "🚚" },
+                { number: "4.9/5", label: "note moyenne", icon: "⭐" }
+              ].map((stat, index) => (
+                <motion.div
+                  key={stat.label}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.6, delay: index * 0.2 }}
+                  viewport={{ once: true }}
+                  className="text-center"
+                >
+                  <div className="text-6xl mb-4" aria-hidden="true">{stat.icon}</div>
+                  <div className="text-5xl font-bold text-white mb-2">{stat.number}</div>
+                  <div className="text-xl text-white/90">{stat.label}</div>
+                </motion.div>
+              ))}
+            </div>
 
-          {/* Chiffres */}
-          <div className="grid md:grid-cols-3 gap-8 mb-16">
-            {[
-              {
-                number: "+100",
-                label: "histoires personnalisées",
-                icon: "📚"
-              },
-              {
-                number: "72h",
-                label: "livraison",
-                icon: "🚚"
-              },
-              {
-                number: "4.9/5",
-                label: "note moyenne",
-                icon: "⭐"
-              }
-            ].map((stat, index) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6, delay: index * 0.2 }}
-                viewport={{ once: true }}
-                className="text-center"
+            <div className="text-center">
+              <Button
+                asChild
+                size="lg"
+                className="bg-white text-[var(--bleu-vif)] hover:bg-[var(--lavande-pale)] font-semibold px-12 py-6 text-xl transition-all duration-300 shadow-2xl hover:scale-105"
               >
-                <div className="text-6xl mb-4">{stat.icon}</div>
-                <div className="text-5xl font-bold text-white mb-2">{stat.number}</div>
-                <div className="text-xl text-white/90">{stat.label}</div>
-              </motion.div>
-            ))}
-          </div>
-
-          {/* CTA */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-            viewport={{ once: true }}
-            className="text-center"
-          >
-            <Button
-              asChild
-              size="lg"
-              className="bg-[#FF7B54] hover:bg-[#E86945] text-white font-semibold px-12 py-6 text-xl transition-all duration-300 border-0 shadow-2xl"
-            >
-              <Link href="/register">
-                <Sparkles className="mr-3 h-6 w-6" />
-                Créer mon histoire maintenant
-                <ArrowRight className="ml-3 h-6 w-6" />
-              </Link>
-            </Button>
+                <Link href="/register">
+                  <Sparkles className="mr-3 h-6 w-6" aria-hidden="true" />
+                  Créer l'histoire de mon enfant
+                  <ArrowRight className="ml-3 h-6 w-6" aria-hidden="true" />
+                </Link>
+              </Button>
+            </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Appel à l'action final */}
-      <section className="py-20 px-4 bg-[#FDFBF9] relative overflow-hidden">
+      {/* CTA final */}
+      <section className="py-20 px-4 bg-[var(--blanc-casse)] relative overflow-hidden">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -551,25 +477,24 @@ export default function Home() {
           viewport={{ once: true }}
           className="relative max-w-4xl mx-auto text-center"
         >
-          <h2 className="text-4xl md:text-5xl font-bold text-[#1A1A1A] mb-6">
-            Prêt à vivre une aventure
-            <span className="text-[#FF7B54]"> unique ?</span>
+          <h2 className="text-4xl md:text-5xl font-bold text-[var(--gris-noir)] mb-6">
+            Prêt à créer une aventure
+            <span className="text-[var(--corail)]"> tunisienne ?</span>
           </h2>
-          <p className="text-xl text-gray-700 mb-8 max-w-2xl mx-auto">
-            Chaque histoire commence par un prénom. Le vôtre.
+          <p className="text-xl text-[var(--gris-doux)] mb-8 max-w-2xl mx-auto">
+            Chaque histoire est imprimée à Sousse avec amour.
           </p>
           <Button
             asChild
             size="lg"
-            className="bg-[#3E7BFA] hover:bg-[#2E5BDA] text-white font-semibold px-10 py-5 text-lg transition-all duration-300 border-0 shadow-lg"
+            className="bg-[var(--corail)] hover:bg-[#C74A35] text-white font-semibold px-10 py-5 text-lg transition-all duration-300 shadow-lg hover:shadow-[var(--corail)]/30"
           >
             <Link href="/register">
-              Commencer maintenant
+              Commencer l'aventure
             </Link>
           </Button>
         </motion.div>
       </section>
-
     </div>
   )
 }

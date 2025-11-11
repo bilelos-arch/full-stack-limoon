@@ -98,9 +98,13 @@ export default function HistoireCard({
           
           {template?.coverPath ? (
             <img
-              src={`${process.env.NEXT_PUBLIC_API_URL}/uploads/${template.coverPath}`}
+              src={template.coverPath && template.coverPath.includes('res.cloudinary.com')
+                ? `${process.env.NEXT_PUBLIC_API_URL}/uploads/${template.coverPath.split('/').pop()?.split('.')[0]}.png`
+                : template.coverPath.startsWith('http')
+                ? template.coverPath
+                : `${process.env.NEXT_PUBLIC_API_URL}/uploads/${template.coverPath}`}
               alt={template.title}
-              className="w-full h-full object-cover transition-all duration-300 group-hover:scale-110 group-hover:brightness-110"
+              className="w-full h-full object-contain transition-all duration-300 group-hover:scale-110 group-hover:brightness-110"
               loading="lazy"
             />
           ) : (

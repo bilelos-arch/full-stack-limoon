@@ -173,7 +173,7 @@ let HistoiresService = HistoiresService_1 = class HistoiresService {
         return {
             ...histoireObj,
             previewImage: histoireObj.previewUrls?.[0] || null,
-            defaultPdfUrl: histoireObj.pdfUrl || `${baseUrl}/pdfs/${histoireObj.templateId}-default.pdf`,
+            defaultPdfUrl: histoireObj.pdfUrl || `${baseUrl}/uploads/pdfs/${histoireObj.templateId}-default.pdf`,
         };
     }
     async findByUser(userId) {
@@ -238,18 +238,20 @@ let HistoiresService = HistoiresService_1 = class HistoiresService {
             const fs = require('fs');
             const path = require('path');
             for (const previewUrl of histoire.previewUrls) {
-                const previewPath = path.join('./uploads', previewUrl);
+                const previewPath = path.join('.', previewUrl);
                 if (fs.existsSync(previewPath)) {
                     fs.unlinkSync(previewPath);
+                    this.logger.log(`Removed preview file: ${previewPath}`);
                 }
             }
         }
         if (histoire.pdfUrl) {
             const fs = require('fs');
             const path = require('path');
-            const pdfPath = path.join('./uploads', histoire.pdfUrl);
+            const pdfPath = path.join('.', histoire.pdfUrl);
             if (fs.existsSync(pdfPath)) {
                 fs.unlinkSync(pdfPath);
+                this.logger.log(`Removed PDF file: ${pdfPath}`);
             }
         }
         await this.histoireModel.findByIdAndDelete(id);

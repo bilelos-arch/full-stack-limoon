@@ -106,6 +106,7 @@ export default function CreerHistoirePage() {
     console.log('[DEBUG] user:', user);
     console.log('[DEBUG] user?._id:', user?._id);
     console.log('[DEBUG] templateId:', templateId);
+    console.log('[DEBUG] showPreview before:', showPreview);
 
     if (!template || !user?._id) {
       console.error('[DEBUG] Missing template or user:', { template: !!template, userId: user?._id });
@@ -138,10 +139,13 @@ export default function CreerHistoirePage() {
         setPreviewImages(previewUrls);
 
         // Show preview immediately after generation
+        console.log('[DEBUG] Setting showPreview to true');
         setShowPreview(true);
+        console.log('[DEBUG] showPreview after setting:', true);
       } else {
         console.error('[DEBUG] generateHistoire returned null or undefined');
         setPreviewImages([]);
+        console.log('[DEBUG] Setting showPreview to false due to null histoire');
         setShowPreview(false);
       }
     } catch (error) {
@@ -152,78 +156,89 @@ export default function CreerHistoirePage() {
         name: (error as Error).name
       });
       setPreviewImages([]);
+      console.log('[DEBUG] Setting showPreview to false due to error');
       setShowPreview(false);
     } finally {
       setIsGeneratingPreview(false);
     }
-  }, [template, user?._id, templateId, generateHistoire]);
+  }, [template, user?._id, templateId, generateHistoire, showPreview]);
 
   const handleGenerate = async (variables: Record<string, string>) => {
-    console.log('handleGenerate called with variables:', variables);
-    console.log('template:', template);
-    console.log('user:', user);
-    console.log('user?._id:', user?._id);
-    console.log('isAuthenticated:', isAuthenticated);
+    console.log('[DEBUG] handleGenerate called with variables:', variables);
+    console.log('[DEBUG] template:', template);
+    console.log('[DEBUG] user:', user);
+    console.log('[DEBUG] user?._id:', user?._id);
+    console.log('[DEBUG] isAuthenticated:', isAuthenticated);
 
     if (!template || !user?._id) {
-      console.error('Missing template or user:', { template: !!template, userId: user?._id, user: user, isAuthenticated });
-      console.error('Full user object:', JSON.stringify(user, null, 2));
+      console.error('[DEBUG] Missing template or user:', { template: !!template, userId: user?._id, user: user, isAuthenticated });
+      console.error('[DEBUG] Full user object:', JSON.stringify(user, null, 2));
       return;
     }
 
     setIsGenerating(true);
     try {
-      console.log('Calling generateHistoire with:', {
+      console.log('[DEBUG] Calling generateHistoire with:', {
         templateId: templateId,
         variables,
       });
 
-      console.log('About to call generateHistoire from store...');
+      console.log('[DEBUG] About to call generateHistoire from store...');
       const histoire = await generateHistoire({
         templateId: templateId,
         variables,
       });
 
-      console.log('generateHistoire returned:', histoire);
-      console.log('histoire type:', typeof histoire);
-      console.log('histoire is null:', histoire === null);
-      console.log('histoire is undefined:', histoire === undefined);
-      console.log('histoire.previewUrls:', histoire?.previewUrls);
-      console.log('histoire.previewUrls length:', histoire?.previewUrls?.length);
-      console.log('histoire.previewUrls type:', typeof histoire?.previewUrls);
-      console.log('histoire.generatedPdfUrl:', histoire?.generatedPdfUrl);
-      console.log('histoire.pdfUrl:', histoire?.pdfUrl);
-      console.log('Full histoire object:', JSON.stringify(histoire, null, 2));
+      console.log('[DEBUG] generateHistoire returned:', histoire);
+      console.log('[DEBUG] histoire type:', typeof histoire);
+      console.log('[DEBUG] histoire is null:', histoire === null);
+      console.log('[DEBUG] histoire is undefined:', histoire === undefined);
 
       if (histoire) {
-        console.log('Setting generated histoire for preview');
-        setGeneratedHistoire(histoire);
+        console.log('[DEBUG] Histoire object received, checking structure...');
+        console.log('[DEBUG] histoire.previewUrls:', histoire?.previewUrls);
+        console.log('[DEBUG] histoire.previewUrls length:', histoire?.previewUrls?.length);
+        console.log('[DEBUG] histoire.previewUrls type:', typeof histoire?.previewUrls);
+        console.log('[DEBUG] histoire.generatedPdfUrl:', histoire?.generatedPdfUrl);
+        console.log('[DEBUG] histoire.pdfUrl:', histoire?.pdfUrl);
+        console.log('[DEBUG] histoire._id:', histoire?._id);
+        console.log('[DEBUG] Full histoire object:', JSON.stringify(histoire, null, 2));
+
+        // Handle different response formats from backend
+        let actualHistoire = histoire;
+        // Note: Removed nested response handling as Histoire type doesn't have success/histoire properties
+
+        console.log('[DEBUG] Setting generated histoire for preview');
+        setGeneratedHistoire(actualHistoire);
         setFinalVariables(variables);
 
         // Utiliser les images de preview générées lors de la création de l'histoire
-        const previewUrls = histoire.previewUrls || [];
-        console.log('Setting previewImages with:', previewUrls);
-        console.log('Preview URLs are strings:', previewUrls.every(url => typeof url === 'string'));
+        const previewUrls = actualHistoire.previewUrls || [];
+        console.log('[DEBUG] Setting previewImages with:', previewUrls);
+        console.log('[DEBUG] Preview URLs are strings:', previewUrls.every(url => typeof url === 'string'));
         setPreviewImages(previewUrls);
 
         // Show preview immediately after generation
+        console.log('[DEBUG] Setting showPreview to true');
         setShowPreview(true);
 
         // Stay on the page instead of navigating
       } else {
-        console.error('generateHistoire returned null or undefined');
-        console.error('This means the API call failed or returned an invalid response');
+        console.error('[DEBUG] generateHistoire returned null or undefined');
+        console.error('[DEBUG] This means the API call failed or returned an invalid response');
         setPreviewImages([]);
+        console.log('[DEBUG] Setting showPreview to false due to null histoire');
         setShowPreview(false);
       }
     } catch (error) {
-      console.error('Erreur lors de la génération:', error);
-      console.error('Error details:', {
+      console.error('[DEBUG] Erreur lors de la génération:', error);
+      console.error('[DEBUG] Error details:', {
         message: (error as Error).message,
         stack: (error as Error).stack,
         name: (error as Error).name
       });
       setPreviewImages([]);
+      console.log('[DEBUG] Setting showPreview to false due to error');
       setShowPreview(false);
     } finally {
       setIsGenerating(false);
@@ -330,7 +345,24 @@ export default function CreerHistoirePage() {
     try {
       // Build the full URL for the PDF file
       const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
-      const fullPdfUrl = `${apiBaseUrl}/uploads/${generatedHistoire.generatedPdfUrl}`;
+      let pdfPath = generatedHistoire.generatedPdfUrl;
+
+      // Convert Cloudinary URL to local URL if needed
+      if (pdfPath.includes('res.cloudinary.com')) {
+        // Extract filename from Cloudinary URL
+        const urlParts = pdfPath.split('/');
+        const filename = urlParts[urlParts.length - 1].split('.')[0];
+        pdfPath = `pdfs/${filename}.pdf`;
+      }
+
+      // Normalize pdfPath to be relative to /uploads/
+      if (pdfPath.startsWith('/uploads/')) {
+        pdfPath = pdfPath.substring(8);
+      } else if (pdfPath.startsWith('/')) {
+        pdfPath = pdfPath.substring(1);
+      }
+
+      const fullPdfUrl = `${apiBaseUrl}/uploads/${pdfPath}`;
       console.log('Fetching PDF from:', fullPdfUrl);
 
       const response = await fetch(fullPdfUrl);

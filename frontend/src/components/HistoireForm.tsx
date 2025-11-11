@@ -365,7 +365,26 @@ export default function HistoireForm({
 
         const result = await response.json();
         console.log('[DEBUG] [HistoireForm] Histoire generation successful:', result);
+        console.log('[DEBUG] [HistoireForm] Result type:', typeof result);
+        console.log('[DEBUG] [HistoireForm] Result keys:', Object.keys(result));
+        console.log('[DEBUG] [HistoireForm] Result.histoire:', result.histoire);
+        console.log('[DEBUG] [HistoireForm] Result.success:', result.success);
+
+        // Convert Cloudinary URLs to local URLs for images
+        if (result.histoire && result.histoire.previewUrls) {
+          result.histoire.previewUrls = result.histoire.previewUrls.map((url: string) => {
+            if (url.includes('res.cloudinary.com')) {
+              // Convert Cloudinary URL to local URL
+              const filename = url.split('/').pop()?.split('.')[0];
+              return `${apiUrl}/uploads/previews/${filename}.png`;
+            }
+            return url;
+          });
+        }
+
+        console.log('[DEBUG] [HistoireForm] About to call onSubmit with result');
         await onSubmit(result);
+        console.log('[DEBUG] [HistoireForm] onSubmit called successfully');
       } catch (error) {
         console.error('[DEBUG] [HistoireForm] Error generating histoire:', error);
         console.error('[DEBUG] [HistoireForm] Error details:', {
@@ -449,16 +468,24 @@ export default function HistoireForm({
                     type="button"
                     variant="outline"
                     onClick={() => {
+                      console.log('[DEBUG] HistoireForm: Preview button clicked');
+                      console.log('[DEBUG] HistoireForm: Form is valid:', form.formState.isValid);
+                      console.log('[DEBUG] HistoireForm: Form errors:', form.formState.errors);
                       if (form.formState.isValid) {
                         const formData = form.getValues();
+                        console.log('[DEBUG] HistoireForm: Raw form data:', formData);
                         // Convertir les fichiers en URLs pour l'aperçu
                         const variablesWithUrls = { ...formData };
                         Object.keys(variablesWithUrls).forEach(key => {
                           if (variablesWithUrls[key] instanceof File) {
                             variablesWithUrls[key] = imagePreviews[key] || '';
+                            console.log(`[DEBUG] HistoireForm: Converted file for ${key} to URL:`, variablesWithUrls[key]);
                           }
                         });
+                        console.log('[DEBUG] HistoireForm: Final variables for preview:', variablesWithUrls);
                         onShowPreview(variablesWithUrls);
+                      } else {
+                        console.log('[DEBUG] HistoireForm: Form is invalid, not calling onShowPreview');
                       }
                     }}
                     disabled={!form.formState.isValid}

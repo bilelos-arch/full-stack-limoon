@@ -23,11 +23,8 @@ const Navbar: React.FC = () => {
   // Navigation links configuration
   const navLinks = useMemo(() => {
     const baseLinks = [
-      { href: '/', label: 'Accueil' },
-      { href: '/histoires', label: 'Histoires' },
-      { href: '/creer', label: 'Créer' },
-      { href: '/le-concept', label: 'À propos' },
-      { href: '/contact', label: 'Contact' },
+      { href: '/book-store', label: 'Book-store' },
+      { href: '/le-concept', label: 'Le concept' },
     ];
 
     const adminLinks = user?.role === 'admin' ? [
@@ -44,7 +41,7 @@ const Navbar: React.FC = () => {
         {/* Logo */}
         <div className="flex items-center w-[237px] self-stretch">
           <Link href="/" className="flex items-center">
-            <span className="text-3xl font-bold text-primary">LIM∞N</span>
+            <Image src="/logo.svg" alt="LIM∞N Logo" width={120} height={40} />
           </Link>
         </div>
 

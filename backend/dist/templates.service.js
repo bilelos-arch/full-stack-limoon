@@ -170,7 +170,7 @@ let TemplatesService = class TemplatesService {
         console.log('Generating temporary PDF...');
         const tempPdfFilename = await this.pdfGeneratorService.generateFinalPdf(template, variables);
         console.log('Generated PDF filename:', tempPdfFilename);
-        const tempPdfPath = path.join('./uploads', tempPdfFilename);
+        const tempPdfPath = path.join('.', tempPdfFilename);
         const finalTempPath = path.join(this.tempPreviewsDir, `preview-${templateId}-${Date.now()}-${Math.round(Math.random() * 1e9)}.pdf`);
         console.log('Moving PDF from:', tempPdfPath, 'to:', finalTempPath);
         console.log('Temp PDF exists:', fs.existsSync(tempPdfPath));
