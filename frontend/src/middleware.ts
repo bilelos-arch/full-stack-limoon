@@ -18,10 +18,12 @@ export function middleware(request: NextRequest) {
 
   console.log(`Middleware: ${pathname} - Protected: ${isProtectedRoute}, Auth: ${isAuthRoute}, Token: ${!!accessToken}`);
 
-  // Si l'utilisateur est sur une route d'authentification et a un token, rediriger vers book-store
+  // Si l'utilisateur est sur une route d'authentification et a un token, permettre l'accès à la page de connexion
+  // ⚠️ CORRECTION: Ne pas rediriger automatiquement les utilisateurs authentifiés vers /book-store
+  // Ils doivent pouvoir accéder à /login pour se reconnecter ou changer de compte si nécessaire
   if (isAuthRoute && accessToken) {
-    console.log('Middleware: Redirection vers /book-store pour utilisateur authentifié');
-    return NextResponse.redirect(new URL('/book-store', request.url));
+    console.log('Middleware: Accès autorisé à /login pour utilisateur authentifié');
+    // Permettre la continuation normale - pas de redirection
   }
 
   // Si l'utilisateur est sur une route protégée sans token, rediriger vers login

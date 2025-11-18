@@ -1,0 +1,228 @@
+/* ========== VARIABLES CSS - DESIGN "PARCOURS NARRATIF" ========== */
+
+/* Typographie personnalisée */
+:root {
+  /* Polices */
+  --font-poppins: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-roboto: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  
+  /* Sizes - Système modulaire sur base 4px */
+  --text-xs: 0.75rem;    /* 12px */
+  --text-sm: 0.875rem;   /* 14px */
+  --text-base: 1rem;     /* 16px */
+  --text-lg: 1.125rem;   /* 18px */
+  --text-xl: 1.25rem;    /* 20px */
+  --text-2xl: 1.5rem;    /* 24px */
+  --text-3xl: 1.875rem;  /* 30px */
+  --text-4xl: 2.25rem;   /* 36px */
+  --text-5xl: 3rem;      /* 48px */
+  --text-6xl: 3.75rem;   /* 60px */
+  --text-7xl: 4.5rem;    /* 72px */
+  
+  /* Line Heights - Optimisés pour la lisibilité */
+  --leading-tight: 1.25;
+  --leading-snug: 1.375;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+  --leading-loose: 2;
+  
+  /* Font Weights - Sémantique */
+  --font-light: 300;
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  --font-extrabold: 800;
+  --font-black: 900;
+}
+
+/* Couleurs avancées pour le parcours narratif */
+:root {
+  /* Palette principale - Immersive */
+  --color-primary: #7B3FE4;        /* Violet vibrant */
+  --color-secondary: #42D9C8;      /* Turquoise frais */
+  --color-accent: #FFE066;         /* Jaune lumineux */
+  --color-neutral: #F8FAFF;        /* Blanc cassé */
+  --color-dark: #0F172A;           /* Gris très foncé */
+  
+  /* Variations de la couleur primaire */
+  --color-primary-light: #9B6BEE;  /* Plus clair */
+  --color-primary-dark: #5A2FB8;   /* Plus foncé */
+  --color-primary-50: #F3F0FF;     /* Très clair */
+  --color-primary-100: #E8E0FF;
+  --color-primary-200: #D1C2FF;
+  --color-primary-300: #BAA3FF;
+  --color-primary-400: #A385FF;
+  --color-primary-500: #7B3FE4;
+  --color-primary-600: #5A2FB8;
+  --color-primary-700: #4A26A0;
+  --color-primary-800: #3A1F80;
+  --color-primary-900: #2A1860;
+  
+  /* Variations de la couleur secondaire */
+  --color-secondary-light: #6BE4D8;  /* Plus clair */
+  --color-secondary-dark: #2B9B8C;   /* Plus foncé */
+  --color-secondary-50: #F0FCFA;     /* Très clair */
+  --color-secondary-100: #E1F9F5;
+  --color-secondary-200: #C3F2EB;
+  --color-secondary-300: #A5EBE1;
+  --color-secondary-400: #87E4D7;
+  --color-secondary-500: #42D9C8;
+  --color-secondary-600: #2B9B8C;
+  --color-secondary-700: #147C6C;
+  --color-secondary-800: #0A5D4C;
+  --color-secondary-900: #053E2C;
+  
+  /* Variations de la couleur accent */
+  --color-accent-light: #FFED99;     /* Plus clair */
+  --color-accent-dark: #CCB833;      /* Plus foncé */
+  --color-accent-50: #FFFEF0;        /* Très clair */
+  --color-accent-100: #FFFDE1;
+  --color-accent-200: #FFFBC3;
+  --color-accent-300: #FFF9A5;
+  --color-accent-400: #FFF787;
+  --color-accent-500: #FFE066;
+  --color-accent-600: #CCB833;
+  --color-accent-700: #998200;
+  --color-accent-800: #665500;
+  --color-accent-900: #332900;
+  
+  /* Neutres avancés */
+  --color-gray-50: #F8FAFF;
+  --color-gray-100: #F1F5F9;
+  --color-gray-200: #E2E8F0;
+  --color-gray-300: #CBD5E1;
+  --color-gray-400: #94A3B8;
+  --color-gray-500: #64748B;
+  --color-gray-600: #475569;
+  --color-gray-700: #334155;
+  --color-gray-800: #1E293B;
+  --color-gray-900: #0F172A;
+  --color-gray-950: #020617;
+}
+
+/* Ombres et effets */
+:root {
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-base: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+  --shadow-2xl: 0 50px 100px -20px rgb(0 0 0 / 0.25);
+  
+  /* Ombres colorées spécifiques */
+  --shadow-primary: 0 10px 30px rgba(123, 63, 228, 0.3);
+  --shadow-secondary: 0 10px 30px rgba(66, 217, 200, 0.3);
+  --shadow-accent: 0 10px 30px rgba(255, 224, 102, 0.3);
+  --shadow-glow: 0 0 20px rgba(123, 63, 228, 0.5);
+  
+  /* Backdrop blur */
+  --backdrop-blur-sm: blur(4px);
+  --backdrop-blur-base: blur(8px);
+  --backdrop-blur-lg: blur(16px);
+  --backdrop-blur-xl: blur(24px);
+}
+
+/* Espacement modulaire sur base 4px */
+:root {
+  --space-1: 0.25rem;   /* 4px */
+  --space-2: 0.5rem;    /* 8px */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-5: 1.25rem;   /* 20px */
+  --space-6: 1.5rem;    /* 24px */
+  --space-8: 2rem;      /* 32px */
+  --space-10: 2.5rem;   /* 40px */
+  --space-12: 3rem;     /* 48px */
+  --space-16: 4rem;     /* 64px */
+  --space-20: 5rem;     /* 80px */
+  --space-24: 6rem;     /* 96px */
+  --space-32: 8rem;     /* 128px */
+  --space-40: 10rem;    /* 160px */
+  --space-48: 12rem;    /* 192px */
+  --space-56: 14rem;    /* 224px */
+  --space-64: 16rem;    /* 256px */
+}
+
+/* Border radius cohérents */
+:root {
+  --radius-none: 0;
+  --radius-sm: 0.125rem;   /* 2px */
+  --radius-base: 0.25rem;  /* 4px */
+  --radius-md: 0.375rem;   /* 6px */
+  --radius-lg: 0.5rem;     /* 8px */
+  --radius-xl: 0.75rem;    /* 12px */
+  --radius-2xl: 1rem;      /* 16px */
+  --radius-3xl: 1.5rem;    /* 24px */
+  --radius-full: 9999px;
+}
+
+/* Transitions et animations */
+:root {
+  --transition-fast: 150ms ease-out;
+  --transition-base: 250ms ease-out;
+  --transition-slow: 350ms ease-out;
+  --transition-slower: 500ms ease-out;
+  
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* Z-index systematisés */
+:root {
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
+  --z-toast: 1080;
+}
+
+/* Media queries pour responsive design */
+:root {
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+}
+
+/* Variables pour les états interactifs */
+:root {
+  --hover-opacity: 0.8;
+  --active-opacity: 0.6;
+  --disabled-opacity: 0.4;
+  --focus-ring: 0 0 0 3px rgba(123, 63, 228, 0.1);
+}
+
+/* Gradients personnalisés */
+:root {
+  --gradient-primary: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  --gradient-secondary: linear-gradient(135deg, var(--color-secondary) 0%, var(--color-accent) 100%);
+  --gradient-accent: linear-gradient(135deg, var(--color-accent) 0%, var(--color-primary) 100%);
+  --gradient-narrative: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 50%, var(--color-accent) 100%);
+  --gradient-radial: radial-gradient(circle at center, var(--color-primary) 0%, var(--color-secondary) 100%);
+}
+
+/* Utilitaires de couleur pour les composants */
+.text-primary { color: var(--color-primary); }
+.text-secondary { color: var(--color-secondary); }
+.text-accent { color: var(--color-accent); }
+.text-neutral { color: var(--color-neutral); }
+.text-dark { color: var(--color-dark); }
+
+.bg-primary { background-color: var(--color-primary); }
+.bg-secondary { background-color: var(--color-secondary); }
+.bg-accent { background-color: var(--color-accent); }
+.bg-neutral { background-color: var(--color-neutral); }
+.bg-dark { background-color: var(--color-dark); }
+
+.border-primary { border-color: var(--color-primary); }
+.border-secondary { border-color: var(--color-secondary); }
+.border-accent { border-color: var(--color-accent); }

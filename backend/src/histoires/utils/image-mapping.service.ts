@@ -1,5 +1,5 @@
 // backend/src/histoires/utils/image-mapping.service.ts
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -399,7 +399,7 @@ export class ImageMappingService {
 
     for (const filename of files) {
       const filePath = path.join(this.tempImagesDir, filename);
-      
+
       try {
         const stats = fs.statSync(filePath);
         if (stats.mtime.getTime() < cutoffTime) {
@@ -415,4 +415,5 @@ export class ImageMappingService {
 
     return cleanedCount;
   }
+
 }

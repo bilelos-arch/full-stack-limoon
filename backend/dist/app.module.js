@@ -12,11 +12,13 @@ const mongoose_1 = require("@nestjs/mongoose");
 const auth_module_1 = require("./auth.module");
 const users_module_1 = require("./users.module");
 const templates_module_1 = require("./templates.module");
+const testimonials_module_1 = require("./testimonials.module");
 const histoires_module_1 = require("./histoires/histoires.module");
 const admin_controller_1 = require("./admin.controller");
 const histoire_schema_1 = require("./histoires/schemas/histoire.schema");
 const user_schema_1 = require("./user.schema");
 const template_schema_1 = require("./template.schema");
+const testimonial_schema_1 = require("./testimonial.schema");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -27,8 +29,10 @@ exports.AppModule = AppModule = __decorate([
             mongoose_1.MongooseModule.forFeature([
                 { name: histoire_schema_1.Histoire.name, schema: histoire_schema_1.HistoireSchema },
                 { name: user_schema_1.User.name, schema: user_schema_1.UserSchema },
-                { name: template_schema_1.Template.name, schema: template_schema_1.TemplateSchema }
+                { name: template_schema_1.Template.name, schema: template_schema_1.TemplateSchema },
+                { name: testimonial_schema_1.Testimonial.name, schema: testimonial_schema_1.TestimonialSchema }
             ]),
+            testimonials_module_1.TestimonialsModule,
             auth_module_1.AuthModule,
             users_module_1.UsersModule,
             templates_module_1.TemplatesModule,

@@ -1,0 +1,9 @@
+<svg width="240" height="240" viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="240" height="240" fill="#f3f4f6"/>
+  <circle cx="120" cy="90" r="35" fill="#d1d5db"/>
+  <ellipse cx="120" cy="170" rx="60" ry="45" fill="#d1d5db"/>
+  <circle cx="90" cy="75" r="8" fill="#9ca3af"/>
+  <circle cx="150" cy="75" r="8" fill="#9ca3af"/>
+  <path d="M100 100 Q120 115 140 100" stroke="#9ca3af" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <text x="120" y="220" text-anchor="middle" fill="#6b7280" font-family="Arial, sans-serif" font-size="14">Avatar en cours...</text>
+</svg>

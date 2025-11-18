@@ -16,6 +16,7 @@ export declare class Template {
     };
     variables: string[];
     isPublished: boolean;
+    isFeatured: boolean;
 }
 export declare const TemplateSchema: import("mongoose").Schema<Template, import("mongoose").Model<Template, any, any, any, Document<unknown, any, Template, any, {}> & Template & {
     _id: import("mongoose").Types.ObjectId;

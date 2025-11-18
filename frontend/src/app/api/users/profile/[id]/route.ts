@@ -73,3 +73,44 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
+
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+
+  const accessToken = request.cookies.get('accessToken')?.value;
+  console.log('Frontend API Route PATCH: Received accessToken from cookies:', accessToken ? 'present' : 'missing');
+  console.log('Frontend API Route PATCH: Received id:', id);
+
+  try {
+    const body = await request.text();
+    console.log('Frontend API Route PATCH: Request body:', body);
+
+    const backendUrl = `${process.env.NEXT_PUBLIC_API_URL}/users/profile/${id}`;
+    console.log('Frontend API Route PATCH: Calling backend URL:', backendUrl);
+
+    const response = await fetch(backendUrl, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': accessToken ? `Bearer ${accessToken}` : '',
+        'Content-Type': 'application/json',
+      },
+      body: body,
+    });
+
+    console.log('Frontend API Route PATCH: Backend response status:', response.status);
+    console.log('Frontend API Route PATCH: Backend response headers:', Object.fromEntries(response.headers.entries()));
+
+    const data = await response.text();
+    console.log('Frontend API Route PATCH: Backend response data:', data);
+
+    return new NextResponse(data, {
+      status: response.status,
+      headers: {
+        'Content-Type': response.headers.get('content-type') || 'application/json',
+      },
+    });
+  } catch (error) {
+    console.error('Error proxying PATCH request:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

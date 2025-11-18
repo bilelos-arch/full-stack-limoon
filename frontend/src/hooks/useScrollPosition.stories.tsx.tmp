@@ -1,0 +1,149 @@
+import type { Meta, StoryObj } from '@storybook/react';
+import { userEvent, within, expect } from '@storybook/test';
+import { useScrollPosition } from './useScrollPosition';
+
+// Composant de test pour useScrollPosition
+const ScrollPositionDemo = ({ threshold = 10 }: { threshold?: number }) => {
+  const isScrolled = useScrollPosition(threshold);
+  
+  return (
+    <div className="min-h-[200vh] p-8">
+      <div className={`fixed top-4 left-4 p-4 rounded-lg transition-all duration-300 ${
+        isScrolled 
+          ? 'bg-blue-500 text-white' 
+          : 'bg-gray-200 text-gray-800'
+      }`}>
+        <h2 className="font-bold">Scroll Position Demo</h2>
+        <p>Threshold: {threshold}px</p>
+        <p>Is Scrolled: {isScrolled ? 'YES' : 'NO'}</p>
+        <p>Scroll position: {typeof window !== 'undefined' ? window.pageYOffset : 0}px</p>
+      </div>
+      
+      <div className="mt-32 space-y-8">
+        <div className="h-64 bg-gradient-to-b from-blue-100 to-blue-200 p-8 rounded-lg">
+          <h3 className="text-2xl font-bold text-blue-800">Section 1</h3>
+          <p className="text-blue-600">Faites défiler pour voir l'effet...</p>
+        </div>
+        
+        <div className="h-64 bg-gradient-to-b from-green-100 to-green-200 p-8 rounded-lg">
+          <h3 className="text-2xl font-bold text-green-800">Section 2</h3>
+          <p className="text-green-600">L'état change quand vous dépassez le seuil</p>
+        </div>
+        
+        <div className="h-64 bg-gradient-to-b from-purple-100 to-purple-200 p-8 rounded-lg">
+          <h3 className="text-2xl font-bold text-purple-800">Section 3</h3>
+          <p className="text-purple-600">Testez avec différents seuils</p>
+        </div>
+        
+        <div className="h-64 bg-gradient-to-b from-orange-100 to-orange-200 p-8 rounded-lg">
+          <h3 className="text-2xl font-bold text-orange-800">Section 4</h3>
+          <p className="text-orange-600">Return to top to reset</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const meta: Meta<typeof ScrollPositionDemo> = {
+  title: 'Hooks/useScrollPosition',
+  component: ScrollPositionDemo,
+  parameters: {
+    layout: 'fullscreen',
+    docs: {
+      description: {
+        component: `
+Le hook useScrollPosition surveille la position de défilement de la fenêtre 
+et retourne un boolean indiquant si la position a dépassé un seuil donné.
+
+Fonctionnalités :
+- Surveillance en temps réel du scroll
+- Seuil configurable (défaut: 10px)
+- Changement d'état fluide
+- Optimisation des performances
+- Clean-up automatique des event listeners
+        `,
+      },
+    },
+  },
+  tags: ['autodocs'],
+  argTypes: {
+    threshold: {
+      description: 'Seuil en pixels à dépasser pour activer l\'état scrollé',
+      control: { type: 'number', min: 0, max: 100, step: 5 },
+    },
+  },
+};
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+// Story: Seuil par défaut
+export const DefaultThreshold: Story = {
+  name: 'Seuil par défaut (10px)',
+  parameters: {
+    docs: {
+      description: {
+        story: 'Comportement avec le seuil par défaut de 10 pixels',
+      },
+    },
+  },
+};
+
+// Story: Seuil élevé
+export const HighThreshold: Story = {
+  name: 'Seuil élevé (100px)',
+  args: {
+    threshold: 100,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Avec un seuil de 100 pixels, le changement d\'état est plus tardif',
+      },
+    },
+  },
+};
+
+// Story: Seuil faible
+export const LowThreshold: Story = {
+  name: 'Seuil faible (5px)',
+  args: {
+    threshold: 5,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Avec un seuil de 5 pixels, le changement d\'état est très rapide',
+      },
+    },
+  },
+};
+
+// Story: Test d'interaction
+export const InteractiveTest: Story = {
+  name: 'Test interactif',
+  parameters: {
+    docs: {
+      description: {
+        story: 'Testez le scroll et observez les changements d\'état en temps réel',
+      },
+    },
+    chromatic: {
+      delay: 1000,
+    },
+  },
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+    
+    await step('Observer l\'état initial', async () => {
+      const statusElement = canvas.getByText(/is scrolled: no/i);
+      await expect(statusElement).toBeInTheDocument();
+    });
+    
+    await step('Simuler le scroll', async () => {
+      // Dans Storybook, on ne peut pas vraiment scroller, mais on peut montrer l'état
+      const scrollValue = canvas.getByText(/scroll position:/i);
+      await expect(scrollValue).toBeInTheDocument();
+    });
+  },
+};

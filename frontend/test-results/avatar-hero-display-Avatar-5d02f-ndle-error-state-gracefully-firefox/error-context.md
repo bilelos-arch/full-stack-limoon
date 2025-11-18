@@ -1,0 +1,159 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - navigation "Navigation principale" [ref=e2]:
+    - generic [ref=e4]:
+      - link "Accueil - Limoon" [ref=e6] [cursor=pointer]:
+        - /url: /
+        - img "Limoon" [ref=e7]
+      - generic [ref=e8]:
+        - button "Nos histoires" [ref=e11]:
+          - img [ref=e12]
+          - generic [ref=e15]: Nos histoires
+          - img [ref=e17]
+        - link "Le concept" [ref=e21] [cursor=pointer]:
+          - /url: /le-concept
+          - img [ref=e22]
+          - generic [ref=e28]: Le concept
+      - generic [ref=e29]:
+        - button "Rechercher" [ref=e31]:
+          - img
+        - link "Créer une histoire" [ref=e33] [cursor=pointer]:
+          - /url: /histoires/creer
+        - generic [ref=e34]:
+          - link "Connexion" [ref=e36] [cursor=pointer]:
+            - /url: /login
+          - link "S'inscrire" [ref=e38] [cursor=pointer]:
+            - /url: /register
+  - main [ref=e39]:
+    - generic [ref=e41]:
+      - generic [ref=e42]:
+        - generic [ref=e43]: Connexion
+        - paragraph [ref=e44]: Connectez-vous à votre compte
+      - generic [ref=e46]:
+        - generic [ref=e47]:
+          - generic [ref=e48]: Email
+          - textbox "Email" [ref=e49]:
+            - /placeholder: votre@email.com
+        - generic [ref=e50]:
+          - generic [ref=e51]: Mot de passe
+          - textbox "Mot de passe" [ref=e52]:
+            - /placeholder: Votre mot de passe
+        - button "Se connecter" [ref=e53]
+        - paragraph [ref=e55]:
+          - text: Pas de compte ?
+          - link "S'inscrire" [ref=e56] [cursor=pointer]:
+            - /url: /register
+  - contentinfo [ref=e57]:
+    - generic [ref=e58]:
+      - generic [ref=e60]:
+        - generic [ref=e61]:
+          - link "Limoon - Histoires personnalisées en Tunisie Limoon Le livre libre — chaque histoire est unique" [ref=e62] [cursor=pointer]:
+            - /url: /
+            - img "Limoon - Histoires personnalisées en Tunisie" [ref=e64]
+            - generic [ref=e65]:
+              - heading "Limoon" [level=2] [ref=e66]
+              - paragraph [ref=e67]: Le livre libre — chaque histoire est unique
+          - paragraph [ref=e68]: Créer des récits uniques qui donnent vie à l'imagination de chaque enfant tunisien, transformant leurs prénoms en aventures extraordinaires.
+          - generic [ref=e69]:
+            - generic "Paiement sécurisé SSL" [ref=e70]:
+              - img [ref=e71]
+              - generic [ref=e73]: Paiement sécurisé
+            - generic "Impression écologique" [ref=e74]:
+              - img [ref=e75]
+              - generic [ref=e78]: Eco-friendly
+            - generic "Fabriqué en Tunisie" [ref=e79]:
+              - img [ref=e80]
+              - generic [ref=e83]: Imprimé en Tunisie
+        - navigation "Sitemap" [ref=e84]:
+          - generic [ref=e85]:
+            - heading "Liens rapides" [level=3] [ref=e86]:
+              - generic [ref=e87]: Liens rapides
+            - list [ref=e88]:
+              - listitem [ref=e89]:
+                - link "Nos histoires" [ref=e90] [cursor=pointer]:
+                  - /url: /histoires
+              - listitem [ref=e91]:
+                - link "Collections" [ref=e92] [cursor=pointer]:
+                  - /url: /collections
+              - listitem [ref=e93]:
+                - link "Créer" [ref=e94] [cursor=pointer]:
+                  - /url: /histoires/creer
+              - listitem [ref=e95]:
+                - link "FAQ" [ref=e96] [cursor=pointer]:
+                  - /url: /faq
+          - generic [ref=e97]:
+            - heading "Entreprise" [level=3] [ref=e98]:
+              - generic [ref=e99]: Entreprise
+            - list [ref=e100]:
+              - listitem [ref=e101]:
+                - link "À propos" [ref=e102] [cursor=pointer]:
+                  - /url: /le-concept
+              - listitem [ref=e103]:
+                - link "Carrières" [ref=e104] [cursor=pointer]:
+                  - /url: /carrieres
+              - listitem [ref=e105]:
+                - link "Presse" [ref=e106] [cursor=pointer]:
+                  - /url: /presse
+          - generic [ref=e107]:
+            - heading "Support" [level=3] [ref=e108]:
+              - generic [ref=e109]: Support
+            - list [ref=e110]:
+              - listitem [ref=e111]:
+                - link "Contact" [ref=e112] [cursor=pointer]:
+                  - /url: /contact
+              - listitem [ref=e113]:
+                - link "Aide" [ref=e114] [cursor=pointer]:
+                  - /url: /aide
+              - listitem [ref=e115]:
+                - link "Politique de confidentialité" [ref=e116] [cursor=pointer]:
+                  - /url: /politique-confidentialite
+        - generic [ref=e117]:
+          - heading "Restez informé" [level=3] [ref=e118]
+          - paragraph [ref=e119]: Recevez nos dernières nouvelles et offres spéciales.
+          - generic [ref=e120]:
+            - generic [ref=e121]:
+              - generic [ref=e122]: Adresse email
+              - textbox "Adresse email" [ref=e123]:
+                - /placeholder: votre@email.com
+            - button "S'inscrire" [ref=e124]:
+              - img [ref=e125]
+              - text: S'inscrire
+      - img [ref=e133]
+      - generic [ref=e136]:
+        - generic [ref=e137]:
+          - paragraph [ref=e138]:
+            - generic [ref=e139]: © 2025 Limoon Tunisie. Tous droits réservés.
+            - img [ref=e140]
+            - generic [ref=e142]: Fait avec amour à Sousse
+          - generic [ref=e143]:
+            - link "Conditions d'utilisation" [ref=e144] [cursor=pointer]:
+              - /url: /conditions-utilisation
+            - link "Mentions légales" [ref=e145] [cursor=pointer]:
+              - /url: /mentions-legales
+            - generic [ref=e146]: "SIRET: 1234567890001 - TVA: TN123456789"
+        - generic [ref=e147]:
+          - generic [ref=e148]: "@limoon.tn sur les réseaux"
+          - generic [ref=e149]:
+            - link "Suivez-nous sur Instagram" [ref=e150] [cursor=pointer]:
+              - /url: https://instagram.com/livretunisie
+              - img [ref=e151]
+            - link "Suivez-nous sur TikTok" [ref=e155] [cursor=pointer]:
+              - /url: https://tiktok.com/@limoon.tn
+              - img [ref=e156]
+            - link "Suivez-nous sur Facebook" [ref=e159] [cursor=pointer]:
+              - /url: https://facebook.com/limoon.tunisie
+              - img [ref=e160]
+  - region "Notifications alt+T"
+  - generic [ref=e162]:
+    - heading "Performance & Accessibilité" [level=3] [ref=e163]
+    - generic [ref=e164]:
+      - generic [ref=e165]: "LCP: ..."
+      - generic [ref=e166]: "CLS: ..."
+      - generic [ref=e167]: "FCP: ..."
+      - generic [ref=e168]: "Accessibilité: ..."
+  - button "Open Next.js Dev Tools" [ref=e174] [cursor=pointer]:
+    - img [ref=e175]
+  - alert [ref=e179]
+```

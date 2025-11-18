@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Patch,
   Delete,
   Param,
   Body,
@@ -49,6 +50,8 @@ export class UsersController {
       settings: profile.settings,
       storyHistory: profile.storyHistory,
       purchaseHistory: profile.purchaseHistory,
+      child: profile.child,
+      childAvatar: profile.childAvatar,
       role: profile.role,
       status: profile.status,
       createdAt: profile.createdAt,
@@ -91,6 +94,8 @@ export class UsersController {
       settings: profile.settings,
       storyHistory: profile.storyHistory,
       purchaseHistory: profile.purchaseHistory,
+      child: profile.child,
+      childAvatar: profile.childAvatar,
       role: profile.role,
       status: profile.status,
       createdAt: profile.createdAt,
@@ -115,6 +120,45 @@ export class UsersController {
 
     console.log('Users Controller: Profile updated successfully for user:', user.email);
     return user;
+  }
+
+  @Patch('profile/:id')
+  async updateChildProfile(
+    @Param('id') id: string,
+    @Req() req: any,
+    @Body() updateData: UpdateUserDto
+  ) {
+    console.log('Users Controller: updateChildProfile called for id:', id);
+    console.log('Users Controller: Request user:', req.user);
+    console.log('Users Controller: Update data received:', updateData);
+
+    // Vérifier les permissions : utilisateur peut modifier son propre profil ou admin peut modifier n'importe quel profil
+    if (req.user.userId !== id && req.user.role !== 'admin') {
+      console.log('Users Controller: Access denied - userId mismatch or not admin');
+      throw new HttpException('Access denied', HttpStatus.FORBIDDEN);
+    }
+
+    try {
+      const user = await this.usersService.updateChildProfile(id, updateData);
+      
+      if (!user) {
+        console.log('Users Controller: Update failed - no user returned');
+        throw new HttpException('Failed to update child profile', HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+
+      console.log('Users Controller: Child profile updated successfully for user:', user.email);
+      return {
+        success: true,
+        message: 'Profil enfant mis à jour avec succès',
+        user: user
+      };
+    } catch (error) {
+      console.error('Users Controller: Error updating child profile:', error);
+      throw new HttpException(
+        'Erreur lors de la mise à jour du profil enfant: ' + error.message,
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
   }
 
   @Get('profile/stories')

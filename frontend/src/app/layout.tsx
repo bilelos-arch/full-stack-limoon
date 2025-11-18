@@ -5,23 +5,27 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { initializeDOMMatrix } from "@/lib/domMatrixPolyfill-safe";
 import { AuthProvider } from "@/components/AuthProvider";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Toaster } from "sonner";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
+import { PerformanceMonitor } from '@/components/ui/performance-monitor';
 
 // Initialiser le polyfill DOMMatrix au démarrage
 if (typeof window !== 'undefined') {
   initializeDOMMatrix();
 }
 
-// Police Inter uniquement - optimisée pour le marché tunisien
+// Police Inter optimisée pour les performances - marché tunisien
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin", "latin-ext"], // Support pour caractères français
   weight: ["400", "500", "600", "700"],
   display: "swap",
+  preload: true,
+  fallback: ["system-ui", "sans-serif"],
 });
 
 export default function RootLayout({
@@ -44,22 +48,25 @@ export default function RootLayout({
       </head>
       <body className={`${inter.variable} font-sans antialiased`}>
         <QueryClientProviderWrapper>
-          <AuthProvider>
-            <Navbar />
-            <main id="main-content" className="min-h-screen">
-              {children}
-            </main>
-            <Footer />
-            <Toaster 
-              position="top-right" 
-              richColors 
-              toastOptions={{
-                style: {
-                  fontFamily: 'var(--font-sans)',
-                }
-              }}
-            />
-          </AuthProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              <Navbar />
+              <main id="main-content" className="min-h-screen pt-20 md:pt-16">
+                {children}
+              </main>
+              <Footer />
+              <Toaster 
+                position="top-right" 
+                richColors 
+                toastOptions={{
+                  style: {
+                    fontFamily: 'var(--font-sans)',
+                  }
+                }}
+              />
+              <PerformanceMonitor />
+            </AuthProvider>
+          </ThemeProvider>
         </QueryClientProviderWrapper>
       </body>
     </html>

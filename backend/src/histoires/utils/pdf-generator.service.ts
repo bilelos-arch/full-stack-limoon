@@ -542,10 +542,6 @@ export class PdfGeneratorService {
               continue;
             }
 
-            // Charger les bytes de l'image
-            imageBytes = fs.readFileSync(imagePath);
-            imageFormat = path.extname(imagePath).toLowerCase().replace('.', '');
-            this.logger.log(`[PDF-GENERATOR] ✅ Loaded image from file: ${imageFormat} (${imageBytes.length} bytes)`);
           }
 
           // Calculate absolute positions
@@ -760,25 +756,6 @@ export class PdfGeneratorService {
     }
   }
 
-  /**
-   * Cartoonify an image using external service
-   */
-  private async cartoonifyImage(imagePath: string): Promise<string> {
-    try {
-      // TODO: Implement actual cartoonification API call
-      // For now, return the original path from temp-images directory
-      this.logger.log(`Cartoonifying image: ${imagePath}`);
-
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // Return the path in temp-images directory (original uploaded image)
-      return `/uploads/temp-images/${imagePath}`;
-    } catch (error) {
-      this.logger.error(`Cartoonification failed: ${error.message}`);
-      throw error;
-    }
-  }
 
   /**
    * Validate base64 data URL

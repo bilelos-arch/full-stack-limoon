@@ -33,6 +33,24 @@ export declare class User {
     }[];
     role: 'admin' | 'user';
     status: 'active' | 'inactive' | 'suspended';
+    child?: {
+        name: string;
+        age: string;
+        gender: string;
+        mood: string;
+        hairType: string;
+        hairColor: string;
+        skinTone: string;
+        eyes: string;
+        eyebrows: string;
+        mouth: string;
+        glasses: boolean;
+        glassesStyle: string;
+        accessories: string;
+        earrings: string;
+        features: string;
+    };
+    childAvatar?: string;
     lastLogin?: Date;
     deletedAt?: Date;
 }

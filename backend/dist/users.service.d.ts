@@ -14,6 +14,7 @@ export declare class UsersService {
     findAll(query: QueryUsersDto): Promise<PaginatedUsersResponse>;
     findOne(id: string): Promise<UserResponse | null>;
     update(id: string, updateUserDto: UpdateUserDto): Promise<UserResponse | null>;
+    updateChildProfile(id: string, updateUserDto: UpdateUserDto): Promise<UserResponse | null>;
     remove(id: string): Promise<boolean>;
     updateLastLogin(userId: string): Promise<void>;
     private transformUserResponse;

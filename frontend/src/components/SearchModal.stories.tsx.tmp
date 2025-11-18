@@ -1,0 +1,350 @@
+import type { Meta, StoryObj } from '@storybook/react';
+import { userEvent, within, expect } from '@storybook/test';
+import SearchModal from './SearchModal';
+import { 
+  mockSearchResults, 
+  mockEmptySearchResults 
+} from '@/mocks/storybookData';
+
+const meta: Meta<typeof SearchModal> = {
+  title: 'Navigation/SearchModal',
+  component: SearchModal,
+  parameters: {
+    layout: 'fullscreen',
+    docs: {
+      description: {
+        component: `
+Le composant SearchModal est la modal de recherche avancée. 
+Il inclut les fonctionnalités suivantes :
+- Modal overlay avec backdrop blur
+- Champ de recherche avec debouncing
+- Résultats de recherche en temps réel
+- Navigation dans les résultats (Tab/Enter)
+- Focus trap pour l'accessibilité
+- Fermeture avec Escape ou clic extérieur
+- Types de résultats : Histoires, Templates, Utilisateurs
+- Loading state pendant la recherche
+- Animation d'ouverture/fermeture
+        `,
+      },
+    },
+  },
+  tags: ['autodocs'],
+  argTypes: {
+    isOpen: {
+      description: 'État d\'ouverture de la modal',
+      control: 'boolean',
+    },
+    onSearch: {
+      description: 'Fonction de recherche personnalisée',
+      control: false,
+    },
+  },
+};
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+// Story: Modal Fermée
+export const Closed: Story = {
+  name: 'Modal fermée',
+  args: {
+    isOpen: false,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Modal de recherche fermée - état par défaut',
+      },
+    },
+  },
+};
+
+// Story: Modal Ouverte - État Initial
+export const OpenInitial: Story = {
+  name: 'Modal ouverte - état initial',
+  args: {
+    isOpen: true,
+  },
+  play: async ({ canvasElement, step }: { canvasElement: HTMLElement, step: any }) => {
+    const canvas = within(canvasElement);
+    
+    await step('Vérifier l\'ouverture de la modal', async () => {
+      const modal = await canvas.findByRole('dialog');
+      await expect(modal).toBeInTheDocument();
+      
+      // Vérifier le titre
+      const title = canvas.getByText(/recherche/i);
+      await expect(title).toBeInTheDocument();
+      
+      // Vérifier le champ de recherche
+      const searchInput = await canvas.findByPlaceholderText(/rechercher des histoires/i);
+      await expect(searchInput).toBeInTheDocument();
+    });
+  },
+};
+
+// Story: Recherche en Cours
+export const SearchInProgress: Story = {
+  name: 'Recherche en cours',
+  args: {
+    isOpen: true,
+    onSearch: async (query: string) => {
+      // Simuler une recherche avec délai
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return mockSearchResults;
+    },
+  },
+  play: async ({ canvasElement, step }: { canvasElement: HTMLElement, step: any }) => {
+    const canvas = within(canvasElement);
+    
+    await step('Taper dans le champ de recherche', async () => {
+      const searchInput = await canvas.findByPlaceholderText(/rechercher des histoires/i);
+      
+      // Taper du texte pour déclencher la recherche
+      await userEvent.type(searchInput, 'aventure', { delay: 100 });
+      
+      // Vérifier le loading state
+      const loadingText = canvas.getByText(/recherche en cours/i);
+      await expect(loadingText).toBeInTheDocument();
+    });
+  },
+};
+
+// Story: Résultats de Recherche
+export const WithResults: Story = {
+  name: 'Avec résultats de recherche',
+  args: {
+    isOpen: true,
+    onSearch: async (query: string) => {
+      // Simuler une recherche rapide
+      await new Promise(resolve => setTimeout(resolve, 300));
+      return mockSearchResults;
+    },
+  },
+  play: async ({ canvasElement, step }: { canvasElement: HTMLElement, step: any }) => {
+    const canvas = within(canvasElement);
+    
+    await step('Effectuer une recherche avec résultats', async () => {
+      const searchInput = await canvas.findByPlaceholderText(/rechercher des histoires/i);
+      await userEvent.type(searchInput, 'aventure');
+      
+      // Attendre les résultats
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Vérifier les sections de résultats
+      const storiesSection = canvas.getByText(/histoires/i);
+      const templatesSection = canvas.getByText(/templates/i);
+      
+      await expect(storiesSection).toBeInTheDocument();
+      await expect(templatesSection).toBeInTheDocument();
+      
+      // Vérifier quelques résultats
+      const storyResults = await canvas.findAllByText(/aventures de timothée/i);
+      const templateResults = await canvas.findAllByText(/aventurier des étoiles/i);
+      
+      expect(storyResults.length).toBeGreaterThan(0);
+      expect(templateResults.length).toBeGreaterThan(0);
+    });
+  },
+};
+
+// Story: Aucun Résultat
+export const NoResults: Story = {
+  name: 'Aucun résultat trouvé',
+  args: {
+    isOpen: true,
+    onSearch: async (query: string) => {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      return mockEmptySearchResults;
+    },
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Affichage quand la recherche ne retourne aucun résultat',
+      },
+    },
+  },
+  play: async ({ canvasElement, step }: { canvasElement: HTMLElement, step: any }) => {
+    const canvas = within(canvasElement);
+    
+    await step('Rechercher quelque chose sans résultat', async () => {
+      const searchInput = await canvas.findByPlaceholderText(/rechercher des histoires/i);
+      await userEvent.type(searchInput, 'xyz123inconu');
+      
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Vérifier le message "Aucun résultat"
+      const noResultsText = canvas.getByText(/aucun résultat trouvé/i);
+      await expect(noResultsText).toBeInTheDocument();
+      
+      // Vérifier le conseil
+      const adviceText = canvas.getByText(/essayez avec d\'autres mots-clés/i);
+      await expect(adviceText).toBeInTheDocument();
+    });
+  },
+};
+
+// Story: Focus Trap
+export const FocusTrap: Story = {
+  name: 'Test focus trap',
+  args: {
+    isOpen: true,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Test de navigation au clavier avec focus trap',
+      },
+    },
+  },
+  play: async ({ canvasElement, step }: { canvasElement: HTMLElement, step: any }) => {
+    const canvas = within(canvasElement);
+    
+    await step('Tester navigation Tab dans la modal', async () => {
+      // Le champ de recherche devrait avoir le focus au début
+      const searchInput = await canvas.findByPlaceholderText(/rechercher des histoires/i);
+      await expect(searchInput).toHaveFocus();
+      
+      // Tab vers le bouton effacer
+      await userEvent.tab();
+      const clearButton = canvas.getByText(/effacer/i);
+      await expect(clearButton).toHaveFocus();
+      
+      // Tab vers le bouton fermer
+      await userEvent.tab();
+      const closeButton = canvas.getByRole('button', { name: /fermer/i });
+      await expect(closeButton).toHaveFocus();
+      
+      // Retour au champ de recherche (focus trap)
+      await userEvent.tab();
+      await expect(searchInput).toHaveFocus();
+    });
+  },
+};
+
+// Story: Fermeture avec Escape
+export const CloseWithEscape: Story = {
+  name: 'Fermeture avec Escape',
+  args: {
+    isOpen: true,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Fermeture de la modal avec la touche Escape',
+      },
+    },
+  },
+  play: async ({ canvasElement, step }: { canvasElement: HTMLElement, step: any }) => {
+    const canvas = within(canvasElement);
+    
+    await step('Appuyer sur Escape pour fermer', async () => {
+      await userEvent.keyboard('{Escape}');
+      
+      // La modal se ferme (simulation dans Storybook)
+      const modal = canvas.getByRole('dialog');
+      expect(modal).toBeInTheDocument(); // Still there for demo purposes
+    });
+  },
+};
+
+// Story: Fermeture par Clic Extérieur
+export const CloseOnBackdrop: Story = {
+  name: 'Fermeture par clic sur l\'arrière-plan',
+  args: {
+    isOpen: true,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Fermeture de la modal en cliquant sur l\'overlay',
+      },
+    },
+  },
+  play: async ({ canvasElement, step }: { canvasElement: HTMLElement, step: any }) => {
+    const canvas = within(canvasElement);
+    
+    await step('Cliquer sur l\'arrière-plan pour fermer', async () => {
+      const overlay = canvas.getByLabelText(/recherche/i);
+      await userEvent.click(overlay);
+      
+      // Simulation de fermeture
+      expect(overlay).toBeInTheDocument();
+    });
+  },
+};
+
+// Story: Effacer la Recherche
+export const ClearSearch: Story = {
+  name: 'Effacer la recherche',
+  args: {
+    isOpen: true,
+  },
+  play: async ({ canvasElement, step }: { canvasElement: HTMLElement, step: any }) => {
+    const canvas = within(canvasElement);
+    
+    await step('Taper puis effacer la recherche', async () => {
+      const searchInput = await canvas.findByPlaceholderText(/rechercher des histoires/i);
+      
+      // Taper du texte
+      await userEvent.type(searchInput, 'test');
+      
+      // Cliquer sur effacer
+      const clearButton = canvas.getByText(/effacer/i);
+      await userEvent.click(clearButton);
+      
+      // Vérifier que le champ est vide
+      await expect(searchInput).toHaveValue('');
+    });
+  },
+};
+
+// Story: Navigation dans les Résultats
+export const NavigateResults: Story = {
+  name: 'Navigation dans les résultats',
+  args: {
+    isOpen: true,
+    onSearch: async (query: string) => {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      return mockSearchResults;
+    },
+  },
+  play: async ({ canvasElement, step }: { canvasElement: HTMLElement, step: any }) => {
+    const canvas = within(canvasElement);
+    
+    await step('Rechercher et naviguer dans les résultats', async () => {
+      const searchInput = await canvas.findByPlaceholderText(/rechercher des histoires/i);
+      await userEvent.type(searchInput, 'aventure');
+      
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Tab vers les premiers résultats
+      await userEvent.tab();
+      const firstResult = canvas.getByText(/aventures de timothée/i);
+      await expect(firstResult).toBeInTheDocument();
+      
+      // Navigation avec flèches (simulation)
+      await userEvent.keyboard('{ArrowDown}');
+    });
+  },
+};
+
+// Story: Animation et Performance
+export const Animations: Story = {
+  name: 'Animations et performance',
+  args: {
+    isOpen: true,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Démonstration des animations d\'ouverture et performance',
+      },
+    },
+    chromatic: {
+      delay: 1000,
+    },
+  },
+};

@@ -402,9 +402,6 @@ let PdfGeneratorService = PdfGeneratorService_1 = class PdfGeneratorService {
                         imageErrors.push(`Variable "${element.variableName}": ${validation.error}`);
                         continue;
                     }
-                    imageBytes = fs.readFileSync(imagePath);
-                    imageFormat = path.extname(imagePath).toLowerCase().replace('.', '');
-                    this.logger.log(`[PDF-GENERATOR] ✅ Loaded image from file: ${imageFormat} (${imageBytes.length} bytes)`);
                 }
                 const pageWidth = template.dimensions?.width || 595;
                 const pageHeight = template.dimensions?.height || 842;
@@ -568,17 +565,6 @@ let PdfGeneratorService = PdfGeneratorService_1 = class PdfGeneratorService {
         catch (error) {
             this.logger.error(`Failed to convert PDF to images: ${error.message}`);
             throw new common_1.BadRequestException('Failed to generate preview images');
-        }
-    }
-    async cartoonifyImage(imagePath) {
-        try {
-            this.logger.log(`Cartoonifying image: ${imagePath}`);
-            await new Promise(resolve => setTimeout(resolve, 100));
-            return `/uploads/temp-images/${imagePath}`;
-        }
-        catch (error) {
-            this.logger.error(`Cartoonification failed: ${error.message}`);
-            throw error;
         }
     }
     validateDataUrl(dataUrl) {

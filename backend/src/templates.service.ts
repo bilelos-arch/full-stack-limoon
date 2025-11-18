@@ -87,6 +87,7 @@ export class TemplatesService {
     if (query.ageRange) filter.ageRange = query.ageRange;
     if (query.isPublished !== undefined) filter.isPublished = query.isPublished === 'true';
     if (query.language) filter.language = query.language;
+    if (query.featured !== undefined) filter.isFeatured = query.featured === 'true';
 
     return this.templateModel.find(filter).sort({ createdAt: -1 }).exec();
   }

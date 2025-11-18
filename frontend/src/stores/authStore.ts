@@ -6,8 +6,10 @@ import { AxiosError } from 'axios';
 export interface User {
   _id: string;
   userId: string;
+  name: string;
   email: string;
   role: 'admin' | 'user';
+  childAvatar?: string;
 }
 
 interface AuthState {
@@ -58,7 +60,7 @@ export const useAuthStore = create<AuthState>()(
           set({ user, isAuthenticated: true, isLoading: false });
         } catch (error) {
           if (error instanceof AxiosError && error.response?.status === 401) {
-            console.error('checkAuth: 401 error detected, triggering global logout');
+            console.warn('checkAuth: 401 error detected, triggering global logout');
             // Déclencher la déconnexion globale avec redirection
             get().logout();
             set({ isLoading: false });

@@ -18,6 +18,8 @@ export declare class UsersController {
         settings: any;
         storyHistory: any;
         purchaseHistory: any;
+        child: any;
+        childAvatar: any;
         role: any;
         status: any;
         createdAt: any;
@@ -36,6 +38,8 @@ export declare class UsersController {
         settings: any;
         storyHistory: any;
         purchaseHistory: any;
+        child: any;
+        childAvatar: any;
         role: any;
         status: any;
         createdAt: any;
@@ -43,6 +47,11 @@ export declare class UsersController {
         lastLogin: any;
     }>;
     updateProfile(req: any, updateData: any): Promise<UserResponse>;
+    updateChildProfile(id: string, req: any, updateData: UpdateUserDto): Promise<{
+        success: boolean;
+        message: string;
+        user: UserResponse;
+    }>;
     getUserStories(req: any): Promise<{
         id: string;
         title: string;

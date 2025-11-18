@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@800&family=Inter:wght@400;500;600&family=Roboto:wght@400;500;700&display=swap');
 @import "tailwindcss";
 @import "tw-animate-css";
 @import '@react-pdf-viewer/core/lib/styles/index.css';
@@ -5,40 +6,56 @@
 
 /* ========== PALETTE UNIFIÉE - RÊVE VIF MODÉRÉ ========== */
 @theme inline {
-  --color-background: var(--blanc-casse);
-  --color-foreground: var(--gris-noir);
+  /* Typographie - Design "parcours narratif" */
+  --font-poppins: 'Poppins', sans-serif;
+  --font-inter: 'Inter', sans-serif;
+  --font-roboto: 'Roboto', sans-serif;
+  
+  /* Couleurs système */
+  --color-background: var(--neutral-white);
+  --color-foreground: var(--dark-slate);
   --font-sans: var(--font-inter);
-  --color-primary: var(--bleu-vif);
+  --color-primary: var(--primary-purple);
   --color-primary-foreground: var(--blanc-pur);
-  --color-secondary: var(--lavande-pale);
-  --color-secondary-foreground: var(--gris-noir);
+  --color-secondary: var(--secondary-teal);
+  --color-secondary-foreground: var(--blanc-pur);
   --color-muted: var(--lavande-pale);
   --color-muted-foreground: var(--gris-doux);
-  --color-accent: var(--corail);
-  --color-accent-foreground: var(--blanc-pur);
+  --color-accent: var(--accent-yellow);
+  --color-accent-foreground: var(--dark-slate);
   --color-destructive: oklch(0.55 0.20 20);
   --color-border: oklch(0.85 0 0);
   --color-input: oklch(1 0 0);
-  --color-ring: var(--bleu-vif);
+  --color-ring: var(--primary-purple);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  
+  /* Espacement sur base 4px */
+  --spacing-unit: 4px;
 }
 
 :root {
   --radius: 0.625rem;
   
-  /* Palette "Rêve vif" optimisée pour le marché tunisien */
-  --corail: #E05A3F; /* Moins saturé, plus chaleureux */
-  --bleu-vif: #2C5FCC; /* Plus profond pour meilleur contraste */
-  --vert-menthe: #00A082; /* Légèrement assourdi */
-  --blanc-casse: #FEFCFA; /* Plus chaud */
-  --lavande-pale: #F5F2FF; /* Plus doux */
-  --gris-noir: #1A1A1A; /* Conservé */
+  /* Nouvelle palette immersive - Design "parcours narratif" */
+  --primary-purple: #7B3FE4; /* Couleur principale vibrante */
+  --secondary-teal: #42D9C8; /* Couleur secondaire rafraîchissante */
+  --accent-yellow: #FFE066; /* Accent jaune lumineux */
+  --neutral-white: #F8FAFF; /* Blanc cassé pour arrière-plans */
+  --dark-slate: #0F172A; /* Gris très foncé pour textes */
+  
+  /* Compatibilité avec anciennes variables */
+  --corail: #7B3FE4; /* Utilise la nouvelle palette */
+  --bleu-vif: #42D9C8;
+  --vert-menthe: #42D9C8;
+  --blanc-casse: #F8FAFF;
+  --lavande-pale: #F5F2FF;
+  --gris-noir: #0F172A;
   --blanc-pur: #FFFFFF;
-  --jaune-miel: #E6B800; /* Pour accents */
-  --gris-doux: #4A4A4A; /* Plus lisible */
+  --jaune-miel: #FFE066;
+  --gris-doux: #64748B; /* Plus moderne */
   
   /* Application des couleurs */
   --background: var(--blanc-casse);
@@ -65,22 +82,50 @@
   --tunisie-jaune: #FFC107;
 }
 
-/* ========== UTILITAIRES ========== */
+/* ========== UTILITAIRES - NOUVELLE PALETTE ========== */
 @layer utilities {
+  /* Gradients avec nouvelle palette */
+  .text-gradient-primary {
+    background: linear-gradient(135deg, var(--primary-purple) 0%, var(--secondary-teal) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
   .text-gradient-corail {
-    background: linear-gradient(135deg, var(--corail) 0%, var(--bleu-vif) 100%);
+    background: linear-gradient(135deg, var(--primary-purple) 0%, var(--secondary-teal) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
   
   .bg-gradient-hero {
-    background: linear-gradient(135deg, var(--blanc-casse) 0%, var(--lavande-pale) 100%);
+    background: linear-gradient(135deg, var(--neutral-white) 0%, rgba(123, 63, 228, 0.05) 100%);
   }
 
   .bg-gradient-cta {
-    background: linear-gradient(135deg, var(--bleu-vif) 0%, var(--corail) 100%);
+    background: linear-gradient(135deg, var(--primary-purple) 0%, var(--secondary-teal) 100%);
   }
+  
+  .bg-gradient-narrative {
+    background: linear-gradient(135deg, var(--primary-purple) 0%, var(--secondary-teal) 50%, var(--accent-yellow) 100%);
+  }
+  
+  /* Classes utilitaires pour nouvelle palette */
+  .bg-primary-purple { background-color: var(--primary-purple); }
+  .bg-secondary-teal { background-color: var(--secondary-teal); }
+  .bg-accent-yellow { background-color: var(--accent-yellow); }
+  .bg-neutral-white { background-color: var(--neutral-white); }
+  .bg-dark-slate { background-color: var(--dark-slate); }
+  
+  .text-primary-purple { color: var(--primary-purple); }
+  .text-secondary-teal { color: var(--secondary-teal); }
+  .text-accent-yellow { color: var(--accent-yellow); }
+  .text-dark-slate { color: var(--dark-slate); }
+  
+  .border-primary-purple { border-color: var(--primary-purple); }
+  .border-secondary-teal { border-color: var(--secondary-teal); }
+  .border-accent-yellow { border-color: var(--accent-yellow); }
   
   .shadow-glow-orange {
     box-shadow: 0 0 20px rgba(224, 90, 63, 0.3), 0 0 40px rgba(224, 90, 63, 0.1);
@@ -123,5 +168,318 @@
   /* Focus visible pour accessibilité */
   button:focus-visible, a:focus-visible {
     @apply ring-2 ring-primary ring-offset-2 ring-offset-background;
+  }
+  /* ========== ANIMATIONS AVANCÉES POUR LE LIVRE ANIMÉ ========== */
+  
+  /* Animations 3D du livre */
+  .book-3d {
+    perspective: 1000px;
+    transform-style: preserve-3d;
+  }
+  
+  .book-cover {
+    transform-style: preserve-3d;
+    transition: transform 0.6s ease-in-out;
+    transform-origin: left center;
+  }
+  
+  .book-cover:hover {
+    transform: rotateY(-30deg);
+  }
+  
+  .book-page {
+    transform-style: preserve-3d;
+    animation: pageFlip 8s ease-in-out infinite;
+  }
+  
+  @keyframes pageFlip {
+    0%, 20% { transform: rotateY(0deg); }
+    25%, 45% { transform: rotateY(-180deg); }
+    50%, 100% { transform: rotateY(0deg); }
+  }
+  
+  /* Animations des avatars */
+  .avatar-container {
+    position: relative;
+    overflow: hidden;
+    border-radius: 50%;
+    animation: avatarGlow 3s ease-in-out infinite;
+  }
+  
+  @keyframes avatarGlow {
+    0%, 100% { 
+      box-shadow: 0 0 20px rgba(123, 63, 228, 0.3);
+    }
+    50% { 
+      box-shadow: 0 0 40px rgba(123, 63, 228, 0.6), 0 0 60px rgba(66, 217, 200, 0.3);
+    }
+  }
+  
+  .avatar-fade {
+    animation: avatarFade 3s ease-in-out infinite;
+  }
+  
+  @keyframes avatarFade {
+    0%, 15% { opacity: 1; transform: scale(1); }
+    20%, 85% { opacity: 0.3; transform: scale(0.9); }
+    90%, 100% { opacity: 1; transform: scale(1); }
+  }
+  
+  /* Animations des particules magiques */
+  .magic-particle {
+    animation: floatParticle 6s ease-in-out infinite;
+    will-change: transform, opacity;
+  }
+  
+  @keyframes floatParticle {
+    0% { 
+      transform: translateY(0px) translateX(0px) rotate(0deg);
+      opacity: 0.3;
+    }
+    25% { 
+      transform: translateY(-20px) translateX(10px) rotate(90deg);
+      opacity: 0.8;
+    }
+    50% { 
+      transform: translateY(-40px) translateX(0px) rotate(180deg);
+      opacity: 1;
+    }
+    75% { 
+      transform: translateY(-20px) translateX(-10px) rotate(270deg);
+      opacity: 0.8;
+    }
+    100% { 
+      transform: translateY(0px) translateX(0px) rotate(360deg);
+      opacity: 0.3;
+    }
+  }
+  
+  /* Animations des boutons CTA */
+  .cta-pulse {
+    animation: ctaPulse 2s ease-in-out infinite;
+    will-change: transform, box-shadow;
+  }
+  
+  @keyframes ctaPulse {
+    0%, 100% { 
+      transform: scale(1);
+      box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+    }
+    50% { 
+      transform: scale(1.05);
+      box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+    }
+  }
+  
+  /* Effets de focus pour l'accessibilité */
+  .focus-visible {
+    outline: 2px solid var(--accent-yellow);
+    outline-offset: 2px;
+  }
+  
+  /* Animations optimisées GPU */
+  .gpu-accelerated {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+  }
+  
+  /* Respect des préférences utilisateur */
+  @media (prefers-reduced-motion: reduce) {
+    .book-cover,
+    .book-page,
+    .avatar-container,
+    .magic-particle,
+    .cta-pulse {
+      animation: none !important;
+      transform: none !important;
+    }
+    
+    .book-cover {
+      transition: none !important;
+    }
+  }
+  
+  /* Animations responsive */
+  @media (max-width: 768px) {
+    .book-3d {
+      perspective: 600px;
+    }
+    
+    .magic-particle {
+      animation-duration: 8s;
+    }
+  }
+  
+  /* Effets de hover avancés */
+  .hover-lift {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(123, 63, 228, 0.2);
+  }
+  
+  /* Animations de chargement */
+  .loading-shimmer {
+    background: linear-gradient(90deg, 
+      transparent, 
+      rgba(255, 255, 255, 0.4), 
+      transparent
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+  
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  
+  /* Animations de texte */
+  .text-glow {
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    animation: textGlow 3s ease-in-out infinite;
+  }
+  
+  @keyframes textGlow {
+    0%, 100% { 
+      text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    }
+    50% { 
+      text-shadow: 0 0 20px rgba(255, 255, 255, 0.8), 
+                   0 0 30px rgba(123, 63, 228, 0.5);
+    }
+  }
+  /* ========== OPTIMISATIONS MOBILE & ACCESSIBILITÉ ========== */
+
+  /* Optimisations pour écrans tactiles */
+  @media (max-width: 768px) {
+    /* Réduction de la complexité des animations sur mobile */
+    .book-cover,
+    .book-page,
+    .avatar-container,
+    .magic-particle,
+    .cta-pulse,
+    .hover-lift {
+      transition-duration: 0.2s !important;
+      animation-duration: 0.3s !important;
+    }
+    
+    /* Optimisation des images et assets sur mobile */
+    img {
+      max-width: 100%;
+      height: auto;
+      loading: lazy;
+    }
+    
+    /* Réduction des effets GPU intensifs sur mobile */
+    .gpu-accelerated {
+      transform: none !important;
+      backface-visibility: auto !important;
+    }
+    
+    /* Optimisation des polices pour mobile */
+    body {
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+    
+    /* Amélioration de la navigation tactile */
+    button,
+    a,
+    [role="button"] {
+      min-height: 44px;
+      min-width: 44px;
+      touch-action: manipulation;
+    }
+    
+    /* Réduction des couleurs complexes sur mobile */
+    .text-gradient-primary,
+    .text-gradient-corail {
+      background: none;
+      color: var(--primary-purple) !important;
+      -webkit-background-clip: unset;
+      -webkit-text-fill-color: unset;
+    }
+  }
+
+  /* Optimisations pour les appareils à faible puissance */
+  @media (max-width: 480px) {
+    .book-3d {
+      perspective: 400px;
+    }
+    
+    .magic-particle {
+      animation-duration: 12s;
+      display: none; /* Masquer les particules sur très petits écrans */
+    }
+    
+    /* Réduction des effets de parallaxe */
+    [data-parallax] {
+      transform: none !important;
+    }
+  }
+
+  /* Optimisation pour les appareils avec GPU limité */
+  @media (max-width: 768px) and (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* Support des couleurs adaptatives pour l'accessibilité */
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --neutral-white: #1a1a1a;
+      --dark-slate: #ffffff;
+      --lavande-pale: #2d2d2d;
+      --gris-doux: #a0a0a0;
+    }
+    
+    body {
+      background-color: var(--neutral-white);
+      color: var(--dark-slate);
+    }
+  }
+
+  /* Optimisation pour les préférences utilisateur d'accessibilité */
+  @media (prefers-contrast: high) {
+    .text-gris-doux {
+      color: var(--dark-slate) !important;
+    }
+    
+    .bg-primary-purple {
+      background-color: #000000 !important;
+    }
+  }
+
+  /* Optimisation pour les appareils pliables */
+  @media (max-width: 280px) {
+    .grid {
+      grid-template-columns: 1fr !important;
+    }
+    
+    .text-4xl,
+    .text-5xl,
+    .text-6xl,
+    .text-7xl {
+      font-size: 1.5rem !important;
+    }
+  }
+
+  /* Support du mode focus clavier amélioré */
+  @media (any-hover: hover) {
+    .focus-visible:hover {
+      background-color: var(--accent-yellow);
+      color: var(--dark-slate);
+      transition: all 0.2s ease;
+    }
   }
 }

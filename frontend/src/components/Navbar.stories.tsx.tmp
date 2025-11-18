@@ -1,0 +1,359 @@
+import type { Meta, StoryObj } from '@storybook/react';
+import { userEvent, within, expect } from '@storybook/test';
+import Navbar from './Navbar';
+import { 
+  mockUser, 
+  mockAdminUser, 
+  mockTemplates, 
+  mockEmptySearchResults,
+  mockUseAuth, 
+  mockUseAuthLoggedOut, 
+  mockUseTheme,
+  mockUseScrollPosition,
+  mockScrolledUseScrollPosition 
+} from '@/mocks/storybookData';
+
+// Mock des hooks
+const mockAuth = {
+  useAuth: () => mockUseAuth,
+};
+
+const mockAuthLoggedOut = {
+  useAuth: () => mockUseAuthLoggedOut,
+};
+
+const mockTheme = {
+  useTheme: () => mockUseTheme,
+};
+
+const mockScroll = {
+  useScrollPosition: () => mockUseScrollPosition,
+};
+
+const mockScrollScrolled = {
+  useScrollPosition: () => mockScrolledUseScrollPosition,
+};
+
+const meta: Meta<typeof Navbar> = {
+  title: 'Navigation/Navbar',
+  component: Navbar,
+  parameters: {
+    layout: 'fullscreen',
+    docs: {
+      description: {
+        component: `
+Le composant Navbar est la barre de navigation principale de l'application Limoon. 
+Il inclut les fonctionnalités suivantes :
+- Navigation responsive avec menu mobile
+- Système de recherche avec modal
+- Menu déroulant pour les histoires
+- Menu utilisateur avec avatar
+- Toggle theme sombre/clair
+- Gestion des états d'authentification
+- Animations fluides avec Framer Motion
+        `,
+      },
+    },
+    viewport: {
+      defaultViewport: 'desktop',
+    },
+  },
+  tags: ['autodocs'],
+  argTypes: {
+    user: {
+      description: 'Objet utilisateur connecté',
+      control: 'object',
+    },
+  },
+};
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+// Story: État Logged Out
+export const LoggedOut: Story = {
+  name: 'Utilisateur non connecté',
+  parameters: {
+    docs: {
+      description: {
+        story: 'Navbar dans l\'état utilisateur non connecté avec boutons Connexion et S\'inscrire',
+      },
+    },
+  },
+  decorators: [
+    (Story: React.ComponentType) => (
+      <div className="relative">
+        <Story />
+      </div>
+    ),
+  ],
+  args: {
+    user: null,
+  },
+};
+
+// Story: État Logged In (Utilisateur normal)
+export const LoggedIn: Story = {
+  name: 'Utilisateur connecté',
+  parameters: {
+    docs: {
+      description: {
+        story: 'Navbar avec utilisateur connecté, avatar et menu utilisateur',
+      },
+    },
+  },
+  args: {
+    user: mockUser,
+  },
+  play: async ({ canvasElement, step }: { canvasElement: HTMLElement, step: any }) => {
+    const canvas = within(canvasElement);
+    
+    await step('Tester le menu utilisateur', async () => {
+      const userButton = await canvas.findByRole('button', { name: /marie dubois/i });
+      await userEvent.click(userButton);
+      
+      const userMenu = await canvas.findByRole('menu');
+      await expect(userMenu).toBeInTheDocument();
+      
+      // Fermer le menu
+      await userEvent.click(userButton);
+      await expect(userMenu).not.toBeVisible();
+    });
+  },
+};
+
+// Story: État Admin
+export const AdminLoggedIn: Story = {
+  name: 'Administrateur connecté',
+  parameters: {
+    docs: {
+      description: {
+        story: 'Navbar avec administrateur connecté, incluant l\'option Administration',
+      },
+    },
+  },
+  args: {
+    user: mockAdminUser,
+  },
+};
+
+// Story: État Scrolled
+export const Scrolled: Story = {
+  name: 'Navbar réduites (scroll)',
+  parameters: {
+    docs: {
+      description: {
+        story: 'Navbar avec hauteur réduite après scroll, avec effet backdrop blur',
+      },
+    },
+    viewport: {
+      defaultViewport: 'desktop',
+    },
+  },
+  args: {
+    user: mockUser,
+  },
+  decorators: [
+    (Story: React.ComponentType) => (
+      <div style={{ marginTop: '60px' }}>
+        <div className="fixed top-0 left-0 right-0 h-16 bg-background/95 backdrop-blur-md border-b border-border/50 shadow-sm z-40" />
+        <Story />
+      </div>
+    ),
+  ],
+};
+
+// Story: Dropdown Ouvert
+export const DropdownOpen: Story = {
+  name: 'Menu déroulant ouvert',
+  parameters: {
+    docs: {
+      description: {
+        story: 'Navbar avec le menu déroulant "Nos histoires" ouvert',
+      },
+    },
+  },
+  args: {
+    user: mockUser,
+  },
+  play: async ({ canvasElement, step }: { canvasElement: HTMLElement, step: any }) => {
+    const canvas = within(canvasElement);
+    
+    await step('Ouvrir le dropdown "Nos histoires"', async () => {
+      const dropdownButton = await canvas.findByRole('button', { name: /nos histoires/i });
+      await userEvent.click(dropdownButton);
+      
+      const dropdown = await canvas.findByRole('menu');
+      await expect(dropdown).toBeInTheDocument();
+      
+      // Tester les liens du dropdown
+      const storyLinks = await canvas.findAllByRole('menuitem');
+      expect(storyLinks.length).toBeGreaterThan(0);
+    });
+  },
+};
+
+// Story: Modal de Recherche Ouverte
+export const SearchModalOpen: Story = {
+  name: 'Modal de recherche ouverte',
+  parameters: {
+    docs: {
+      description: {
+        story: 'Navbar avec la modal de recherche ouverte et résultats',
+      },
+    },
+  },
+  args: {
+    user: mockUser,
+  },
+  play: async ({ canvasElement, step }: { canvasElement: HTMLElement, step: any }) => {
+    const canvas = within(canvasElement);
+    
+    await step('Ouvrir la modal de recherche', async () => {
+      const searchButton = await canvas.findByRole('button', { name: /rechercher/i });
+      await userEvent.click(searchButton);
+      
+      const searchModal = await canvas.findByRole('dialog');
+      await expect(searchModal).toBeInTheDocument();
+      
+      // Tester la recherche
+      const searchInput = await canvas.findByPlaceholderText(/rechercher des histoires/i);
+      await userEvent.type(searchInput, 'aventure');
+      
+      await step('Vérifier les résultats de recherche', async () => {
+        const results = await canvas.findByText(/histoires/i);
+        await expect(results).toBeInTheDocument();
+      });
+    });
+  },
+};
+
+// Story: Mobile View
+export const MobileView: Story = {
+  name: 'Vue mobile',
+  parameters: {
+    viewport: {
+      defaultViewport: 'mobile',
+    },
+    docs: {
+      description: {
+        story: 'Navbar adaptée pour mobile avec bouton menu hamburger',
+      },
+    },
+  },
+  args: {
+    user: mockUser,
+  },
+  play: async ({ canvasElement, step }: { canvasElement: HTMLElement, step: any }) => {
+    const canvas = within(canvasElement);
+    
+    await step('Tester le menu mobile', async () => {
+      const mobileMenuButton = await canvas.findByRole('button', { name: /ouvrir le menu/i });
+      await userEvent.click(mobileMenuButton);
+      
+      // Le menu mobile s'ouvre (on ne peut pas tester le slide-in dans Storybook)
+      await expect(mobileMenuButton).toHaveAttribute('aria-expanded', 'true');
+    });
+  },
+};
+
+// Story: Tablet View
+export const TabletView: Story = {
+  name: 'Vue tablette',
+  parameters: {
+    viewport: {
+      defaultViewport: 'tablet',
+    },
+    docs: {
+      description: {
+        story: 'Navbar adaptée pour tablette',
+      },
+    },
+  },
+  args: {
+    user: mockUser,
+  },
+};
+
+// Story: Dark Theme
+export const DarkTheme: Story = {
+  name: 'Thème sombre',
+  parameters: {
+    globals: {
+      theme: 'dark',
+    },
+    docs: {
+      description: {
+        story: 'Navbar avec le thème sombre activé',
+      },
+    },
+  },
+  args: {
+    user: mockUser,
+  },
+  play: async ({ canvasElement, step }: { canvasElement: HTMLElement, step: any }) => {
+    const canvas = within(canvasElement);
+    
+    await step('Tester le toggle theme', async () => {
+      const themeToggle = await canvas.findByRole('button', { name: /mode sombre/i });
+      await userEvent.click(themeToggle);
+      
+      // Vérifier que le theme change (simulation dans Storybook)
+      expect(themeToggle).toBeInTheDocument();
+    });
+  },
+};
+
+// Story: Interaction Complexe
+export const FullInteraction: Story = {
+  name: 'Test d\'interaction complet',
+  parameters: {
+    docs: {
+      description: {
+        story: 'Test interactif complet avec toutes les fonctionnalités de la navbar',
+      },
+    },
+    chromatic: {
+      delay: 1000,
+    },
+  },
+  args: {
+    user: mockUser,
+  },
+  play: async ({ canvasElement, step }: { canvasElement: HTMLElement, step: any }) => {
+    const canvas = within(canvasElement);
+    
+    await step('Séquence complète de test', async () => {
+      // 1. Tester la recherche
+      const searchButton = await canvas.findByRole('button', { name: /rechercher/i });
+      await userEvent.click(searchButton);
+      
+      const searchInput = await canvas.findByPlaceholderText(/rechercher des histoires/i);
+      await userEvent.type(searchInput, 'test');
+      
+      // 2. Fermer la recherche
+      await userEvent.keyboard('{Escape}');
+      
+      // 3. Ouvrir le dropdown
+      const dropdownButton = await canvas.findByRole('button', { name: /nos histoires/i });
+      await userEvent.click(dropdownButton);
+      
+      // 4. Fermer le dropdown
+      await userEvent.click(dropdownButton);
+      
+      // 5. Ouvrir le menu utilisateur
+      const userButton = await canvas.findByRole('button', { name: /marie dubois/i });
+      await userEvent.click(userButton);
+      
+      // 6. Fermer le menu utilisateur
+      await userEvent.click(userButton);
+      
+      await step('Vérifier que tous les menus sont fermés', async () => {
+        const dropdowns = canvas.queryAllByRole('menu');
+        dropdowns.forEach(dropdown => {
+          expect(dropdown).not.toBeVisible();
+        });
+      });
+    });
+  },
+};

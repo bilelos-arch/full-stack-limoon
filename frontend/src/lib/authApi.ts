@@ -81,6 +81,7 @@ class AuthApi {
 
   async getProfile(): Promise<User> {
     const response = await this.api.get<User>('/users/profile');
+    console.log('authApi.getProfile response:', response.data);
     return response.data;
   }
 }

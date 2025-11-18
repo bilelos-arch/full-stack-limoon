@@ -1,0 +1,83 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Livre ouvert -->
+  <defs>
+    <linearGradient id="bookCover" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7B3FE4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#42D9C8;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="bookPages" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F8FAFF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#E8E0FF;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="magicGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFE066;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7B3FE4;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Couverture du livre (gauche) -->
+  <path d="M12 16 Q10 16 10 18 L10 46 Q10 48 12 48 L30 48 L30 16 Q30 14 28 14 L14 14 Q12 14 12 16 Z" 
+        fill="url(#bookCover)" stroke="#0F172A" stroke-width="0.5" opacity="0.9"/>
+  
+  <!-- Couverture du livre (droite) -->
+  <path d="M34 16 L52 16 Q54 16 54 18 L54 46 Q54 48 52 48 L34 48 L34 16 Z" 
+        fill="url(#bookCover)" stroke="#0F172A" stroke-width="0.5" opacity="0.9"/>
+  
+  <!-- Pages gauches -->
+  <path d="M14 18 L28 18 L28 46 L16 46 Q14 46 14 44 L14 20 Q14 18 14 18 Z" 
+        fill="url(#bookPages)" stroke="#42D9C8" stroke-width="0.5"/>
+  
+  <!-- Pages droites -->
+  <path d="M36 18 L50 20 Q52 20 52 22 L52 44 Q52 46 50 46 L36 46 L36 18 Z" 
+        fill="url(#bookPages)" stroke="#42D9C8" stroke-width="0.5"/>
+  
+  <!-- Ligne centrale du livre -->
+  <line x1="30" y1="16" x2="30" y2="48" stroke="#0F172A" stroke-width="1" opacity="0.6"/>
+  
+  <!-- Texte magique sur les pages -->
+  <text x="21" y="32" text-anchor="middle" fill="#7B3FE4" font-family="monospace" font-size="4" font-weight="bold">
+    ✨✨✨
+  </text>
+  <text x="43" y="32" text-anchor="middle" fill="#42D9C8" font-family="monospace" font-size="4" font-weight="bold">
+    ✨✨✨
+  </text>
+  
+  <!-- Effets magiques - particules qui s'échappent -->
+  <circle cx="32" cy="12" r="1" fill="#FFE066" opacity="0.8">
+    <animate attributeName="cy" values="12;8;4" dur="2s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.8;0.4;0" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  
+  <circle cx="28" cy="10" r="0.8" fill="#42D9C8" opacity="0.7">
+    <animate attributeName="cy" values="10;6;2" dur="1.8s" repeatCount="indefinite" begin="0.3s"/>
+    <animate attributeName="opacity" values="0.7;0.3;0" dur="1.8s" repeatCount="indefinite" begin="0.3s"/>
+  </circle>
+  
+  <circle cx="36" cy="10" r="0.6" fill="#7B3FE4" opacity="0.6">
+    <animate attributeName="cy" values="10;6;2" dur="2.2s" repeatCount="indefinite" begin="0.6s"/>
+    <animate attributeName="opacity" values="0.6;0.2;0" dur="2.2s" repeatCount="indefinite" begin="0.6s"/>
+  </circle>
+  
+  <!-- Étoiles filantes magiques -->
+  <path d="M42 6 L43 8 L45 7 L43 9 L44 11 L42 10 L40 11 L41 9 L39 7 L41 8 Z" 
+        fill="#FFE066" opacity="0.9">
+    <animateTransform attributeName="transform" type="rotate" values="0 42 8;360 42 8" dur="3s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.5;1;0.5" dur="1.5s" repeatCount="indefinite"/>
+  </path>
+  
+  <path d="M26 4 L27 6 L29 5 L27 7 L28 9 L26 8 L24 9 L25 7 L23 5 L25 6 Z" 
+        fill="#42D9C8" opacity="0.8">
+    <animateTransform attributeName="transform" type="rotate" values="0 26 6;360 26 6" dur="4s" repeatCount="indefinite" begin="0.5s"/>
+    <animate attributeName="opacity" values="0.4;0.8;0.4" dur="2s" repeatCount="indefinite" begin="0.5s"/>
+  </path>
+  
+  <!-- Lueur magique autour du livre -->
+  <ellipse cx="32" cy="32" rx="25" ry="30" fill="url(#magicGlow)" opacity="0.1">
+    <animate attributeName="opacity" values="0.05;0.15;0.05" dur="3s" repeatCount="indefinite"/>
+  </ellipse>
+  
+  <!-- Marque-pages flottant -->
+  <rect x="34" y="20" width="3" height="15" fill="#FFE066" rx="1">
+    <animate attributeName="y" values="20;18;20" dur="2.5s" repeatCount="indefinite"/>
+  </rect>
+</svg>

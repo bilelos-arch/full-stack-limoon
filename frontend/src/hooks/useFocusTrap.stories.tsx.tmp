@@ -1,0 +1,320 @@
+import type { Meta, StoryObj } from '@storybook/react';
+import { userEvent, within, expect } from '@storybook/test';
+import { useFocusTrap } from './useFocusTrap';
+import { useState } from 'react';
+
+// Composant de test pour useFocusTrap
+const FocusTrapDemo = ({ isActive, onEscape }: { isActive: boolean; onEscape?: () => void }) => {
+  const containerRef = useFocusTrap(isActive, onEscape);
+  
+  return (
+    <div className="min-h-screen bg-gray-100 p-8">
+      <div className="max-w-md mx-auto">
+        {/* Bouton pour ouvrir/fermer */}
+        <button 
+          onClick={() => onEscape && onEscape()}
+          className="mb-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+        >
+          {isActive ? 'Fermer le trap' : 'Activer le trap'}
+        </button>
+        
+        {/* Conteneur avec focus trap */}
+        <div
+          ref={containerRef}
+          className={`p-6 border-2 rounded-lg transition-all duration-300 ${
+            isActive 
+              ? 'bg-white border-blue-500 shadow-lg' 
+              : 'bg-gray-50 border-gray-300'
+          }`}
+        >
+          <h2 className="text-xl font-bold mb-4">
+            Focus Trap {isActive ? '(ACTIF)' : '(inactif)'}
+          </h2>
+          
+          <div className="space-y-4">
+            {/* Champ de texte */}
+            <div>
+              <label className="block text-sm font-medium mb-1">Nom:</label>
+              <input 
+                type="text" 
+                className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Entrez votre nom"
+              />
+            </div>
+            
+            {/* Boutons */}
+            <div className="flex gap-2">
+              <button className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600">
+                Sauvegarder
+              </button>
+              <button className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+                Annuler
+              </button>
+            </div>
+            
+            {/* Checkbox */}
+            <div className="flex items-center">
+              <input type="checkbox" id="terms" className="mr-2" />
+              <label htmlFor="terms" className="text-sm">
+                J'accepte les conditions
+              </label>
+            </div>
+            
+            {/* Select */}
+            <div>
+              <label className="block text-sm font-medium mb-1">Langue:</label>
+              <select className="w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option>Français</option>
+                <option>English</option>
+                <option>Español</option>
+              </select>
+            </div>
+            
+            {/* Lien focusable */}
+            <a href="#" className="text-blue-600 hover:underline block">
+              En savoir plus
+            </a>
+            
+            {/* Contenu avec tabindex */}
+            <div 
+              tabIndex={0}
+              className="p-3 bg-gray-100 rounded text-sm"
+            >
+              Élément focusable avec tabindex
+            </div>
+          </div>
+          
+          {/* Instructions */}
+          <div className="mt-6 p-3 bg-blue-50 rounded text-sm text-blue-800">
+            <p className="font-medium">Instructions:</p>
+            <ul className="mt-2 space-y-1 list-disc list-inside">
+              <li>Utilisez Tab pour naviguer</li>
+              <li>Utilisez Shift+Tab pour revenir en arrière</li>
+              <li>Appuyez sur Escape pour fermer</li>
+            </ul>
+          </div>
+        </div>
+        
+        {/* Contenu extérieur (ne devrait pas être focusable) */}
+        <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded">
+          <p className="text-red-800 font-medium">Zone extérieure:</p>
+          <p className="text-red-600 text-sm">
+            Ces éléments ne devraient pas être focusables quand le trap est actif.
+          </p>
+          <button className="mt-2 px-3 py-1 bg-red-500 text-white rounded text-sm">
+            Bouton externe
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const meta: Meta<typeof FocusTrapDemo> = {
+  title: 'Hooks/useFocusTrap',
+  component: FocusTrapDemo,
+  parameters: {
+    layout: 'fullscreen',
+    docs: {
+      description: {
+        component: `
+Le hook useFocusTrap crée un focus trap dans un conteneur pour améliorer l'accessibilité.
+
+Fonctionnalités :
+- Focus automatique sur le premier élément focusable
+- Navigation Tab/Shift+Tab cyclique dans le conteneur
+- Fermeture avec la touche Escape
+- Empêche le focus sur les éléments extérieurs
+- Clean-up automatique des event listeners
+- Gestion de la visibilité des éléments
+        `,
+      },
+    },
+  },
+  tags: ['autodocs'],
+  argTypes: {
+    isActive: {
+      description: 'Active ou désactive le focus trap',
+      control: 'boolean',
+    },
+    onEscape: {
+      description: 'Fonction appelée quand Escape est pressé',
+      control: false,
+    },
+  },
+};
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+// Story: Focus Trap Inactif
+export const Inactive: Story = {
+  name: 'Focus trap inactif',
+  args: {
+    isActive: false,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Focus trap désactivé - navigation normale sur toute la page',
+      },
+    },
+  },
+};
+
+// Story: Focus Trap Actif
+export const Active: Story = {
+  name: 'Focus trap actif',
+  args: {
+    isActive: true,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Focus trap activé - la navigation est limitée au conteneur',
+      },
+    },
+  },
+};
+
+// Story: Test de Navigation Tab
+export const TabNavigation: Story = {
+  name: 'Navigation Tab',
+  args: {
+    isActive: true,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Test de navigation avec la touche Tab dans le focus trap',
+      },
+    },
+  },
+  play: async (context: any) => {
+    const { canvasElement, step } = context;
+    const canvas = within(canvasElement);
+    
+    await step('Tester la navigation Tab', async () => {
+      // Le premier élément focusable devrait avoir le focus
+      const firstInput = canvas.getByPlaceholderText(/entrez votre nom/i);
+      await expect(firstInput).toHaveFocus();
+      
+      // Tab vers le bouton suivant
+      await userEvent.tab();
+      const saveButton = canvas.getByText(/sauvegarder/i);
+      await expect(saveButton).toHaveFocus();
+      
+      // Continuer la navigation
+      await userEvent.tab();
+      const cancelButton = canvas.getByText(/annuler/i);
+      await expect(cancelButton).toHaveFocus();
+    });
+  },
+};
+
+// Story: Test Shift+Tab
+export const ShiftTabNavigation: Story = {
+  name: 'Navigation Shift+Tab',
+  args: {
+    isActive: true,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Test de navigation arrière avec Shift+Tab',
+      },
+    },
+  },
+  play: async (context: any) => {
+    const { canvasElement, step } = context;
+    const canvas = within(canvasElement);
+    
+    await step('Tester Shift+Tab', async () => {
+      // Commencer par naviguer vers un élément
+      await userEvent.tab();
+      
+      // Revenir en arrière avec Shift+Tab
+      await userEvent.tab({ shift: true });
+      
+      const firstInput = canvas.getByPlaceholderText(/entrez votre nom/i);
+      await expect(firstInput).toHaveFocus();
+    });
+  },
+};
+
+// Story: Test Escape
+export const EscapeKey: Story = {
+  name: 'Fermeture avec Escape',
+  args: {
+    isActive: true,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Test de fermeture avec la touche Escape',
+      },
+    },
+  },
+  play: async (context: any) => {
+    const { canvasElement, step } = context;
+    const canvas = within(canvasElement);
+    
+    await step('Appuyer sur Escape', async () => {
+      await userEvent.keyboard('{Escape}');
+      
+      // Le focus trap devrait être désactivé
+      const container = canvas.getByText(/focus trap \(inactif\)/i);
+      await expect(container).toBeInTheDocument();
+    });
+  },
+};
+
+// Story: Focus Cyclique
+export const CyclicFocus: Story = {
+  name: 'Focus cyclique',
+  args: {
+    isActive: true,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Test de focus cyclique - retour au début à la fin',
+      },
+    },
+  },
+  play: async (context: any) => {
+    const { canvasElement, step } = context;
+    const canvas = within(canvasElement);
+    
+    await step('Tester le cycle complet', async () => {
+      const firstInput = canvas.getByPlaceholderText(/entrez votre nom/i);
+      
+      // Aller jusqu'au dernier élément focusable (plusieurs tabs)
+      for (let i = 0; i < 8; i++) {
+        await userEvent.tab();
+      }
+      
+      // Le prochain tab devrait retourner au premier élément
+      await userEvent.tab();
+      await expect(firstInput).toHaveFocus();
+    });
+  },
+};
+
+// Story: Test Accessibilité
+export const AccessibilityTest: Story = {
+  name: 'Test d\'accessibilité',
+  args: {
+    isActive: true,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Test complet de l\'accessibilité du focus trap',
+      },
+    },
+    chromatic: {
+      delay: 1500,
+    },
+  },
+};

@@ -9,7 +9,7 @@ export declare class TemplatesController {
         pdf?: Express.Multer.File[];
         cover?: Express.Multer.File[];
     }): Promise<import("./template.schema").TemplateDocument>;
-    findAll(category?: string, gender?: string, ageRange?: string, isPublished?: string, language?: string): Promise<import("./template.schema").TemplateDocument[]>;
+    findAll(category?: string, gender?: string, ageRange?: string, isPublished?: string, language?: string, featured?: string): Promise<import("./template.schema").TemplateDocument[]>;
     search(query?: string, limit?: string): Promise<import("./template.schema").TemplateDocument[]>;
     findOne(id: string): Promise<import("./template.schema").TemplateDocument>;
     generatePreview(previewDto: PreviewTemplateDto): Promise<{

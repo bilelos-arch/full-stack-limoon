@@ -49,8 +49,8 @@ let TemplatesController = class TemplatesController {
         console.log('Calling service with paths:', { pdfPath, coverPath });
         return this.templatesService.create(createTemplateDto, pdfPath, coverPath);
     }
-    async findAll(category, gender, ageRange, isPublished, language) {
-        const query = { category, gender, ageRange, isPublished: isPublished !== undefined ? isPublished : 'true', language };
+    async findAll(category, gender, ageRange, isPublished, language, featured) {
+        const query = { category, gender, ageRange, isPublished: isPublished !== undefined ? isPublished : 'true', language, featured };
         return this.templatesService.findAll(query);
     }
     async search(query, limit) {
@@ -117,8 +117,9 @@ __decorate([
     __param(2, (0, common_1.Query)('ageRange')),
     __param(3, (0, common_1.Query)('isPublished')),
     __param(4, (0, common_1.Query)('language')),
+    __param(5, (0, common_1.Query)('featured')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String, String, String]),
+    __metadata("design:paramtypes", [String, String, String, String, String, String]),
     __metadata("design:returntype", Promise)
 ], TemplatesController.prototype, "findAll", null);
 __decorate([

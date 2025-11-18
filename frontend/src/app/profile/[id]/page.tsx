@@ -29,6 +29,7 @@ import {
   Heart,
   Sparkles
 } from 'lucide-react'
+import Link from 'next/link'
 import { useAuth } from '@/hooks/useAuth'
 
 interface UserProfile {
@@ -397,6 +398,15 @@ export default function ProfilePage() {
                         </div>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Button to create/modify child avatar */}
+                  <div className="flex justify-center mt-6">
+                    <Link href={`/profil/enfant/${id}/avatar`}>
+                      <Button className="bg-[#FF7B54] hover:bg-[#E86945] text-white px-6 py-2 rounded-lg shadow-md">
+                        Créer/Modifier Avatar Enfant
+                      </Button>
+                    </Link>
                   </div>
                 </CardContent>
               </Card>

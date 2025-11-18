@@ -1,0 +1,79 @@
+<svg width="400" height="400" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Arrière-plan décoratif -->
+  <circle cx="200" cy="200" r="180" fill="url(#heroGradient)" opacity="0.1"/>
+  
+  <!-- Livre principal -->
+  <g transform="translate(80, 80)">
+    <!-- Couverture du livre -->
+    <rect x="0" y="0" width="160" height="200" rx="12" fill="url(#bookGradient)" stroke="#7B3FE4" stroke-width="2"/>
+    
+    <!-- Pages -->
+    <rect x="8" y="8" width="144" height="184" rx="8" fill="#F8FAFF" stroke="#42D9C8" stroke-width="1"/>
+    
+    <!-- Titre du livre -->
+    <text x="80" y="40" text-anchor="middle" fill="#7B3FE4" font-family="Poppins, sans-serif" font-size="14" font-weight="bold">
+      AVENTURE
+    </text>
+    <text x="80" y="55" text-anchor="middle" fill="#42D9C8" font-family="Poppins, sans-serif" font-size="12">
+      MAGIQUE
+    </text>
+    
+    <!-- Illustration simple du héros -->
+    <circle cx="80" cy="100" r="20" fill="#FFE066"/>
+    <circle cx="80" cy="100" r="15" fill="#F8FAFF"/>
+    <circle cx="80" cy="95" r="8" fill="#7B3FE4"/>
+    <text x="80" y="105" text-anchor="middle" fill="#7B3FE4" font-family="Poppins, sans-serif" font-size="10" font-weight="bold">
+      HÉROS
+    </text>
+    
+    <!-- Étoiles décoratives -->
+    <circle cx="20" cy="30" r="3" fill="#FFE066">
+      <animate attributeName="opacity" values="0.5;1;0.5" dur="2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="140" cy="50" r="2" fill="#42D9C8">
+      <animate attributeName="opacity" values="0.5;1;0.5" dur="1.5s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="30" cy="150" r="2.5" fill="#FFE066">
+      <animate attributeName="opacity" values="0.5;1;0.5" dur="2.5s" repeatCount="indefinite"/>
+    </circle>
+    
+    <!-- Bordure brillante -->
+    <rect x="0" y="0" width="160" height="200" rx="12" fill="none" stroke="url(#glowGradient)" stroke-width="2" opacity="0.6"/>
+  </g>
+  
+  <!-- Éléments flottants -->
+  <g>
+    <!-- Étoile 1 -->
+    <path d="M250 80 L255 95 L270 95 L257 105 L262 120 L250 110 L238 120 L243 105 L230 95 L245 95 Z" fill="#FFE066" opacity="0.7">
+      <animateTransform attributeName="transform" type="rotate" values="0 250 80;360 250 80" dur="20s" repeatCount="indefinite"/>
+    </path>
+    
+    <!-- Étoile 2 -->
+    <path d="M320 200 L323 210 L333 210 L325 217 L328 227 L320 222 L312 227 L315 217 L307 210 L317 210 Z" fill="#42D9C8" opacity="0.6">
+      <animateTransform attributeName="transform" type="rotate" values="0 320 200;360 320 200" dur="15s" repeatCount="indefinite"/>
+    </path>
+    
+    <!-- Petit livre flottant -->
+    <rect x="280" y="300" width="30" height="40" rx="4" fill="#7B3FE4" opacity="0.6">
+      <animateTransform attributeName="transform" type="translate" values="0,0;10,-10;0,0" dur="4s" repeatCount="indefinite"/>
+    </rect>
+  </g>
+  
+  <!-- Définitions des gradients -->
+  <defs>
+    <linearGradient id="heroGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7B3FE4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#42D9C8;stop-opacity:1" />
+    </linearGradient>
+    
+    <linearGradient id="bookGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7B3FE4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#42D9C8;stop-opacity:1" />
+    </linearGradient>
+    
+    <linearGradient id="glowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFE066;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#7B3FE4;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+</svg>

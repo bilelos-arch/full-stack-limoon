@@ -31,6 +31,22 @@ export interface UserResponse {
     status: string;
     invoiceUrl: string;
   }[];
+  child?: {
+    name: string;
+    age: string;
+    gender: string;
+    mood: string;
+    hairType: string;
+    hairColor: string;
+    skinTone: string;
+    eyes: string;
+    eyebrows: string;
+    mouth: string;
+    glasses: boolean;
+    glassesStyle: string;
+    accessories: string;
+  };
+  childAvatar?: string;
   role: 'admin' | 'user';
   status: 'active' | 'inactive' | 'suspended';
   createdAt: Date;

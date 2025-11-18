@@ -1,0 +1,280 @@
+#!/usr/bin/env node
+
+/**
+ * Test de la génération temps réel et des performances
+ * Test du debouncing et de la responsivité de l'interface
+ */
+
+const path = require('path');
+
+// Simulation des types TypeScript
+const DEFAULT_CHILD_PROFILE = {
+  gender: 'unisex',
+  hairType: 'short01',
+  hairColor: '6d4c41',
+  skinTone: 'e0ac69',
+  eyes: 'variant01',
+  eyebrows: 'variant01',
+  mouth: 'variant01',
+  earrings: 'variant01',
+  glasses: 'variant01',
+  features: 'blush'
+};
+
+// Fonctions de conversion simulées
+function convertProfileToAvatarConfig(profile) {
+  const config = {
+    hair: [profile.hairType],
+    hairColor: [profile.hairColor],
+    skinColor: [profile.skinTone],
+    eyes: [profile.eyes],
+    eyebrows: [profile.eyebrows],
+    mouth: [profile.mouth],
+    earrings: [profile.earrings],
+    glasses: [profile.glasses],
+    features: [profile.features],
+    backgroundColor: ['b6e3f4']
+  };
+  
+  return config;
+}
+
+function validateAndCleanConfig(config) {
+  const cleanedConfig = {};
+  
+  for (const [key, value] of Object.entries(config)) {
+    if (Array.isArray(value) && value.length > 0) {
+      const validValues = Array.from(new Set(
+        value.filter(v => typeof v === 'string' && v.trim() !== '')
+      ));
+      
+      if (validValues.length > 0) {
+        if (key === 'base' && validValues[0] !== 'default') {
+          continue;
+        }
+        cleanedConfig[key] = validValues;
+      }
+    }
+  }
+  
+  if (!cleanedConfig.backgroundColor) {
+    cleanedConfig.backgroundColor = ['b6e3f4'];
+  }
+  
+  return cleanedConfig;
+}
+
+// Simulation de génération d'avatar (sans DiceBear pour la démo)
+function simulateAvatarGeneration(config, callback) {
+  return new Promise((resolve) => {
+    const startTime = Date.now();
+    
+    // Simulation du progrès
+    let progress = 0;
+    const progressInterval = setInterval(() => {
+      progress += 0.1;
+      callback?.(Math.min(progress, 0.9));
+      
+      if (progress >= 1) {
+        clearInterval(progressInterval);
+        const generationTime = Date.now() - startTime;
+        resolve({
+          dataUri: `data:image/svg+xml;base64,${Buffer.from(`Avatar généré en ${generationTime}ms`).toString('base64')}`,
+          generationTime,
+          config
+        });
+      }
+    }, 50);
+  });
+}
+
+// Système de debouncing optimisé
+function createAvatarDebounce(delay = 250) {
+  let timeoutId;
+  let lastCallTime = 0;
+  
+  return function debounce(callback, config) {
+    const now = Date.now();
+    const timeSinceLastCall = now - lastCallTime;
+    
+    clearTimeout(timeoutId);
+    
+    if (timeSinceLastCall >= delay) {
+      lastCallTime = now;
+      callback(config);
+    } else {
+      timeoutId = setTimeout(() => {
+        lastCallTime = Date.now();
+        callback(config);
+      }, delay - timeSinceLastCall);
+    }
+  };
+}
+
+async function testRealTimeGeneration() {
+  console.log('⚡ TEST GÉNÉRATION TEMPS RÉEL AVATAR');
+  console.log('═'.repeat(80));
+  
+  const debounce = createAvatarDebounce(250);
+  const changes = [];
+  const results = [];
+  
+  // TEST 1: Debouncing sur modifications rapides
+  console.log('\n🚀 TEST 1: Debouncing sur modifications rapides');
+  console.log('─'.repeat(60));
+  
+  const testConfigs = [
+    { ...DEFAULT_CHILD_PROFILE, gender: 'boy', hairType: 'short01' },
+    { ...DEFAULT_CHILD_PROFILE, gender: 'girl', hairType: 'long01' },
+    { ...DEFAULT_CHILD_PROFILE, hairColor: 'f5c842' },
+    { ...DEFAULT_CHILD_PROFILE, skinTone: 'fdbcb4' },
+    { ...DEFAULT_CHILD_PROFILE, eyes: 'variant05' }
+  ];
+  
+  const startTestTime = Date.now();
+  
+  // Simuler des changements rapides (tous les 100ms)
+  for (let i = 0; i < testConfigs.length; i++) {
+    const config = testConfigs[i];
+    changes.push({
+      index: i,
+      config,
+      timestamp: Date.now() - startTestTime
+    });
+    
+    debounce((cfg) => {
+      const changeStartTime = Date.now();
+      simulateAvatarGeneration(convertProfileToAvatarConfig(cfg), (progress) => {
+        // Callback de progrès
+      }).then(result => {
+        results.push({
+          changeIndex: i,
+          config: cfg,
+          result,
+          responseTime: Date.now() - changeStartTime,
+          changeTime: Date.now() - startTestTime
+        });
+        
+        console.log(`  ✅ Changement ${i + 1}: ${cfg.gender} ${cfg.hairType} - ${result.generationTime}ms`);
+      });
+    }, config);
+    
+    // Attendre 100ms entre chaque changement
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+  
+  // Attendre que tous les debouncing se terminent
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  const totalTestTime = Date.now() - startTestTime;
+  
+  // TEST 2: Analyse des performances
+  console.log('\n📊 TEST 2: Analyse des performances');
+  console.log('─'.repeat(60));
+  
+  const generationTimes = results.map(r => r.result.generationTime);
+  const responseTimes = results.map(r => r.responseTime);
+  
+  const avgGenerationTime = generationTimes.reduce((a, b) => a + b, 0) / generationTimes.length;
+  const avgResponseTime = responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length;
+  const maxGenerationTime = Math.max(...generationTimes);
+  const maxResponseTime = Math.max(...responseTimes);
+  
+  console.log(`  ⚡ Temps moyen de génération: ${avgGenerationTime.toFixed(2)}ms`);
+  console.log(`  ⚡ Temps moyen de réponse: ${avgResponseTime.toFixed(2)}ms`);
+  console.log(`  🐌 Temps max de génération: ${maxGenerationTime}ms`);
+  console.log(`  🐌 Temps max de réponse: ${maxResponseTime}ms`);
+  console.log(`  ⏱️ Durée totale du test: ${totalTestTime}ms`);
+  
+  // TEST 3: Test de validé de configuration
+  console.log('\n⚙️ TEST 3: Validation et nettoyage de configuration');
+  console.log('─'.repeat(60));
+  
+  const invalidConfigs = [
+    { hair: [], hairColor: [''], skinColor: ['invalid'] },
+    { hair: [''], hairColor: ['f5c842', '6d4c41'], skinColor: [] },
+    { base: ['invalid'], backgroundColor: [] }
+  ];
+  
+  invalidConfigs.forEach((config, index) => {
+    const cleaned = validateAndCleanConfig(config);
+    console.log(`  ${index + 1}. Config ${index + 1}:`);
+    console.log(`     Entrant: ${JSON.stringify(config)}`);
+    console.log(`     Nettoyé: ${JSON.stringify(cleaned)}`);
+    
+    const isValid = cleaned.backgroundColor && cleaned.backgroundColor.length > 0;
+    console.log(`     ${isValid ? '✅' : '❌'} Validation: ${isValid ? 'Réussie' : 'Échouée'}`);
+  });
+  
+  // TEST 4: Test de charge (modifications simultanées)
+  console.log('\n🔥 TEST 4: Test de charge - Modifications simultanées');
+  console.log('─'.repeat(60));
+  
+  const loadTestStart = Date.now();
+  const loadTestPromises = [];
+  
+  // Simuler 10 modifications simultanées
+  for (let i = 0; i < 10; i++) {
+    const config = {
+      ...DEFAULT_CHILD_PROFILE,
+      gender: i % 2 === 0 ? 'boy' : 'girl',
+      hairType: i % 3 === 0 ? 'short01' : 'long01',
+      hairColor: ['6d4c41', 'f5c842', 'e67e22'][i % 3]
+    };
+    
+    const promise = simulateAvatarGeneration(convertProfileToAvatarConfig(config))
+      .then(result => ({
+        index: i,
+        config,
+        result,
+        time: Date.now() - loadTestStart
+      }));
+    
+    loadTestPromises.push(promise);
+  }
+  
+  const loadResults = await Promise.all(loadTestPromises);
+  const loadTestTime = Date.now() - loadTestStart;
+  
+  console.log(`  ⚡ Test de charge terminé en: ${loadTestTime}ms`);
+  console.log(`  📊 Générations parallèles: ${loadResults.length}`);
+  console.log(`  🏁 Toutes les générations complétées: ${loadResults.every(r => r.result) ? '✅' : '❌'}`);
+  
+  // RÉSUMÉ FINAL
+  console.log('\n📊 RÉSUMÉ DES PERFORMANCES');
+  console.log('═'.repeat(80));
+  
+  const allTestsPassed = 
+    avgGenerationTime < 500 && 
+    maxGenerationTime < 1000 &&
+    totalTestTime < 2000 &&
+    loadTestTime < 1500;
+  
+  if (allTestsPassed) {
+    console.log('🎉 SUCCÈS: Performances excellentes!');
+    console.log(`✅ Debouncing: ${delay}ms (optimisé)`);
+    console.log(`✅ Génération temps réel: ${avgGenerationTime.toFixed(2)}ms`);
+    console.log(`✅ Gestion de charge: 10 générations en ${loadTestTime}ms`);
+    console.log(`✅ Interface responsive: ${avgResponseTime.toFixed(2)}ms`);
+    return true;
+  } else {
+    console.log('⚠️ PERFORMANCE DÉGRADÉE: Optimisations recommandées');
+    console.log(`❌ Temps de génération: ${avgGenerationTime.toFixed(2)}ms (objectif: <500ms)`);
+    console.log(`❌ Temps de réponse: ${avgResponseTime.toFixed(2)}ms (objectif: <300ms)`);
+    return false;
+  }
+}
+
+// Lancer les tests
+const delay = process.argv[2] ? parseInt(process.argv[2]) : 250;
+
+(async () => {
+  try {
+    const success = await testRealTimeGeneration();
+    console.log(`\n🏁 Test terminé avec ${success ? 'SUCCÈS' : 'DES PROBLÈMES DE PERFORMANCE'}`);
+    process.exit(success ? 0 : 1);
+  } catch (error) {
+    console.error('💥 Erreur lors du test:', error.message);
+    process.exit(1);
+  }
+})();

@@ -40,6 +40,9 @@ export class Template {
 
   @Prop({ default: false })
   isPublished: boolean;
+
+  @Prop({ default: false })
+  isFeatured: boolean;
 }
 
 export const TemplateSchema = SchemaFactory.createForClass(Template);

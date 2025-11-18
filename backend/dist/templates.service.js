@@ -87,6 +87,8 @@ let TemplatesService = class TemplatesService {
             filter.isPublished = query.isPublished === 'true';
         if (query.language)
             filter.language = query.language;
+        if (query.featured !== undefined)
+            filter.isFeatured = query.featured === 'true';
         return this.templateModel.find(filter).sort({ createdAt: -1 }).exec();
     }
     async findOne(id) {

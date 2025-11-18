@@ -99,6 +99,32 @@ __decorate([
     __metadata("design:type", String)
 ], User.prototype, "status", void 0);
 __decorate([
+    (0, mongoose_1.Prop)({
+        type: {
+            name: String,
+            age: String,
+            gender: String,
+            mood: String,
+            hairType: String,
+            hairColor: String,
+            skinTone: String,
+            eyes: String,
+            eyebrows: String,
+            mouth: String,
+            glasses: Boolean,
+            glassesStyle: String,
+            accessories: String,
+            earrings: String,
+            features: String,
+        }
+    }),
+    __metadata("design:type", Object)
+], User.prototype, "child", void 0);
+__decorate([
+    (0, mongoose_1.Prop)(),
+    __metadata("design:type", String)
+], User.prototype, "childAvatar", void 0);
+__decorate([
     (0, mongoose_1.Prop)({ type: Date }),
     __metadata("design:type", Date)
 ], User.prototype, "lastLogin", void 0);

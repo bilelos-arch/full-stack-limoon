@@ -95,6 +95,46 @@ export class User {
   })
   status: 'active' | 'inactive' | 'suspended';
 
+  @Prop({
+    type: {
+      name: String,
+      age: String,
+      gender: String,
+      mood: String,
+      hairType: String,
+      hairColor: String,
+      skinTone: String,
+      eyes: String,
+      eyebrows: String,
+      mouth: String,
+      glasses: Boolean,
+      glassesStyle: String,
+      accessories: String,
+      earrings: String,
+      features: String,
+    }
+  })
+  child?: {
+    name: string;
+    age: string;
+    gender: string;
+    mood: string;
+    hairType: string;
+    hairColor: string;
+    skinTone: string;
+    eyes: string;
+    eyebrows: string;
+    mouth: string;
+    glasses: boolean;
+    glassesStyle: string;
+    accessories: string;
+    earrings: string;
+    features: string;
+  };
+
+  @Prop()
+  childAvatar?: string;
+
   @Prop({ type: Date })
   lastLogin?: Date;
 

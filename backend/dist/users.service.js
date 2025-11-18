@@ -108,6 +108,53 @@ let UsersService = class UsersService {
         }
         return user ? this.transformUserResponse(user) : null;
     }
+    async updateChildProfile(id, updateUserDto) {
+        console.log('Users Service: updateChildProfile called with id:', id);
+        console.log('Users Service: updateUserDto:', updateUserDto);
+        const existingUser = await this.userModel.findOne({ _id: id, deletedAt: { $exists: false } }).exec();
+        console.log('Users Service: existingUser found:', !!existingUser);
+        if (!existingUser) {
+            console.log('Users Service: User not found, returning null');
+            return null;
+        }
+        const updateData = { updatedAt: new Date() };
+        if (updateUserDto.child) {
+            updateData.child = {
+                ...existingUser.child,
+                ...updateUserDto.child
+            };
+        }
+        if (updateUserDto.childAvatar !== undefined) {
+            updateData.childAvatar = updateUserDto.childAvatar;
+        }
+        if (updateUserDto.fullName)
+            updateData.fullName = updateUserDto.fullName;
+        if (updateUserDto.avatarUrl)
+            updateData.avatarUrl = updateUserDto.avatarUrl;
+        if (updateUserDto.phone)
+            updateData.phone = updateUserDto.phone;
+        if (updateUserDto.country)
+            updateData.country = updateUserDto.country;
+        if (updateUserDto.city)
+            updateData.city = updateUserDto.city;
+        if (updateUserDto.settings) {
+            updateData.settings = {
+                ...existingUser.settings,
+                ...updateUserDto.settings
+            };
+        }
+        console.log('Users Service: Final updateData to apply for child profile:', updateData);
+        const user = await this.userModel
+            .findByIdAndUpdate(id, updateData, { new: true })
+            .exec();
+        console.log('Users Service: Child profile update result:', user ? 'success' : 'failed');
+        if (user) {
+            console.log('Users Service: Updated user email:', user.email);
+            console.log('Users Service: Child data:', user.child);
+            console.log('Users Service: ChildAvatar:', user.childAvatar);
+        }
+        return user ? this.transformUserResponse(user) : null;
+    }
     async remove(id) {
         const existingUser = await this.userModel.findOne({ _id: id, deletedAt: { $exists: false } }).exec();
         if (!existingUser) {
@@ -138,6 +185,8 @@ let UsersService = class UsersService {
             settings: userObject.settings,
             storyHistory: userObject.storyHistory || [],
             purchaseHistory: userObject.purchaseHistory || [],
+            child: userObject.child,
+            childAvatar: userObject.childAvatar,
             role: userObject.role,
             status: userObject.status,
             createdAt: userObject.createdAt,

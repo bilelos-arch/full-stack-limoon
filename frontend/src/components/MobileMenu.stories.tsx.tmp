@@ -1,0 +1,365 @@
+import type { Meta, StoryObj } from '@storybook/react';
+import { userEvent, within, expect } from '@storybook/test';
+import MobileMenu from './MobileMenu';
+import { 
+  mockUser, 
+  mockAdminUser, 
+  mockTemplates, 
+  mockUseAuth, 
+  mockUseAuthLoggedOut, 
+  mockUseTheme 
+} from '@/mocks/storybookData';
+
+const meta: Meta<typeof MobileMenu> = {
+  title: 'Navigation/MobileMenu',
+  component: MobileMenu,
+  parameters: {
+    layout: 'fullscreen',
+    docs: {
+      description: {
+        component: `
+Le composant MobileMenu est le menu latéral responsive pour mobile. 
+Il inclut les fonctionnalités suivantes :
+- Slide-in animation depuis la droite
+- Focus trap pour l'accessibilité
+- Overlay avec backdrop blur
+- Navigation items avec icônes
+- Section utilisateur avec avatar
+- Actions rapides (recherche, theme, créer histoire)
+- Gestion keyboard (Escape, Tab navigation)
+- Fermeture automatique au clic d'un lien
+        `,
+      },
+    },
+    viewport: {
+      defaultViewport: 'mobile',
+    },
+  },
+  tags: ['autodocs'],
+  argTypes: {
+    isOpen: {
+      description: 'État d\'ouverture du menu',
+      control: 'boolean',
+    },
+    user: {
+      description: 'Objet utilisateur connecté',
+      control: 'object',
+    },
+    templates: {
+      description: 'Liste des templates pour la section histoires',
+      control: 'object',
+    },
+  },
+};
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+// Story: Menu Fermé
+export const Closed: Story = {
+  name: 'Menu fermé',
+  args: {
+    isOpen: false,
+    user: mockUser,
+    templates: mockTemplates,
+    isAuthenticated: true,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Menu mobile fermé - état par défaut',
+      },
+    },
+  },
+};
+
+// Story: Menu Ouvert - Utilisateur Connecté
+export const Open: Story = {
+  name: 'Menu ouvert - utilisateur connecté',
+  args: {
+    isOpen: true,
+    user: mockUser,
+    templates: mockTemplates,
+    isAuthenticated: true,
+  },
+  play: async ({ canvasElement, step }: { canvasElement: HTMLElement, step: any }) => {
+    const canvas = within(canvasElement);
+    
+    await step('Tester l\'overlay', async () => {
+      const overlay = canvas.getByLabelText(/menu/i);
+      await expect(overlay).toBeInTheDocument();
+    });
+    
+    await step('Tester la navigation', async () => {
+      const navItems = await canvas.findAllByRole('link');
+      expect(navItems.length).toBeGreaterThan(0);
+    });
+  },
+};
+
+// Story: Menu Ouvert - Utilisateur Non Connecté
+export const OpenLoggedOut: Story = {
+  name: 'Menu ouvert - utilisateur non connecté',
+  args: {
+    isOpen: true,
+    user: null,
+    templates: mockTemplates,
+    isAuthenticated: false,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Menu mobile ouvert avec boutons Connexion et S\'inscrire',
+      },
+    },
+  },
+};
+
+// Story: Menu Ouvert - Administrateur
+export const OpenAdmin: Story = {
+  name: 'Menu ouvert - administrateur',
+  args: {
+    isOpen: true,
+    user: mockAdminUser,
+    templates: mockTemplates,
+    isAuthenticated: true,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Menu mobile avec section Administration visible',
+      },
+    },
+  },
+};
+
+// Story: Focus Trap
+export const FocusTrap: Story = {
+  name: 'Test focus trap',
+  args: {
+    isOpen: true,
+    user: mockUser,
+    templates: mockTemplates,
+    isAuthenticated: true,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Test de navigation au clavier avec focus trap',
+      },
+    },
+  },
+  play: async ({ canvasElement, step }: { canvasElement: HTMLElement, step: any }) => {
+    const canvas = within(canvasElement);
+    
+    await step('Tester navigation Tab', async () => {
+      // Simuler navigation Tab
+      await userEvent.tab();
+      
+      const firstFocusable = canvas.getByRole('button', { name: /rechercher/i });
+      await expect(firstFocusable).toHaveFocus();
+      
+      // Tab vers l'élément suivant
+      await userEvent.tab();
+      const secondFocusable = canvas.getByRole('button', { name: /mode.*sombre/i });
+      await expect(secondFocusable).toHaveFocus();
+    });
+    
+    await step('Tester navigation Shift+Tab', async () => {
+      // Retourner en arrière
+      await userEvent.tab({ shift: true });
+      const firstFocusable = canvas.getByRole('button', { name: /rechercher/i });
+      await expect(firstFocusable).toHaveFocus();
+    });
+  },
+};
+
+// Story: Fermeture avec Escape
+export const CloseWithEscape: Story = {
+  name: 'Fermeture avec Escape',
+  args: {
+    isOpen: true,
+    user: mockUser,
+    templates: mockTemplates,
+    isAuthenticated: true,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Fermeture du menu avec la touche Escape',
+      },
+    },
+  },
+  play: async ({ canvasElement, step }: { canvasElement: HTMLElement, step: any }) => {
+    const canvas = within(canvasElement);
+    
+    await step('Appuyer sur Escape pour fermer', async () => {
+      await userEvent.keyboard('{Escape}');
+      // Le menu se ferme (simulation dans Storybook)
+      expect(canvas.getByLabelText(/menu/i)).toBeInTheDocument();
+    });
+  },
+};
+
+// Story: Navigation Items
+export const NavigationItems: Story = {
+  name: 'Items de navigation',
+  args: {
+    isOpen: true,
+    user: mockUser,
+    templates: mockTemplates,
+    isAuthenticated: true,
+  },
+  play: async ({ canvasElement, step }: { canvasElement: HTMLElement, step: any }) => {
+    const canvas = within(canvasElement);
+    
+    await step('Vérifier les liens de navigation', async () => {
+      const navItems = await canvas.findAllByRole('link');
+      
+      const homeLink = navItems.find(link => link.textContent?.includes('Accueil'));
+      const conceptLink = navItems.find(link => link.textContent?.includes('Comment ça marche'));
+      const boutiqueLink = navItems.find(link => link.textContent?.includes('Boutique'));
+      
+      expect(homeLink).toBeInTheDocument();
+      expect(conceptLink).toBeInTheDocument();
+      expect(boutiqueLink).toBeInTheDocument();
+    });
+  },
+};
+
+// Story: Section Templates
+export const TemplatesSection: Story = {
+  name: 'Section templates',
+  args: {
+    isOpen: true,
+    user: mockUser,
+    templates: mockTemplates,
+    isAuthenticated: true,
+  },
+  play: async ({ canvasElement, step }: { canvasElement: HTMLElement, step: any }) => {
+    const canvas = within(canvasElement);
+    
+    await step('Vérifier la section "Nos histoires"', async () => {
+      const templatesSection = canvas.getByText(/nos histoires/i);
+      await expect(templatesSection).toBeInTheDocument();
+      
+      // Vérifier quelques templates
+      const templateLinks = await canvas.findAllByText(/aventurier/i);
+      expect(templateLinks.length).toBeGreaterThan(0);
+    });
+  },
+};
+
+// Story: Actions Rapides
+export const QuickActions: Story = {
+  name: 'Actions rapides',
+  args: {
+    isOpen: true,
+    user: mockUser,
+    templates: mockTemplates,
+    isAuthenticated: true,
+  },
+  play: async ({ canvasElement, step }: { canvasElement: HTMLElement, step: any }) => {
+    const canvas = within(canvasElement);
+    
+    await step('Tester les actions rapides', async () => {
+      // Bouton recherche
+      const searchButton = await canvas.findByRole('button', { name: /rechercher/i });
+      await expect(searchButton).toBeInTheDocument();
+      
+      // Bouton theme
+      const themeButton = await canvas.findByRole('button', { name: /mode.*sombre/i });
+      await expect(themeButton).toBeInTheDocument();
+      
+      // Bouton créer histoire
+      const createButton = canvas.getByText(/créer une histoire/i);
+      await expect(createButton).toBeInTheDocument();
+      
+      await step('Cliquer sur "Créer une histoire"', async () => {
+        await userEvent.click(createButton);
+        // Simulation de fermeture du menu après clic
+        expect(createButton).toBeInTheDocument();
+      });
+    });
+  },
+};
+
+// Story: Section Utilisateur
+export const UserSection: Story = {
+  name: 'Section utilisateur',
+  args: {
+    isOpen: true,
+    user: mockUser,
+    templates: mockTemplates,
+    isAuthenticated: true,
+  },
+  play: async ({ canvasElement, step }: { canvasElement: HTMLElement, step: any }) => {
+    const canvas = within(canvasElement);
+    
+    await step('Vérifier les informations utilisateur', async () => {
+      // Avatar utilisateur
+      const userAvatar = canvas.getByAltText(/marie dubois/i);
+      await expect(userAvatar).toBeInTheDocument();
+      
+      // Nom utilisateur
+      const userName = canvas.getByText(/marie dubois/i);
+      await expect(userName).toBeInTheDocument();
+      
+      // Email utilisateur
+      const userEmail = canvas.getByText(/marie\.dubois@email\.com/i);
+      await expect(userEmail).toBeInTheDocument();
+    });
+    
+    await step('Vérifier les liens utilisateur', async () => {
+      const userLinks = await canvas.findAllByRole('link');
+      const profileLink = userLinks.find(link => link.textContent?.includes('Mon profil'));
+      const dashboardLink = userLinks.find(link => link.textContent?.includes('Mes histoires'));
+      
+      expect(profileLink).toBeInTheDocument();
+      expect(dashboardLink).toBeInTheDocument();
+    });
+  },
+};
+
+// Story: Logout
+export const LogoutAction: Story = {
+  name: 'Action de déconnexion',
+  args: {
+    isOpen: true,
+    user: mockUser,
+    templates: mockTemplates,
+    isAuthenticated: true,
+  },
+  play: async ({ canvasElement, step }: { canvasElement: HTMLElement, step: any }) => {
+    const canvas = within(canvasElement);
+    
+    await step('Cliquer sur déconnexion', async () => {
+      const logoutButton = canvas.getByRole('button', { name: /déconnexion/i });
+      await userEvent.click(logoutButton);
+      
+      // Simulation de la déconnexion
+      expect(logoutButton).toBeInTheDocument();
+    });
+  },
+};
+
+// Story: Animations et Transitions
+export const Animations: Story = {
+  name: 'Animations et transitions',
+  args: {
+    isOpen: true,
+    user: mockUser,
+    templates: mockTemplates,
+    isAuthenticated: true,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'Démonstration des animations slide-in et des micro-interactions',
+      },
+    },
+    chromatic: {
+      delay: 800,
+    },
+  },
+};

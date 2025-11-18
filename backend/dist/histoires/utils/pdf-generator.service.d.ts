@@ -24,7 +24,6 @@ export declare class PdfGeneratorService {
     private replaceImageVariables;
     private convertPdfToImages;
     private convertPdfToImagesOptimized;
-    private cartoonifyImage;
     private validateDataUrl;
     private decodeBase64Data;
     private validatePngBuffer;

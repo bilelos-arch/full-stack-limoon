@@ -98,8 +98,9 @@ export class TemplatesController {
     @Query('ageRange') ageRange?: string,
     @Query('isPublished') isPublished?: string,
     @Query('language') language?: string,
+    @Query('featured') featured?: string,
   ) {
-    const query = { category, gender, ageRange, isPublished: isPublished !== undefined ? isPublished : 'true', language };
+    const query = { category, gender, ageRange, isPublished: isPublished !== undefined ? isPublished : 'true', language, featured };
     return this.templatesService.findAll(query);
   }
 

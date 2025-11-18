@@ -79,7 +79,16 @@ let HistoiresService = HistoiresService_1 = class HistoiresService {
         this.logger.log(`[SERVICE] Preview DTO:`, JSON.stringify(previewDto, null, 2));
         this.logger.log(`[SERVICE] Uploaded image URLs:`, uploadedImageUrls);
         const { templateId, variables } = previewDto;
-        const validation = await this.pdfGeneratorService.validateVariables(await this.templatesService.findOne(templateId), variables, uploadedImageUrls);
+        const user = await this.usersService.findById(userId);
+        if (!user) {
+            throw new common_1.BadRequestException('User not found');
+        }
+        const mergedVariables = { ...variables };
+        if (user.childAvatar && !mergedVariables.avatar) {
+            mergedVariables.avatar = user.childAvatar;
+            this.logger.log(`[SERVICE] Included child avatar from user profile for preview generation`);
+        }
+        const validation = await this.pdfGeneratorService.validateVariables(await this.templatesService.findOne(templateId), mergedVariables, uploadedImageUrls);
         if (!validation.valid) {
             const errors = [];
             if (validation.missingVariables?.length)
@@ -90,7 +99,6 @@ let HistoiresService = HistoiresService_1 = class HistoiresService {
                 errors.push(`Image errors: ${validation.imageErrors.join(', ')}`);
             throw new common_1.BadRequestException(`Validation failed: ${errors.join('; ')}`);
         }
-        const mergedVariables = variables;
         let template;
         try {
             template = await this.templatesService.findOne(templateId);
@@ -275,6 +283,14 @@ let HistoiresService = HistoiresService_1 = class HistoiresService {
             this.logger.error(`[DEBUG] Failed to parse variables JSON: ${error.message}`);
             this.logger.error(`[DEBUG] Raw variables that failed: ${rawVariables}`);
             throw new common_1.BadRequestException('Variables must be a valid JSON string or object');
+        }
+        const user = await this.usersService.findById(userId);
+        if (!user) {
+            throw new common_1.BadRequestException('User not found');
+        }
+        if (user.childAvatar && !variables.avatar) {
+            variables.avatar = user.childAvatar;
+            this.logger.log(`[DEBUG] Included child avatar from user profile for final PDF generation`);
         }
         let template;
         try {

@@ -62,6 +62,10 @@ __decorate([
     (0, mongoose_1.Prop)({ default: false }),
     __metadata("design:type", Boolean)
 ], Template.prototype, "isPublished", void 0);
+__decorate([
+    (0, mongoose_1.Prop)({ default: false }),
+    __metadata("design:type", Boolean)
+], Template.prototype, "isFeatured", void 0);
 exports.Template = Template = __decorate([
     (0, mongoose_1.Schema)({ timestamps: true })
 ], Template);

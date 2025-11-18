@@ -45,6 +45,8 @@ let UsersController = class UsersController {
             settings: profile.settings,
             storyHistory: profile.storyHistory,
             purchaseHistory: profile.purchaseHistory,
+            child: profile.child,
+            childAvatar: profile.childAvatar,
             role: profile.role,
             status: profile.status,
             createdAt: profile.createdAt,
@@ -80,6 +82,8 @@ let UsersController = class UsersController {
             settings: profile.settings,
             storyHistory: profile.storyHistory,
             purchaseHistory: profile.purchaseHistory,
+            child: profile.child,
+            childAvatar: profile.childAvatar,
             role: profile.role,
             status: profile.status,
             createdAt: profile.createdAt,
@@ -99,6 +103,32 @@ let UsersController = class UsersController {
         }
         console.log('Users Controller: Profile updated successfully for user:', user.email);
         return user;
+    }
+    async updateChildProfile(id, req, updateData) {
+        console.log('Users Controller: updateChildProfile called for id:', id);
+        console.log('Users Controller: Request user:', req.user);
+        console.log('Users Controller: Update data received:', updateData);
+        if (req.user.userId !== id && req.user.role !== 'admin') {
+            console.log('Users Controller: Access denied - userId mismatch or not admin');
+            throw new common_1.HttpException('Access denied', common_1.HttpStatus.FORBIDDEN);
+        }
+        try {
+            const user = await this.usersService.updateChildProfile(id, updateData);
+            if (!user) {
+                console.log('Users Controller: Update failed - no user returned');
+                throw new common_1.HttpException('Failed to update child profile', common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+            }
+            console.log('Users Controller: Child profile updated successfully for user:', user.email);
+            return {
+                success: true,
+                message: 'Profil enfant mis à jour avec succès',
+                user: user
+            };
+        }
+        catch (error) {
+            console.error('Users Controller: Error updating child profile:', error);
+            throw new common_1.HttpException('Erreur lors de la mise à jour du profil enfant: ' + error.message, common_1.HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
     async getUserStories(req) {
         console.log('Users Controller: getUserStories called');
@@ -204,6 +234,15 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "updateProfile", null);
+__decorate([
+    (0, common_1.Patch)('profile/:id'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Req)()),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, update_user_dto_1.UpdateUserDto]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "updateChildProfile", null);
 __decorate([
     (0, common_1.Get)('profile/stories'),
     __param(0, (0, common_1.Req)()),

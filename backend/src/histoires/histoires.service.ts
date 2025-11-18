@@ -87,8 +87,21 @@ export class HistoiresService {
 
     const { templateId, variables } = previewDto;
 
+    // Fetch user profile to get child avatar
+    const user = await this.usersService.findById(userId);
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    // Include child avatar in variables if available
+    const mergedVariables = { ...variables };
+    if (user.childAvatar && !mergedVariables.avatar) {
+      mergedVariables.avatar = user.childAvatar;
+      this.logger.log(`[SERVICE] Included child avatar from user profile for preview generation`);
+    }
+
     // Validate variables before generation (no default values for images)
-    const validation = await this.pdfGeneratorService.validateVariables(await this.templatesService.findOne(templateId), variables, uploadedImageUrls);
+    const validation = await this.pdfGeneratorService.validateVariables(await this.templatesService.findOne(templateId), mergedVariables, uploadedImageUrls);
     if (!validation.valid) {
       const errors = [];
       if (validation.missingVariables?.length) errors.push(`Missing variables: ${validation.missingVariables.join(', ')}`);
@@ -96,8 +109,6 @@ export class HistoiresService {
       if (validation.imageErrors?.length) errors.push(`Image errors: ${validation.imageErrors.join(', ')}`);
       throw new BadRequestException(`Validation failed: ${errors.join('; ')}`);
     }
-
-    const mergedVariables = variables;
 
     // Validate template exists
     let template;
@@ -335,6 +346,18 @@ export class HistoiresService {
       this.logger.error(`[DEBUG] Failed to parse variables JSON: ${error.message}`);
       this.logger.error(`[DEBUG] Raw variables that failed: ${rawVariables}`);
       throw new BadRequestException('Variables must be a valid JSON string or object');
+    }
+
+    // Fetch user profile to get child avatar
+    const user = await this.usersService.findById(userId);
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    // Include child avatar in variables if available
+    if (user.childAvatar && !variables.avatar) {
+      variables.avatar = user.childAvatar;
+      this.logger.log(`[DEBUG] Included child avatar from user profile for final PDF generation`);
     }
 
     // Validate template exists

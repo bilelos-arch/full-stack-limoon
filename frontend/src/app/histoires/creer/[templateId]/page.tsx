@@ -3,16 +3,18 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
 import { useHistoiresStore } from '@/stores/histoiresStore';
 import { templatesApi, Template } from '@/lib/templatesApi';
 import { histoireApi, Histoire } from '@/lib/histoireApi';
+import { authApi } from '@/lib/authApi';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ArrowLeft, Sparkles, Download, BookOpen, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react';
+import { ArrowLeft, Sparkles, Download, BookOpen, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 import HistoireForm from '@/components/HistoireForm';
 import HistoirePreview from '@/components/HistoirePreview';
@@ -41,6 +43,7 @@ export default function CreerHistoirePage() {
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [userProfile, setUserProfile] = useState<any>(null);
   const pdfCanvasRef = useRef<HTMLCanvasElement>(null);
 
 
@@ -61,6 +64,7 @@ export default function CreerHistoirePage() {
         return;
       }
       loadTemplate();
+      loadUserProfile();
     }
   }, [isAuthenticated, templateId, router]);
 
@@ -100,6 +104,17 @@ export default function CreerHistoirePage() {
     }
   };
 
+  const loadUserProfile = async () => {
+    try {
+      console.log('Loading user profile for avatar retrieval');
+      const profile = await authApi.getProfile();
+      console.log('User profile loaded:', profile);
+      setUserProfile(profile);
+    } catch (error) {
+      console.error('Erreur lors du chargement du profil utilisateur:', error);
+    }
+  };
+
   const handlePreview = useCallback(async (variables: Record<string, string>) => {
     console.log('[DEBUG] handlePreview called with variables:', variables);
     console.log('[DEBUG] template:', template);
@@ -107,6 +122,7 @@ export default function CreerHistoirePage() {
     console.log('[DEBUG] user?._id:', user?._id);
     console.log('[DEBUG] templateId:', templateId);
     console.log('[DEBUG] showPreview before:', showPreview);
+    console.log('[DEBUG] userProfile:', userProfile);
 
     if (!template || !user?._id) {
       console.error('[DEBUG] Missing template or user:', { template: !!template, userId: user?._id });
@@ -116,10 +132,18 @@ export default function CreerHistoirePage() {
     setIsGeneratingPreview(true);
     try {
       console.log('[DEBUG] Calling generateHistoire for preview...');
+
+      // Include avatar from user profile if available
+      const variablesWithAvatar = { ...variables };
+      if (userProfile?.childAvatar && !variablesWithAvatar.avatar) {
+        variablesWithAvatar.avatar = userProfile.childAvatar;
+        console.log('[DEBUG] Included child avatar in preview variables:', userProfile.childAvatar);
+      }
+
       // Generate the full histoire instead of just preview
       const histoire = await generateHistoire({
         templateId: templateId,
-        variables,
+        variables: variablesWithAvatar,
       });
 
       console.log('[DEBUG] generateHistoire returned:', histoire);
@@ -130,7 +154,7 @@ export default function CreerHistoirePage() {
       if (histoire) {
         console.log('[DEBUG] Setting generated histoire for preview');
         setGeneratedHistoire(histoire);
-        setFinalVariables(variables);
+        setFinalVariables(variablesWithAvatar);
 
         // Use the preview images from the generated histoire
         const previewUrls = histoire.previewUrls || [];
@@ -161,7 +185,7 @@ export default function CreerHistoirePage() {
     } finally {
       setIsGeneratingPreview(false);
     }
-  }, [template, user?._id, templateId, generateHistoire, showPreview]);
+  }, [template, user?._id, templateId, generateHistoire, showPreview, userProfile]);
 
   const handleGenerate = async (variables: Record<string, string>) => {
     console.log('[DEBUG] handleGenerate called with variables:', variables);
@@ -169,6 +193,7 @@ export default function CreerHistoirePage() {
     console.log('[DEBUG] user:', user);
     console.log('[DEBUG] user?._id:', user?._id);
     console.log('[DEBUG] isAuthenticated:', isAuthenticated);
+    console.log('[DEBUG] userProfile:', userProfile);
 
     if (!template || !user?._id) {
       console.error('[DEBUG] Missing template or user:', { template: !!template, userId: user?._id, user: user, isAuthenticated });
@@ -178,15 +203,22 @@ export default function CreerHistoirePage() {
 
     setIsGenerating(true);
     try {
+      // Include avatar from user profile if available
+      const variablesWithAvatar = { ...variables };
+      if (userProfile?.childAvatar && !variablesWithAvatar.avatar) {
+        variablesWithAvatar.avatar = userProfile.childAvatar;
+        console.log('[DEBUG] Included child avatar in final PDF variables:', userProfile.childAvatar);
+      }
+
       console.log('[DEBUG] Calling generateHistoire with:', {
         templateId: templateId,
-        variables,
+        variables: variablesWithAvatar,
       });
 
       console.log('[DEBUG] About to call generateHistoire from store...');
       const histoire = await generateHistoire({
         templateId: templateId,
-        variables,
+        variables: variablesWithAvatar,
       });
 
       console.log('[DEBUG] generateHistoire returned:', histoire);
@@ -210,7 +242,7 @@ export default function CreerHistoirePage() {
 
         console.log('[DEBUG] Setting generated histoire for preview');
         setGeneratedHistoire(actualHistoire);
-        setFinalVariables(variables);
+        setFinalVariables(variablesWithAvatar);
 
         // Utiliser les images de preview générées lors de la création de l'histoire
         const previewUrls = actualHistoire.previewUrls || [];
@@ -452,22 +484,30 @@ export default function CreerHistoirePage() {
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-4 mb-8"
+            className="flex items-center justify-between gap-4 mb-8"
           >
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => showPreview ? setShowPreview(false) : router.back()}
-              className="flex-shrink-0"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground">
-                {showPreview ? 'Aperçu de votre histoire' : 'Personnaliser l\'histoire'}
-              </h1>
-              <p className="text-sm md:text-base text-muted-foreground mt-1">{template.title}</p>
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => showPreview ? setShowPreview(false) : router.back()}
+                className="flex-shrink-0"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+                  {showPreview ? 'Aperçu de votre histoire' : 'Personnaliser l\'histoire'}
+                </h1>
+                <p className="text-sm md:text-base text-muted-foreground mt-1">{template.title}</p>
+              </div>
             </div>
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/histoires/hero/${user?._id}`}>
+                <User className="h-4 w-4 mr-2" />
+                Créer un avatar
+              </Link>
+            </Button>
           </motion.div>
 
           {/* Error Alert */}
