@@ -5,7 +5,7 @@ import React from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-
+import Footer from '@/components/Footer';
 // Inline SVG logo component (Liverté) — minimal, neon / citron style
 export const LivertéLogo: React.FC<{ className?: string }> = ({ className = '' }) => (
   <svg
@@ -44,7 +44,7 @@ export const LivertéLogo: React.FC<{ className?: string }> = ({ className = '' 
 
 // Reusable Footer component (to include on all pages)
 // Import shared Footer component
-import Footer from '@/components/Footer';
+
 
 // Removed inline Footer component definition (now using shared Footer).
 // Page component — "Le concept"
