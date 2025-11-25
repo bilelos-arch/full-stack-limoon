@@ -22,6 +22,32 @@ export default function AvatarBuilder({
   initialChildName?: string;
   onComplete?: (childName: string, avatarUri: string, config: Record<string, any>) => void;
 }) {
+  // ---------- Helpers for French localisation ----------
+  const toFrenchLabel = (value: string): string => {
+    // Replace hyphens/underscores with spaces, capitalize each word
+    return value
+      .replace(/[-_]/g, ' ')
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  };
+
+  const keyToFrench = (key: string): string => {
+    // Simple conversion: split camelCase, replace with spaces, capitalize
+    const spaced = key.replace(/([a-z])([A-Z])/g, '$1 $2');
+    const capitalized = spaced.replace(/\b\w/g, (c) => c.toUpperCase());
+    // Quelques traductions spécifiques courantes
+    const map: Record<string, string> = {
+      HairColor: 'Couleur des cheveux',
+      EyeColor: 'Couleur des yeux',
+      Mouth: 'Bouche',
+      SkinColor: 'Couleur de peau',
+      Accessories: 'Accessoires',
+      Glasses: 'Lunettes',
+      Earrings: 'Boucles d\'oreilles',
+      Features: 'Caractéristiques',
+    };
+    return map[capitalized] || capitalized;
+  };
+
   const [options, setOptions] = useState<Record<string, string[]>>({});
   const [config, setConfig] = useState<Record<string, string>>({});
   const [avatarUri, setAvatarUri] = useState<string>('');
@@ -260,7 +286,7 @@ export default function AvatarBuilder({
                   .map(([key, values]) => (
                     <div key={key} className="space-y-2">
                       <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                        {key.replace(/([A-Z])/g, ' $1').trim()}
+                        {keyToFrench(key)}
                       </label>
 
                       <select
@@ -273,7 +299,7 @@ export default function AvatarBuilder({
                       >
                         {values.map((v) => (
                           <option key={v} value={v}>
-                            {v}
+                            {toFrenchLabel(v)}
                           </option>
                         ))}
                       </select>
