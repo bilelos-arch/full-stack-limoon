@@ -18,6 +18,7 @@ import { ArrowLeft, Sparkles, Download, BookOpen, ChevronLeft, ChevronRight, Zoo
 import { motion } from 'framer-motion';
 import HistoireForm from '@/components/HistoireForm';
 import HistoirePreview from '@/components/HistoirePreview';
+import StoryCustomizationWizard from '@/components/StoryCustomizationWizard';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 
 export default function CreerHistoirePage() {
@@ -115,6 +116,41 @@ export default function CreerHistoirePage() {
     }
   };
 
+  // Helper function to convert relative URLs to absolute URLs
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:10000';
+
+  const toAbsoluteUrl = (url: string): string => {
+    console.log('[toAbsoluteUrl] Input URL:', url);
+    console.log('[toAbsoluteUrl] API_BASE_URL:', API_BASE_URL);
+
+    if (!url) {
+      console.log('[toAbsoluteUrl] Empty URL, returning as-is');
+      return url;
+    }
+
+    // If already absolute, check if it points to the wrong server
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      // Replace localhost:3000 (frontend) with the correct API_BASE_URL (backend)
+      if (url.includes('localhost:3000')) {
+        const path = url.replace(/^https?:\/\/localhost:3000/, '');
+        const baseUrl = API_BASE_URL.replace(/\/$/, '');
+        const result = `${baseUrl}${path}`;
+        console.log('[toAbsoluteUrl] Fixed wrong server URL to:', result);
+        return result;
+      }
+      console.log('[toAbsoluteUrl] Already absolute URL with correct server, returning as-is');
+      return url;
+    }
+
+    // Convert relative to absolute
+    const baseUrl = API_BASE_URL.replace(/\/$/, ''); // Remove trailing slash
+    const path = url.startsWith('/') ? url : `/${url}`;
+    const result = `${baseUrl}${path}`;
+
+    console.log('[toAbsoluteUrl] Converted to:', result);
+    return result;
+  };
+
   const handlePreview = useCallback(async (variables: Record<string, string>) => {
     console.log('[DEBUG] handlePreview called with variables:', variables);
     console.log('[DEBUG] template:', template);
@@ -157,7 +193,7 @@ export default function CreerHistoirePage() {
         setFinalVariables(variablesWithAvatar);
 
         // Use the preview images from the generated histoire
-        const previewUrls = histoire.previewUrls || [];
+        const previewUrls = (histoire.previewUrls || []).map(toAbsoluteUrl);
         console.log('[DEBUG] Setting previewImages with:', previewUrls);
         console.log('[DEBUG] Preview URLs are strings:', previewUrls.every(url => typeof url === 'string'));
         setPreviewImages(previewUrls);
@@ -240,12 +276,18 @@ export default function CreerHistoirePage() {
         let actualHistoire = histoire;
         // Note: Removed nested response handling as Histoire type doesn't have success/histoire properties
 
+        // Convert PDF URL to absolute if it's relative
+        if (actualHistoire.generatedPdfUrl) {
+          actualHistoire.generatedPdfUrl = toAbsoluteUrl(actualHistoire.generatedPdfUrl);
+          console.log('[DEBUG] Converted PDF URL to:', actualHistoire.generatedPdfUrl);
+        }
+
         console.log('[DEBUG] Setting generated histoire for preview');
         setGeneratedHistoire(actualHistoire);
         setFinalVariables(variablesWithAvatar);
 
         // Utiliser les images de preview générées lors de la création de l'histoire
-        const previewUrls = actualHistoire.previewUrls || [];
+        const previewUrls = (actualHistoire.previewUrls || []).map(toAbsoluteUrl);
         console.log('[DEBUG] Setting previewImages with:', previewUrls);
         console.log('[DEBUG] Preview URLs are strings:', previewUrls.every(url => typeof url === 'string'));
         setPreviewImages(previewUrls);
@@ -375,27 +417,14 @@ export default function CreerHistoirePage() {
     setDownloadError(null);
 
     try {
-      // Build the full URL for the PDF file
-      const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
-      let pdfPath = generatedHistoire.generatedPdfUrl;
-
-      // Convert Cloudinary URL to local URL if needed
-      if (pdfPath.includes('res.cloudinary.com')) {
-        // Extract filename from Cloudinary URL
-        const urlParts = pdfPath.split('/');
-        const filename = urlParts[urlParts.length - 1].split('.')[0];
-        pdfPath = `pdfs/${filename}.pdf`;
-      }
-
-      // Normalize pdfPath to be relative to /uploads/
-      if (pdfPath.startsWith('/uploads/')) {
-        pdfPath = pdfPath.substring(8);
-      } else if (pdfPath.startsWith('/')) {
-        pdfPath = pdfPath.substring(1);
-      }
-
-      const fullPdfUrl = `${apiBaseUrl}/uploads/${pdfPath}`;
-      console.log('Fetching PDF from:', fullPdfUrl);
+      // Apply toAbsoluteUrl to make sure we're using the correct server
+      const fullPdfUrl = toAbsoluteUrl(generatedHistoire.generatedPdfUrl);
+      console.log('[DOWNLOAD DEBUG] Original generatedPdfUrl:', generatedHistoire.generatedPdfUrl);
+      console.log('[DOWNLOAD DEBUG] fullPdfUrl after toAbsoluteUrl:', fullPdfUrl);
+      console.log('[DOWNLOAD DEBUG] API_BASE_URL:', API_BASE_URL);
+      console.log('[DOWNLOAD DEBUG] URL starts with http:', fullPdfUrl.startsWith('http'));
+      console.log('[DOWNLOAD DEBUG] URL includes localhost:10000:', fullPdfUrl.includes('localhost:10000'));
+      console.log('[DOWNLOAD DEBUG] URL includes localhost:3000:', fullPdfUrl.includes('localhost:3000'));
 
       const response = await fetch(fullPdfUrl);
       console.log('Response status:', response.status, 'ok:', response.ok);
@@ -477,138 +506,135 @@ export default function CreerHistoirePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-center justify-between gap-4 mb-8"
+    <div className="min-h-screen bg-[#F8F9FB] overflow-hidden flex flex-col">
+      {/* Top Navigation - Minimal */}
+      <header className="h-16 border-b border-slate-100 bg-white/80 backdrop-blur-md flex items-center justify-between px-6 z-10">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.back()}
+            className="text-slate-500 hover:text-slate-900"
           >
-            <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => showPreview ? setShowPreview(false) : router.back()}
-                className="flex-shrink-0"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-foreground">
-                  {showPreview ? 'Aperçu de votre histoire' : 'Personnaliser l\'histoire'}
-                </h1>
-                <p className="text-sm md:text-base text-muted-foreground mt-1">{template.title}</p>
-              </div>
-            </div>
-            <Button asChild variant="outline" size="sm">
-              <Link href={`/histoires/hero/${user?._id}`}>
-                <User className="h-4 w-4 mr-2" />
-                Créer un avatar
-              </Link>
-            </Button>
-          </motion.div>
-
-          {/* Error Alert */}
-          {error && (
-            <Alert className="mb-6" variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-              <Button variant="outline" size="sm" onClick={clearError}>
-                Fermer
-              </Button>
-            </Alert>
-          )}
-
-          {!showPreview ? (
-            /* Form Section */
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.1 }}
-              className="w-full"
-            >
-              <HistoireForm
-                templateId={templateId}
-                onShowPreview={handlePreview}
-              />
-            </motion.div>
-          ) : (
-            /* Preview Section - Full Page */
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.1 }}
-              className="w-full"
-            >
-              <HistoirePreview
-                previewImages={previewImages}
-                isLoading={isGeneratingPreview}
-                onRetry={() => handlePreview(finalVariables)}
-                pdfUrl={generatedHistoire?.generatedPdfUrl}
-                onDownload={handleDownload}
-                isDownloading={isDownloading}
-              />
-
-              {/* Action Buttons */}
-              <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center">
-                {generatedHistoire?.generatedPdfUrl && (
-                  <Button
-                    onClick={handleDownload}
-                    disabled={isDownloading}
-                    className="flex-1 sm:flex-none"
-                    size="lg"
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    {isDownloading ? 'Téléchargement...' : 'Télécharger l\'histoire'}
-                  </Button>
-                )}
-
-                {downloadError && (
-                  <Alert className="mt-4" variant="destructive">
-                    <AlertDescription>{downloadError}</AlertDescription>
-                  </Alert>
-                )}
-
-                <Button
-                  onClick={() => {
-                    alert('Fonctionnalité de commande bientôt disponible. Redirection vers la boutique...');
-                    router.push('/book-store');
-                  }}
-                  variant="outline"
-                  className="flex-1 sm:flex-none"
-                  size="lg"
-                >
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  Commander le livre
-                </Button>
-
-                <Button
-                  onClick={() => router.push('/histoires')}
-                  variant="outline"
-                  className="flex-1 sm:flex-none"
-                >
-                  Retour à mes histoires
-                </Button>
-              </div>
-            </motion.div>
-          )}
-
-          {/* Preview Modal */}
-          <Dialog open={isPreviewModalOpen} onOpenChange={setIsPreviewModalOpen}>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Aperçu de l'histoire</DialogTitle>
-              </DialogHeader>
-              <HistoirePreview
-                previewImages={previewImages}
-                isLoading={isGeneratingPreview}
-                onRetry={() => handlePreview(finalVariables)}
-              />
-            </DialogContent>
-          </Dialog>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div className="flex flex-col">
+            <h1 className="text-sm font-semibold text-slate-900">
+              {template.title}
+            </h1>
+            <span className="text-xs text-slate-500">Mode édition</span>
+          </div>
         </div>
-      </div>
+
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" className="text-slate-500">
+            <Sparkles className="h-4 w-4 mr-2" />
+            Aide
+          </Button>
+        </div>
+      </header>
+
+      <main className="flex-1 flex relative overflow-hidden flex-col lg:flex-row">
+        {/* Mobile: Avatar Zone at Top - Hidden on Desktop */}
+        <div className="lg:hidden w-full bg-white border-b border-slate-100 shadow-sm z-20 overflow-y-auto max-h-[50vh]">
+          <div className="p-4">
+            <StoryCustomizationWizard
+              templateId={templateId}
+              userId={user?._id || ''}
+              onShowPreview={handlePreview}
+            />
+          </div>
+        </div>
+
+        {/* Center Canvas - Preview Zone */}
+        <div className="flex-1 bg-[#F8F9FB] relative flex flex-col p-4 md:p-8 overflow-auto">
+          {/* Action Buttons - Above Preview - Hidden on mobile/tablet */}
+          <div className="hidden lg:flex w-full max-w-3xl mx-auto mb-4 items-center justify-end gap-3">
+            <Button
+              variant="outline"
+              className="border-slate-200 hover:bg-slate-50 text-slate-700"
+              disabled={!generatedHistoire}
+              onClick={handleDownload}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Télécharger
+            </Button>
+            <Button
+              className="bg-[#0055FF] hover:bg-[#0044CC] text-white"
+              disabled={!generatedHistoire}
+              onClick={() => {
+                // TODO: Add order functionality
+                console.log('Commander clicked');
+              }}
+            >
+              <BookOpen className="h-4 w-4 mr-2" />
+              Commander
+            </Button>
+          </div>
+
+          {/* Preview Zone */}
+          <div className="w-full max-w-3xl mx-auto aspect-[3/4] bg-white rounded-lg shadow-sm border border-slate-100 flex items-center justify-center relative">
+            {/* Canvas Content Placeholder or Preview */}
+            {showPreview ? (
+              <div className="w-full h-full overflow-hidden rounded-lg">
+                <HistoirePreview
+                  previewImages={previewImages}
+                  isLoading={isGeneratingPreview}
+                  onRetry={() => handlePreview(finalVariables)}
+                  pdfUrl={generatedHistoire?.generatedPdfUrl}
+                  onDownload={handleDownload}
+                  isDownloading={isDownloading}
+                />
+              </div>
+            ) : (
+              <div className="text-center p-8">
+                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <BookOpen className="h-8 w-8 text-slate-300" />
+                </div>
+                <h3 className="text-lg font-medium text-slate-900 mb-2">Zone de prévisualisation</h3>
+                <p className="text-slate-500 max-w-sm mx-auto text-sm">
+                  Remplissez les informations pour générer votre histoire.
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Mobile Action Buttons - Below Preview - Visible only on mobile/tablet */}
+          <div className="flex lg:hidden w-full max-w-3xl mx-auto mt-4 gap-3">
+            <Button
+              variant="outline"
+              className="flex-1 border-slate-200 hover:bg-slate-50 text-slate-700"
+              disabled={!generatedHistoire}
+              onClick={handleDownload}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Télécharger
+            </Button>
+            <Button
+              className="flex-1 bg-[#0055FF] hover:bg-[#0044CC] text-white"
+              disabled={!generatedHistoire}
+              onClick={() => {
+                // TODO: Add order functionality
+                console.log('Commander clicked');
+              }}
+            >
+              <BookOpen className="h-4 w-4 mr-2" />
+              Commander
+            </Button>
+          </div>
+        </div>
+
+        {/* Desktop: Right Sidebar - Avatar Zone - Hidden on Mobile */}
+        <div className="hidden lg:block w-[400px] bg-white border-l border-slate-100 shadow-xl shadow-slate-200/50 z-20 overflow-y-auto">
+          <div className="p-6">
+            <StoryCustomizationWizard
+              templateId={templateId}
+              userId={user?._id || ''}
+              onShowPreview={handlePreview}
+            />
+          </div>
+        </div>
+      </main>
     </div>
   );
 }

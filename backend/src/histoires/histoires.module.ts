@@ -5,6 +5,7 @@ import { HistoiresService } from './histoires.service';
 import { Histoire, HistoireSchema } from './schemas/histoire.schema';
 import { PdfGeneratorService } from './utils/pdf-generator.service';
 import { ImageMappingService } from './utils/image-mapping.service';
+import { ImageConversionService } from '../image-conversion.service';
 import { TemplatesModule } from '../templates.module';
 import { UsersModule } from '../users.module';
 
@@ -15,7 +16,7 @@ import { UsersModule } from '../users.module';
     forwardRef(() => UsersModule),
   ],
   controllers: [HistoiresController],
-  providers: [HistoiresService, PdfGeneratorService, ImageMappingService],
-  exports: [HistoiresService, PdfGeneratorService, ImageMappingService],
+  providers: [HistoiresService, PdfGeneratorService, ImageMappingService, ImageConversionService],
+  exports: [HistoiresService, PdfGeneratorService, ImageMappingService, ImageConversionService],
 })
-export class HistoiresModule {}
+export class HistoiresModule { }

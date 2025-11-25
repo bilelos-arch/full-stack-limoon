@@ -7,7 +7,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   console.log('Frontend API Route: Received accessToken from cookies:', accessToken ? 'present' : 'missing');
 
   try {
-    const backendUrl = `${process.env.NEXT_PUBLIC_API_URL}/users/profile/${id}`;
+    const backendUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:10000'}/users/profile/${id}`;
     console.log('Frontend API Route: Calling backend URL:', backendUrl);
 
     const response = await fetch(backendUrl, {
@@ -44,7 +44,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const body = await request.text();
     console.log('Frontend API Route PUT: Request body:', body);
 
-    const backendUrl = `${process.env.NEXT_PUBLIC_API_URL}/users/profile`;
+    const backendUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:10000'}/users/profile`;
     console.log('Frontend API Route PUT: Calling backend URL:', backendUrl);
 
     const response = await fetch(backendUrl, {
@@ -85,7 +85,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const body = await request.text();
     console.log('Frontend API Route PATCH: Request body:', body);
 
-    const backendUrl = `${process.env.NEXT_PUBLIC_API_URL}/users/profile/${id}`;
+    const backendUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:10000'}/users/profile/${id}`;
     console.log('Frontend API Route PATCH: Calling backend URL:', backendUrl);
 
     const response = await fetch(backendUrl, {

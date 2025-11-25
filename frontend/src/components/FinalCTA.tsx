@@ -2,185 +2,110 @@
 
 import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
 import { ArrowRight, Sparkles, Heart, Zap } from 'lucide-react'
 
 const FinalCTA = () => {
   return (
-    <section className="py-20 px-4 bg-gradient-narrative relative overflow-hidden">
-      {/* Éléments décoratifs flottants */}
-      <motion.div
-        animate={{ 
-          y: [-10, 10, -10],
-          rotate: [0, 10, 0]
-        }}
-        transition={{ 
-          duration: 4,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-        className="absolute top-20 left-10 text-6xl opacity-20"
-      >
-        ✨
-      </motion.div>
-      
-      <motion.div
-        animate={{ 
-          y: [10, -10, 10],
-          rotate: [0, -10, 0]
-        }}
-        transition={{ 
-          duration: 6,
-          repeat: Infinity,
-          ease: "easeInOut",
-          delay: 1
-        }}
-        className="absolute bottom-20 right-10 text-5xl opacity-20"
-      >
-        🚀
-      </motion.div>
-
-      <motion.div
-        animate={{ 
-          y: [0, -20, 0],
-          scale: [1, 1.1, 1]
-        }}
-        transition={{ 
-          duration: 8,
-          repeat: Infinity,
-          ease: "easeInOut",
-          delay: 2
-        }}
-        className="absolute top-1/2 left-1/4 text-4xl opacity-20"
-      >
-        🌟
-      </motion.div>
-
-      <div className="relative max-w-5xl mx-auto text-center">
+    <section className="py-32 px-4 bg-white relative overflow-hidden">
+      <div className="max-w-5xl mx-auto">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
+          transition={{ duration: 0.6 }}
           viewport={{ once: true }}
-          className="mb-12"
+          className="text-center"
         >
-          <Badge className="mb-6 bg-white/20 text-white border-white/30 backdrop-blur-sm px-6 py-3 font-medium text-lg">
-            <Zap className="mr-2 h-5 w-5" />
-            Prêt pour l'aventure ?
-          </Badge>
-          
-          <h2 className="text-4xl md:text-6xl lg:text-7xl font-poppins font-extrabold text-white mb-8 leading-tight">
-            Créez dès maintenant
-            <span className="block text-accent-yellow">l'histoire magique</span>
-            <span className="block">de votre enfant</span>
+          {/* Headline */}
+          <h2 className="text-5xl md:text-6xl font-light tracking-tight text-slate-900 mb-8 leading-tight">
+            Prêt à créer{' '}
+            <span className="font-normal text-[#0055FF]">votre première histoire</span> ?
           </h2>
-          
-          <p className="text-xl md:text-2xl text-white/90 mb-12 max-w-3xl mx-auto leading-relaxed">
-            En quelques clics, offrez à votre enfant un cadeau inoubliable qui boost son imagination 
-            et renforce sa confiance en soi.
+
+          {/* Description */}
+          <p className="text-xl text-slate-500 mb-12 max-w-2xl mx-auto font-light leading-relaxed">
+            Offrez à votre enfant un cadeau qui stimule son imagination et renforce sa confiance
           </p>
-        </motion.div>
 
-        {/* Points clés */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          viewport={{ once: true }}
-          className="grid md:grid-cols-3 gap-6 mb-12"
-        >
-          {[
-            {
-              icon: Sparkles,
-              title: "Instantané",
-              description: "Création en 5 minutes"
-            },
-            {
-              icon: Heart,
-              title: "Personnalisé", 
-              description: "Unique à votre enfant"
-            },
-            {
-              icon: Zap,
-              title: "Rapide",
-              description: "Livraison 48-72h"
-            }
-          ].map((benefit, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, scale: 0.8 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.6, delay: 0.1 * index }}
-              viewport={{ once: true }}
-              className="bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/20"
-            >
-              <benefit.icon className="w-8 h-8 text-accent-yellow mx-auto mb-3" />
-              <h3 className="text-lg font-poppins font-bold text-white mb-2">{benefit.title}</h3>
-              <p className="text-white/80 text-sm">{benefit.description}</p>
-            </motion.div>
-          ))}
-        </motion.div>
-
-        {/* CTA principal */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          viewport={{ once: true }}
-          className="flex flex-col sm:flex-row gap-4 justify-center items-center"
-        >
-          <Button
-            asChild
-            size="lg"
-            className="bg-white text-primary-purple hover:bg-neutral-white font-poppins font-bold px-12 py-6 text-xl transition-all duration-300 shadow-2xl hover:scale-105 transform"
-          >
-            <Link href="/register">
-              <Sparkles className="mr-3 h-6 w-6" />
-              Commencer maintenant
-              <ArrowRight className="ml-3 h-6 w-6" />
-            </Link>
-          </Button>
-          
-          <Button
-            asChild
-            variant="outline"
-            size="lg"
-            className="border-2 border-white text-white hover:bg-white hover:text-primary-purple font-semibold px-8 py-6 text-lg transition-all duration-300"
-          >
-            <Link href="/le-concept">
-              Voir un exemple
-            </Link>
-          </Button>
-        </motion.div>
-
-        {/* Garantie */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
-          viewport={{ once: true }}
-          className="mt-12"
-        >
-          <div className="inline-flex items-center gap-4 bg-white/10 backdrop-blur-md border border-white/20 rounded-full px-8 py-4">
-            <span className="text-2xl">🛡️</span>
-            <span className="text-white font-semibold">
-              Garantie satisfaction 100% ou remboursé
-            </span>
+          {/* Benefits */}
+          <div className="grid md:grid-cols-3 gap-8 mb-12 max-w-3xl mx-auto">
+            {[
+              {
+                icon: Sparkles,
+                title: "5 minutes",
+                description: "Création rapide"
+              },
+              {
+                icon: Heart,
+                title: "100% unique",
+                description: "Personnalisé pour votre enfant"
+              },
+              {
+                icon: Zap,
+                title: "48-72h",
+                description: "Livraison express"
+              }
+            ].map((benefit, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 * index }}
+                viewport={{ once: true }}
+                className="antigravity-card p-6"
+              >
+                <benefit.icon className="w-8 h-8 text-[#0055FF] mx-auto mb-3" />
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">{benefit.title}</h3>
+                <p className="text-sm text-slate-500 font-light">{benefit.description}</p>
+              </motion.div>
+            ))}
           </div>
-        </motion.div>
 
-        {/* Countdown motivant */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ duration: 0.8, delay: 0.8 }}
-          viewport={{ once: true }}
-          className="mt-8"
-        >
-          <p className="text-white/70 text-sm">
-            Plus de <span className="text-accent-yellow font-bold">2 500 familles</span> tunisiennes nous font confiance ✨
-          </p>
+          {/* CTA Buttons */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            viewport={{ once: true }}
+            className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12"
+          >
+            <Button
+              asChild
+              className="bg-[#0055FF] hover:bg-[#0044CC] text-white px-10 h-14 text-lg font-medium shadow-lg shadow-blue-500/20"
+            >
+              <Link href="/book-store" className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5" />
+                Commencer maintenant
+                <ArrowRight className="h-5 w-5" />
+              </Link>
+            </Button>
+
+            <Button
+              asChild
+              variant="outline"
+              className="bg-white text-slate-700 border-slate-200 hover:bg-slate-50 px-10 h-14 text-lg font-medium"
+            >
+              <Link href="/le-concept">
+                Voir un exemple
+              </Link>
+            </Button>
+          </motion.div>
+
+          {/* Guarantee */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+            viewport={{ once: true }}
+            className="text-center"
+          >
+            <div className="inline-flex items-center gap-3 bg-slate-50 rounded-full px-8 py-4">
+              <span className="text-2xl">✓</span>
+              <span className="text-slate-600 font-light">
+                Garantie satisfaction 100%
+              </span>
+            </div>
+          </motion.div>
         </motion.div>
       </div>
     </section>

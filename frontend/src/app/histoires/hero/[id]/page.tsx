@@ -3,23 +3,23 @@ import React, { useEffect, useState } from "react";
 import AvatarBuilder from "@/components/AvatarBuilder";
 
 interface UserData {
-  child?: {
-    name: string;
-    age: string;
-    gender: string;
-    mood: string;
-    hairType: string;
-    hairColor: string;
-    skinTone: string;
-    eyes: string;
-    eyebrows: string;
-    mouth: string;
-    glasses: boolean;
-    glassesStyle: string;
-    accessories: string;
-    earrings: string;
-    features: string;
-  };
+    child?: {
+        name: string;
+        age: string;
+        gender: string;
+        mood: string;
+        hairType: string;
+        hairColor: string;
+        skinTone: string;
+        eyes: string;
+        eyebrows: string;
+        mouth: string;
+        glasses: boolean;
+        glassesStyle: string;
+        accessories: string;
+        earrings: string;
+        features: string;
+    };
 }
 
 export default function Page({ params }: { params: Promise<{ id: string }> }) {
@@ -117,5 +117,5 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
     console.log('🎯 Page histoires hero: Rendu AvatarBuilder avec userId:', id, 'et avatarConfig:', Object.keys(avatarConfig).length, 'propriétés');
     console.log('🔍 Page histoires hero: Whether avatar generation succeeds or fails: To be determined in AvatarBuilder');
 
-    return <AvatarBuilder userId={id} avatarConfig={avatarConfig} />;
+    return <AvatarBuilder userId={id} initialConfig={avatarConfig} />;
 }

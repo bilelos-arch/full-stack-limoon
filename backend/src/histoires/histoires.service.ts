@@ -23,7 +23,7 @@ export class HistoiresService {
     private templatesService: TemplatesService,
     private usersService: UsersService,
     private editorElementsService: EditorElementsService,
-  ) {}
+  ) { }
 
   async findByTemplate(templateId: string): Promise<HistoireDocument[]> {
     if (!Types.ObjectId.isValid(templateId)) {
@@ -212,7 +212,7 @@ export class HistoiresService {
     }
 
     const histoireObj = histoire.toObject();
-    const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+    const baseUrl = process.env.BASE_URL || 'http://localhost:10000';
 
     return {
       ...histoireObj,

@@ -23,10 +23,14 @@ interface HistoireFormProps {
   onSubmit?: (variables: Record<string, string>) => Promise<void>;
   onShowPreview?: (variables: Record<string, string>) => void;
   className?: string;
+  initialData?: {
+    childName?: string;
+    avatarUri?: string;
+  };
 }
 
 // Schéma de validation dynamique basé sur les variables détectées
-const createFormSchema = (variables: string[]) => {
+const createFormSchema = (variables: string[], initialData?: { childName?: string; avatarUri?: string }) => {
   const schema: Record<string, z.ZodType<any>> = {};
 
   variables.forEach(variable => {
@@ -35,7 +39,7 @@ const createFormSchema = (variables: string[]) => {
     if (lowerVar.includes('age') || lowerVar.includes('âge')) {
       schema[variable] = z.string()
         .min(1, `${variable} est requis`)
-        .regex(/^\d+$/, `${variable} doit être un nombre`)
+        .regex(/^\\d+$/, `${variable} doit être un nombre`)
         .transform(val => parseInt(val))
         .refine(val => val >= 1 && val <= 18, `${variable} doit être entre 1 et 18`);
     } else if (lowerVar.includes('date') || lowerVar.includes('naissance')) {
@@ -46,11 +50,20 @@ const createFormSchema = (variables: string[]) => {
       schema[variable] = z.string()
         .min(1, `${variable} est requis`)
         .email(`${variable} doit être un email valide`);
-    } else if (lowerVar.includes('image') || lowerVar.includes('photo') || lowerVar.includes('picture')) {
-      schema[variable] = z.instanceof(File)
-        .refine(file => file.size <= 5 * 1024 * 1024, 'L\'image ne doit pas dépasser 5MB')
-        .refine(file => ['image/jpeg', 'image/png', 'image/webp'].includes(file.type),
-          'L\'image doit être au format JPEG, PNG ou WebP');
+    } else if (lowerVar.includes('image') || lowerVar.includes('photo') || lowerVar.includes('picture') || lowerVar.includes('avatar')) {
+      // If we have an avatar from initialData, accept string (DataURI) and make it optional
+      if (initialData?.avatarUri) {
+        schema[variable] = z.union([
+          z.instanceof(File),
+          z.string()
+        ]).optional();
+      } else {
+        // Otherwise require a file upload
+        schema[variable] = z.instanceof(File)
+          .refine(file => file.size <= 5 * 1024 * 1024, 'L\'image ne doit pas dépasser 5MB')
+          .refine(file => ['image/jpeg', 'image/png', 'image/webp'].includes(file.type),
+            'L\'image doit être au format JPEG, PNG ou WebP');
+      }
     } else {
       schema[variable] = z.string()
         .min(1, `${variable} est requis`)
@@ -66,7 +79,8 @@ export default function HistoireForm({
   onPreview,
   onSubmit,
   onShowPreview,
-  className
+  className,
+  initialData
 }: HistoireFormProps) {
   const [template, setTemplate] = useState<Template | null>(null);
   const [variables, setVariables] = useState<string[]>([]);
@@ -111,7 +125,7 @@ export default function HistoireForm({
         console.log('HistoireForm: Detected variables from template:', detectedVars);
         setVariables(detectedVars);
 
-        const schema = createFormSchema(detectedVars);
+        const schema = createFormSchema(detectedVars, initialData);
         setFormSchema(schema);
 
         // Extraire les valeurs par défaut des éléments d'éditeur
@@ -134,8 +148,14 @@ export default function HistoireForm({
             defaultValues[variable] = defaultValuesFromElements[variable];
             console.log(`HistoireForm: Using default value from element for "${variable}":`, defaultValues[variable]);
           } else {
-            // Fallbacks par défaut
-            if (lowerVar.includes('nom') || lowerVar.includes('name')) {
+            // Check if initialData has a value for this variable
+            if (initialData?.childName && (lowerVar.includes('nom') || lowerVar.includes('name'))) {
+              defaultValues[variable] = initialData.childName;
+              console.log(`HistoireForm: Using initialData childName for "${variable}":`, defaultValues[variable]);
+            } else if (initialData?.avatarUri && (lowerVar.includes('image') || lowerVar.includes('photo') || lowerVar.includes('picture') || lowerVar.includes('avatar'))) {
+              defaultValues[variable] = initialData.avatarUri;
+              console.log(`HistoireForm: Using initialData avatarUri for "${variable}":`, initialData.avatarUri.substring(0, 50) + '...');
+            } else if (lowerVar.includes('nom') || lowerVar.includes('name')) {
               defaultValues[variable] = 'Adam';
             } else if (lowerVar.includes('âge') || lowerVar.includes('age')) {
               defaultValues[variable] = '5';
@@ -220,11 +240,17 @@ export default function HistoireForm({
 
   const renderFormField = (variable: string) => {
     const lowerVar = variable.toLowerCase();
-    const isImageField = lowerVar.includes('image') || lowerVar.includes('photo') || lowerVar.includes('picture');
+    const isImageField = lowerVar.includes('image') || lowerVar.includes('photo') || lowerVar.includes('picture') || lowerVar.includes('avatar');
     const isDateField = lowerVar.includes('date') || lowerVar.includes('naissance');
     const isAgeField = lowerVar.includes('age') || lowerVar.includes('âge');
     const label = variable.charAt(0).toUpperCase() + variable.slice(1).replace(/([A-Z])/g, ' $1');
     const placeholder = label; // Placeholder takes the value of the label
+
+    // If it's an image field and we have an avatar URI from initialData, skip rendering the upload field
+    if (isImageField && initialData?.avatarUri) {
+      console.log(`HistoireForm: Skipping image field "${variable}" because avatar is provided via initialData`);
+      return null;
+    }
 
     return (
       <FormField
@@ -399,107 +425,90 @@ export default function HistoireForm({
 
   if (!template || !formSchema) {
     return (
-      <Card className={className}>
-        <CardContent className="p-6">
-          <div className="animate-pulse space-y-4">
-            <div className="h-4 bg-muted rounded w-3/4"></div>
-            <div className="space-y-2">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-10 bg-muted rounded"></div>
-              ))}
-            </div>
+      <div className={className}>
+        <div className="animate-pulse space-y-4">
+          <div className="h-4 bg-slate-100 rounded w-3/4"></div>
+          <div className="space-y-2">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-10 bg-slate-100 rounded"></div>
+            ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className={className ? `${className} w-full lg:w-1/2 mx-auto` : "w-full lg:w-1/2 mx-auto"}
+      className={className ? `${className} w-full` : "w-full"}
     >
-      {/* Template Cover Image */}
+      {/* Template Cover Image - Optional, maybe remove if it takes too much space in the panel */}
+      {/* 
       {template?.coverPath && (
         <div className="mb-6">
           <img
             src={`${process.env.NEXT_PUBLIC_API_URL}/uploads/${template.coverPath}`}
             alt={`Couverture de ${template.title}`}
-            className="w-full h-auto rounded-lg shadow-md"
-            onError={(e) => {
-              console.error('HistoireForm: Cover image failed to load:', e.currentTarget.src);
-              console.error('HistoireForm: Template coverPath:', template.coverPath);
-            }}
-            onLoad={() => {
-              console.log('HistoireForm: Cover image loaded successfully');
-            }}
+            className="w-full h-32 object-cover rounded-lg shadow-sm"
           />
         </div>
       )}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5" />
-            Personnalisez votre histoire
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {error && (
-            <Alert className="mb-6" variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+      */}
 
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-              {variables.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">
-                  Aucune variable à personnaliser pour ce template.
-                </p>
-              ) : (
-                variables.map(renderFormField)
+      <div className="space-y-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Sparkles className="h-5 w-5 text-[#0055FF]" />
+          <h2 className="text-lg font-semibold text-slate-900">
+            Personnalisation
+          </h2>
+        </div>
+
+        {error && (
+          <Alert className="mb-6 bg-red-50 border-red-100 text-red-900" variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-5">
+            {variables.length === 0 ? (
+              <p className="text-slate-500 text-center py-8 text-sm">
+                Aucune variable à personnaliser pour ce template.
+              </p>
+            ) : (
+              variables.map(renderFormField)
+            )}
+
+            <div className="pt-4">
+              {onShowPreview && (
+                <Button
+                  type="button"
+                  onClick={() => {
+                    if (form.formState.isValid) {
+                      const formData = form.getValues();
+                      const variablesWithUrls = { ...formData };
+                      Object.keys(variablesWithUrls).forEach(key => {
+                        if (variablesWithUrls[key] instanceof File) {
+                          variablesWithUrls[key] = imagePreviews[key] || '';
+                        }
+                      });
+                      onShowPreview(variablesWithUrls);
+                    }
+                  }}
+                  disabled={!form.formState.isValid}
+                  className="w-full bg-[#0055FF] hover:bg-[#0044CC] text-white shadow-lg shadow-blue-500/20 h-11 text-base"
+                >
+                  <Image className="h-4 w-4 mr-2" />
+                  Générer l'histoire
+                </Button>
               )}
-
-              <div className="flex gap-4 pt-4 border-t">
-                {onShowPreview && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      console.log('[DEBUG] HistoireForm: Preview button clicked');
-                      console.log('[DEBUG] HistoireForm: Form is valid:', form.formState.isValid);
-                      console.log('[DEBUG] HistoireForm: Form errors:', form.formState.errors);
-                      if (form.formState.isValid) {
-                        const formData = form.getValues();
-                        console.log('[DEBUG] HistoireForm: Raw form data:', formData);
-                        // Convertir les fichiers en URLs pour l'aperçu
-                        const variablesWithUrls = { ...formData };
-                        Object.keys(variablesWithUrls).forEach(key => {
-                          if (variablesWithUrls[key] instanceof File) {
-                            variablesWithUrls[key] = imagePreviews[key] || '';
-                            console.log(`[DEBUG] HistoireForm: Converted file for ${key} to URL:`, variablesWithUrls[key]);
-                          }
-                        });
-                        console.log('[DEBUG] HistoireForm: Final variables for preview:', variablesWithUrls);
-                        onShowPreview(variablesWithUrls);
-                      } else {
-                        console.log('[DEBUG] HistoireForm: Form is invalid, not calling onShowPreview');
-                      }
-                    }}
-                    disabled={!form.formState.isValid}
-                    className="flex-1"
-                  >
-                    <Image className="h-4 w-4 mr-2" />
-                    Afficher l'histoire
-                  </Button>
-                )}
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+            </div>
+          </form>
+        </Form>
+      </div>
     </motion.div>
   );
 }

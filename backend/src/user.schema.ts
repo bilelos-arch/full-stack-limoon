@@ -107,11 +107,14 @@ export class User {
       eyes: String,
       eyebrows: String,
       mouth: String,
-      glasses: Boolean,
+      glasses: String,
       glassesStyle: String,
       accessories: String,
       earrings: String,
       features: String,
+      base: String,
+      hair: String,
+      skinColor: String,
     }
   })
   child?: {
@@ -125,11 +128,14 @@ export class User {
     eyes: string;
     eyebrows: string;
     mouth: string;
-    glasses: boolean;
+    glasses: string;
     glassesStyle: string;
     accessories: string;
     earrings: string;
     features: string;
+    base: string;
+    hair: string;
+    skinColor: string;
   };
 
   @Prop()

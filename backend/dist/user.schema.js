@@ -111,11 +111,14 @@ __decorate([
             eyes: String,
             eyebrows: String,
             mouth: String,
-            glasses: Boolean,
+            glasses: String,
             glassesStyle: String,
             accessories: String,
             earrings: String,
             features: String,
+            base: String,
+            hair: String,
+            skinColor: String,
         }
     }),
     __metadata("design:type", Object)

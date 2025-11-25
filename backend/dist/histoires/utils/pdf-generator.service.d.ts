@@ -1,16 +1,18 @@
 import { TemplateDocument } from '../../template.schema';
 import { EditorElementsService } from '../../editor-elements.service';
 import { ImageMappingService } from './image-mapping.service';
+import { ImageConversionService } from '../../image-conversion.service';
 export declare class PdfGeneratorService {
     private editorElementsService;
     private imageMappingService;
+    private imageConversionService;
     private readonly logger;
     private uploadsDir;
     private tempImagesDir;
     private previewsDir;
     private pdfsDir;
     private cartoonifyServiceUrl;
-    constructor(editorElementsService: EditorElementsService, imageMappingService: ImageMappingService);
+    constructor(editorElementsService: EditorElementsService, imageMappingService: ImageMappingService, imageConversionService: ImageConversionService);
     generatePreview(template: TemplateDocument, variables: Record<string, any>, uploadedImageUrls?: string[]): Promise<string[]>;
     generateFinalPdf(template: TemplateDocument, variables: Record<string, any>, uploadedImageUrls?: string[]): Promise<string>;
     validateVariables(template: TemplateDocument, variables: Record<string, any>, uploadedImageUrls?: string[]): Promise<{

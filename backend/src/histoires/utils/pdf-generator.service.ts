@@ -9,6 +9,7 @@ import { Template, TemplateDocument } from '../../template.schema';
 import { EditorElement } from '../../editor-element.schema';
 import { EditorElementsService } from '../../editor-elements.service';
 import { ImageMappingService, ImageMappingResult } from './image-mapping.service';
+import { ImageConversionService } from '../../image-conversion.service';
 import { detectVariables } from '../../utils/variables';
 
 @Injectable()
@@ -22,18 +23,19 @@ export class PdfGeneratorService {
 
   constructor(
     private editorElementsService: EditorElementsService,
-    private imageMappingService: ImageMappingService
-  ) {}
+    private imageMappingService: ImageMappingService,
+    private imageConversionService: ImageConversionService
+  ) { }
 
   async generatePreview(template: TemplateDocument, variables: Record<string, any>, uploadedImageUrls?: string[]): Promise<string[]> {
-      const startTime = Date.now();
-      try {
-        this.logger.log(`[PDF-GENERATOR] 🔍 Starting preview generation for template ${template._id}`);
-        this.logger.log(`[PDF-GENERATOR] 📋 Variables:`, JSON.stringify(variables, null, 2));
-        this.logger.log(`[PDF-GENERATOR] 📁 Uploaded image URLs:`, uploadedImageUrls);
-        this.logger.log(`[PDF-GENERATOR] 📂 Current working directory: ${process.cwd()}`);
-        this.logger.log(`[PDF-GENERATOR] 📂 Uploads dir: ${this.uploadsDir}, exists: ${fs.existsSync(this.uploadsDir)}`);
-        this.logger.log(`[PDF-GENERATOR] 📂 Previews dir: ${this.previewsDir}, exists: ${fs.existsSync(this.previewsDir)}`);
+    const startTime = Date.now();
+    try {
+      this.logger.log(`[PDF-GENERATOR] 🔍 Starting preview generation for template ${template._id}`);
+      this.logger.log(`[PDF-GENERATOR] 📋 Variables:`, JSON.stringify(variables, null, 2));
+      this.logger.log(`[PDF-GENERATOR] 📁 Uploaded image URLs:`, uploadedImageUrls);
+      this.logger.log(`[PDF-GENERATOR] 📂 Current working directory: ${process.cwd()}`);
+      this.logger.log(`[PDF-GENERATOR] 📂 Uploads dir: ${this.uploadsDir}, exists: ${fs.existsSync(this.uploadsDir)}`);
+      this.logger.log(`[PDF-GENERATOR] 📂 Previews dir: ${this.previewsDir}, exists: ${fs.existsSync(this.previewsDir)}`);
 
       // Ensure previews directory exists
       if (!fs.existsSync(this.previewsDir)) {
@@ -113,11 +115,11 @@ export class PdfGeneratorService {
   }
 
   async generateFinalPdf(template: TemplateDocument, variables: Record<string, any>, uploadedImageUrls?: string[]): Promise<string> {
-     try {
-       this.logger.log(`[PDF-GENERATOR] 🔍 Starting final PDF generation for template ${template._id}`);
-       this.logger.log(`[PDF-GENERATOR] 📋 Variables:`, JSON.stringify(variables, null, 2));
-       this.logger.log(`[PDF-GENERATOR] 📁 Uploaded image URLs:`, uploadedImageUrls);
-       this.logger.log(`[PDF-GENERATOR] 📂 PDFs dir: ${this.pdfsDir}, exists: ${fs.existsSync(this.pdfsDir)}`);
+    try {
+      this.logger.log(`[PDF-GENERATOR] 🔍 Starting final PDF generation for template ${template._id}`);
+      this.logger.log(`[PDF-GENERATOR] 📋 Variables:`, JSON.stringify(variables, null, 2));
+      this.logger.log(`[PDF-GENERATOR] 📁 Uploaded image URLs:`, uploadedImageUrls);
+      this.logger.log(`[PDF-GENERATOR] 📂 PDFs dir: ${this.pdfsDir}, exists: ${fs.existsSync(this.pdfsDir)}`);
 
       // Ensure pdfs directory exists
       if (!fs.existsSync(this.pdfsDir)) {
@@ -221,7 +223,7 @@ export class PdfGeneratorService {
     // SPECIFIC VALIDATION FOR IMAGE VARIABLES
     for (const imageVarName of imageVariables) {
       const imageVarValue = variables[imageVarName];
-      
+
       if (!imageVarValue) {
         missingImages.push(imageVarName);
         this.logger.warn(`[PDF-GENERATOR] Missing required image variable: ${imageVarName}`);
@@ -416,66 +418,93 @@ export class PdfGeneratorService {
   /**
      * Replace image variables in PDF using editor elements (ROBUST VERSION WITH DATA URL SUPPORT)
      */
-    private async replaceImageVariables(
-      page: PDFPage,
-      imageElements: EditorElement[],
-      variables: Record<string, any>,
-      template: TemplateDocument,
-      pdfDoc: PDFDocument,
-      uploadedImageUrls?: string[]
-    ): Promise<void> {
-      this.logger.log(`[PDF-GENERATOR] Processing ${imageElements.length} image elements with robust mapping`);
-      this.logger.log(`[PDF-GENERATOR] Available variables:`, Object.keys(variables));
-      this.logger.log(`[PDF-GENERATOR] Uploaded image URLs:`, uploadedImageUrls);
+  private async replaceImageVariables(
+    page: PDFPage,
+    imageElements: EditorElement[],
+    variables: Record<string, any>,
+    template: TemplateDocument,
+    pdfDoc: PDFDocument,
+    uploadedImageUrls?: string[]
+  ): Promise<void> {
+    this.logger.log(`[PDF-GENERATOR] Processing ${imageElements.length} image elements with robust mapping`);
+    this.logger.log(`[PDF-GENERATOR] Available variables:`, Object.keys(variables));
+    this.logger.log(`[PDF-GENERATOR] Uploaded image URLs:`, uploadedImageUrls);
 
-      let processedImages = 0;
-      let failedImages = 0;
-      const imageErrors: string[] = [];
+    let processedImages = 0;
+    let failedImages = 0;
+    const imageErrors: string[] = [];
 
-      for (const element of imageElements) {
-        this.logger.log(`[PDF-GENERATOR] Processing image element:`, {
-          id: element.id,
-          variableName: element.variableName,
-          type: element.type,
-          x: element.x,
-          y: element.y,
-          width: element.width,
-          height: element.height
-        });
+    for (const element of imageElements) {
+      this.logger.log(`[PDF-GENERATOR] Processing image element:`, {
+        id: element.id,
+        variableName: element.variableName,
+        type: element.type,
+        x: element.x,
+        y: element.y,
+        width: element.width,
+        height: element.height
+      });
 
-        if (!element.variableName) {
-          this.logger.warn(`[PDF-GENERATOR] Skipping element ${element.id} - no variableName`);
-          failedImages++;
-          imageErrors.push(`Element ${element.id}: missing variableName`);
-          continue;
-        }
+      if (!element.variableName) {
+        this.logger.warn(`[PDF-GENERATOR] Skipping element ${element.id} - no variableName`);
+        failedImages++;
+        imageErrors.push(`Element ${element.id}: missing variableName`);
+        continue;
+      }
 
-        const imageVar = variables[element.variableName];
-        this.logger.log(`[PDF-GENERATOR] Image variable "${element.variableName}" value:`, imageVar, `type: ${typeof imageVar}`);
+      const imageVar = variables[element.variableName];
+      this.logger.log(`[PDF-GENERATOR] Image variable "${element.variableName}" value:`, imageVar, `type: ${typeof imageVar}`);
 
-        if (!imageVar) {
-          this.logger.warn(`[PDF-GENERATOR] No value found for image variable: ${element.variableName}`);
-          failedImages++;
-          imageErrors.push(`Variable "${element.variableName}": no value provided`);
-          continue;
-        }
+      if (!imageVar) {
+        this.logger.warn(`[PDF-GENERATOR] No value found for image variable: ${element.variableName}`);
+        failedImages++;
+        imageErrors.push(`Variable "${element.variableName}": no value provided`);
+        continue;
+      }
 
-        if (typeof imageVar !== 'string') {
-          this.logger.warn(`[PDF-GENERATOR] Invalid image variable type for ${element.variableName}: ${typeof imageVar}`);
-          failedImages++;
-          imageErrors.push(`Variable "${element.variableName}": invalid type (${typeof imageVar})`);
-          continue;
-        }
+      if (typeof imageVar !== 'string') {
+        this.logger.warn(`[PDF-GENERATOR] Invalid image variable type for ${element.variableName}: ${typeof imageVar}`);
+        failedImages++;
+        imageErrors.push(`Variable "${element.variableName}": invalid type (${typeof imageVar})`);
+        continue;
+      }
 
-        try {
-          let imageBytes: Buffer;
-          let imageFormat: string;
+      try {
+        let imageBytes: Buffer;
+        let imageFormat: string;
 
-          // DÉTECTION ET TRAITEMENT DES DATA URLs BASE64
-          if (imageVar.startsWith('data:image/')) {
-            this.logger.log(`[PDF-GENERATOR] 🔍 Detected data URL for variable "${element.variableName}"`);
+        // DÉTECTION ET TRAITEMENT DES DATA URLs BASE64
+        if (imageVar.startsWith('data:image/')) {
+          this.logger.log(`[PDF-GENERATOR] 🔍 Detected data URL for variable "${element.variableName}"`);
 
-            // Validate data URL using the new validation method
+          // Special handling for SVG DataURI
+          if (imageVar.startsWith('data:image/svg+xml')) {
+            this.logger.log(`[PDF-GENERATOR] 🎨 Detected SVG DataURI for variable "${element.variableName}"`);
+            try {
+              // Convert SVG DataURI to PNG using ImageConversionService
+              const pngPath = await this.imageConversionService.convertDataUriToPng(
+                imageVar,
+                this.tempImagesDir,
+                `svg-temp-${Date.now()}`
+              );
+
+              // Read the generated PNG file
+              const pngFullPath = path.join(this.tempImagesDir, path.basename(pngPath));
+              imageBytes = fs.readFileSync(pngFullPath);
+              imageFormat = 'png';
+
+              // Clean up temp file
+              fs.unlinkSync(pngFullPath);
+
+              this.logger.log(`[PDF-GENERATOR] ✅ SVG converted to PNG successfully (${imageBytes.length} bytes)`);
+            } catch (svgConversionError) {
+              this.logger.error(`[PDF-GENERATOR] ❌ SVG conversion failed: ${svgConversionError.message}`);
+              failedImages++;
+              imageErrors.push(`Variable "${element.variableName}": SVG conversion failed - ${svgConversionError.message}`);
+              continue;
+            }
+          } else {
+            // Validate non-SVG data URL using the existing validation method
             const dataUrlValidation = this.validateDataUrl(imageVar);
             if (!dataUrlValidation.valid) {
               this.logger.error(`[PDF-GENERATOR] ❌ Data URL validation failed for variable "${element.variableName}": ${dataUrlValidation.error}`);
@@ -513,113 +542,114 @@ export class PdfGeneratorService {
               imageErrors.push(`Variable "${element.variableName}": base64 decode failed - ${decodeError.message}`);
               continue;
             }
-
-          } else {
-            // TRAITEMENT CLASSIQUE DES CHEMINS D'IMAGES
-            const mappingResult = await this.imageMappingService.findImageByVariable(
-              element.variableName,
-              imageVar,
-              uploadedImageUrls
-            );
-
-            if (!mappingResult.found || !mappingResult.imagePath) {
-              const errorMsg = mappingResult.error || `Image not found for variable "${element.variableName}"`;
-              this.logger.error(`[PDF-GENERATOR] ❌ ${errorMsg}`);
-              failedImages++;
-              imageErrors.push(`Variable "${element.variableName}": ${errorMsg}`);
-              continue;
-            }
-
-            let imagePath = mappingResult.imagePath;
-            this.logger.log(`[PDF-GENERATOR] ✅ Found image path: ${imagePath} (filename: ${mappingResult.filename})`);
-
-            // VALIDATION SYSTÉMATIQUE DU FICHIER
-            const validation = this.imageMappingService.validateImageExists(imagePath);
-            if (!validation.valid) {
-              this.logger.error(`[PDF-GENERATOR] ❌ Image validation failed: ${validation.error}`);
-              failedImages++;
-              imageErrors.push(`Variable "${element.variableName}": ${validation.error}`);
-              continue;
-            }
-
           }
 
-          // Calculate absolute positions
-          const pageWidth = template.dimensions?.width || 595;
-          const pageHeight = template.dimensions?.height || 842;
+        } else {
+          // TRAITEMENT CLASSIQUE DES CHEMINS D'IMAGES
+          const mappingResult = await this.imageMappingService.findImageByVariable(
+            element.variableName,
+            imageVar,
+            uploadedImageUrls
+          );
 
-          const x = (element.x / 100) * pageWidth;
-          const y = pageHeight - ((element.y / 100) * pageHeight);
-          const width = (element.width / 100) * pageWidth;
-          const height = (element.height / 100) * pageHeight;
-
-          this.logger.log(`[PDF-GENERATOR] Calculated position: x=${x}, y=${y}, width=${width}, height=${height}`);
-
-          // Embed image dans le PDF
-          let pdfImage: PDFImage;
-
-          // TRAITEMENT UNIFIÉ DES IMAGES (DATA URL OU FICHIER) - OPTIMISÉ POUR LA PERFORMANCE
-          const embedStart = Date.now();
-          if (imageFormat === 'png') {
-            pdfImage = await pdfDoc.embedPng(imageBytes);
-            this.logger.log(`[PDF-GENERATOR] ✅ Embedded PNG image (${Date.now() - embedStart}ms)`);
-          } else if (imageFormat === 'jpg' || imageFormat === 'jpeg') {
-            // Convertir JPG/JPEG en PNG si nécessaire
-            try {
-              this.logger.log(`[PDF-GENERATOR] 🔄 Converting JPG to PNG for variable "${element.variableName}"`);
-              const convertedBuffer = await sharp(imageBytes).png().toBuffer();
-              pdfImage = await pdfDoc.embedPng(convertedBuffer);
-              this.logger.log(`[PDF-GENERATOR] ✅ Successfully converted and embedded JPG as PNG (${Date.now() - embedStart}ms)`);
-            } catch (conversionError) {
-              this.logger.warn(`[PDF-GENERATOR] JPG conversion failed, trying direct embedding: ${conversionError.message}`);
-              pdfImage = await pdfDoc.embedJpg(imageBytes);
-              this.logger.log(`[PDF-GENERATOR] ✅ Embedded JPG image (fallback) (${Date.now() - embedStart}ms)`);
-            }
-          } else if (imageFormat === 'gif' || imageFormat === 'webp') {
-            // Convertir GIF/WEBP en PNG
-            try {
-              this.logger.log(`[PDF-GENERATOR] 🔄 Converting ${imageFormat.toUpperCase()} to PNG for variable "${element.variableName}"`);
-              const convertedBuffer = await sharp(imageBytes).png().toBuffer();
-              pdfImage = await pdfDoc.embedPng(convertedBuffer);
-              this.logger.log(`[PDF-GENERATOR] ✅ Successfully converted and embedded ${imageFormat.toUpperCase()} as PNG (${Date.now() - embedStart}ms)`);
-            } catch (conversionError) {
-              this.logger.warn(`[PDF-GENERATOR] ${imageFormat.toUpperCase()} conversion failed: ${conversionError.message}`);
-              failedImages++;
-              imageErrors.push(`Variable "${element.variableName}": conversion failed (${imageFormat})`);
-              continue;
-            }
-          } else {
-            this.logger.error(`[PDF-GENERATOR] ❌ Unsupported image format: ${imageFormat}`);
+          if (!mappingResult.found || !mappingResult.imagePath) {
+            const errorMsg = mappingResult.error || `Image not found for variable "${element.variableName}"`;
+            this.logger.error(`[PDF-GENERATOR] ❌ ${errorMsg}`);
             failedImages++;
-            imageErrors.push(`Variable "${element.variableName}": unsupported format (${imageFormat})`);
+            imageErrors.push(`Variable "${element.variableName}": ${errorMsg}`);
             continue;
           }
 
-          // Draw image
-          page.drawImage(pdfImage, {
-            x,
-            y: y - height, // PDF coordinates
-            width,
-            height,
-          });
+          let imagePath = mappingResult.imagePath;
+          this.logger.log(`[PDF-GENERATOR] ✅ Found image path: ${imagePath} (filename: ${mappingResult.filename})`);
 
-          this.logger.log(`[PDF-GENERATOR] ✅ Image element rendered successfully for variable "${element.variableName}" at (${x}, ${y})`);
-          processedImages++;
+          // VALIDATION SYSTÉMATIQUE DU FICHIER
+          const validation = this.imageMappingService.validateImageExists(imagePath);
+          if (!validation.valid) {
+            this.logger.error(`[PDF-GENERATOR] ❌ Image validation failed: ${validation.error}`);
+            failedImages++;
+            imageErrors.push(`Variable "${element.variableName}": ${validation.error}`);
+            continue;
+          }
 
-        } catch (error) {
-          const errorMessage = error && error.message ? error.message : (error && error.toString) ? error.toString() : 'Unknown error';
-          this.logger.error(`[PDF-GENERATOR] ❌ Failed to process image for variable "${element.variableName}": ${errorMessage}`, error.stack);
-          failedImages++;
-          imageErrors.push(`Variable "${element.variableName}": processing error (${errorMessage})`);
         }
-      }
 
-      // RAPPORT FINAL DE TRAITEMENT DES IMAGES
-      this.logger.log(`[PDF-GENERATOR] 📊 Image processing summary: ${processedImages} succeeded, ${failedImages} failed`);
-      if (imageErrors.length > 0) {
-        this.logger.warn(`[PDF-GENERATOR] ❌ Image processing errors:`, imageErrors);
+        // Calculate absolute positions
+        const pageWidth = template.dimensions?.width || 595;
+        const pageHeight = template.dimensions?.height || 842;
+
+        const x = (element.x / 100) * pageWidth;
+        const y = pageHeight - ((element.y / 100) * pageHeight);
+        const width = (element.width / 100) * pageWidth;
+        const height = (element.height / 100) * pageHeight;
+
+        this.logger.log(`[PDF-GENERATOR] Calculated position: x=${x}, y=${y}, width=${width}, height=${height}`);
+
+        // Embed image dans le PDF
+        let pdfImage: PDFImage;
+
+        // TRAITEMENT UNIFIÉ DES IMAGES (DATA URL OU FICHIER) - OPTIMISÉ POUR LA PERFORMANCE
+        const embedStart = Date.now();
+        if (imageFormat === 'png') {
+          pdfImage = await pdfDoc.embedPng(imageBytes);
+          this.logger.log(`[PDF-GENERATOR] ✅ Embedded PNG image (${Date.now() - embedStart}ms)`);
+        } else if (imageFormat === 'jpg' || imageFormat === 'jpeg') {
+          // Convertir JPG/JPEG en PNG si nécessaire
+          try {
+            this.logger.log(`[PDF-GENERATOR] 🔄 Converting JPG to PNG for variable "${element.variableName}"`);
+            const convertedBuffer = await sharp(imageBytes).png().toBuffer();
+            pdfImage = await pdfDoc.embedPng(convertedBuffer);
+            this.logger.log(`[PDF-GENERATOR] ✅ Successfully converted and embedded JPG as PNG (${Date.now() - embedStart}ms)`);
+          } catch (conversionError) {
+            this.logger.warn(`[PDF-GENERATOR] JPG conversion failed, trying direct embedding: ${conversionError.message}`);
+            pdfImage = await pdfDoc.embedJpg(imageBytes);
+            this.logger.log(`[PDF-GENERATOR] ✅ Embedded JPG image (fallback) (${Date.now() - embedStart}ms)`);
+          }
+        } else if (imageFormat === 'gif' || imageFormat === 'webp') {
+          // Convertir GIF/WEBP en PNG
+          try {
+            this.logger.log(`[PDF-GENERATOR] 🔄 Converting ${imageFormat.toUpperCase()} to PNG for variable "${element.variableName}"`);
+            const convertedBuffer = await sharp(imageBytes).png().toBuffer();
+            pdfImage = await pdfDoc.embedPng(convertedBuffer);
+            this.logger.log(`[PDF-GENERATOR] ✅ Successfully converted and embedded ${imageFormat.toUpperCase()} as PNG (${Date.now() - embedStart}ms)`);
+          } catch (conversionError) {
+            this.logger.warn(`[PDF-GENERATOR] ${imageFormat.toUpperCase()} conversion failed: ${conversionError.message}`);
+            failedImages++;
+            imageErrors.push(`Variable "${element.variableName}": conversion failed (${imageFormat})`);
+            continue;
+          }
+        } else {
+          this.logger.error(`[PDF-GENERATOR] ❌ Unsupported image format: ${imageFormat}`);
+          failedImages++;
+          imageErrors.push(`Variable "${element.variableName}": unsupported format (${imageFormat})`);
+          continue;
+        }
+
+        // Draw image
+        page.drawImage(pdfImage, {
+          x,
+          y: y - height, // PDF coordinates
+          width,
+          height,
+        });
+
+        this.logger.log(`[PDF-GENERATOR] ✅ Image element rendered successfully for variable "${element.variableName}" at (${x}, ${y})`);
+        processedImages++;
+
+      } catch (error) {
+        const errorMessage = error && error.message ? error.message : (error && error.toString) ? error.toString() : 'Unknown error';
+        this.logger.error(`[PDF-GENERATOR] ❌ Failed to process image for variable "${element.variableName}": ${errorMessage}`, error.stack);
+        failedImages++;
+        imageErrors.push(`Variable "${element.variableName}": processing error (${errorMessage})`);
       }
     }
+
+    // RAPPORT FINAL DE TRAITEMENT DES IMAGES
+    this.logger.log(`[PDF-GENERATOR] 📊 Image processing summary: ${processedImages} succeeded, ${failedImages} failed`);
+    if (imageErrors.length > 0) {
+      this.logger.warn(`[PDF-GENERATOR] ❌ Image processing errors:`, imageErrors);
+    }
+  }
 
   /**
    * Convert PDF pages to images for preview
@@ -758,20 +788,29 @@ export class PdfGeneratorService {
 
 
   /**
-   * Validate base64 data URL
+   * Validate data URL (supports both base64 and UTF-8 encoded formats)
    */
   private validateDataUrl(dataUrl: string): { valid: boolean; format?: string; error?: string } {
     try {
-      const dataUrlMatch = dataUrl.match(/^data:image\/([a-zA-Z]+);base64,(.+)$/);
-      if (!dataUrlMatch) {
-        return { valid: false, error: 'Invalid data URL format' };
+      // Check for SVG with UTF-8 encoding first (DiceBear format)
+      const svgUtf8Match = dataUrl.match(/^data:image\/svg\+xml;(utf8|charset=utf-8),(.+)$/i);
+      if (svgUtf8Match) {
+        // SVG with UTF-8 encoding is valid
+        this.logger.log(`[PDF-GENERATOR] ✅ Validated UTF-8 encoded SVG data URL`);
+        return { valid: true, format: 'svg' };
       }
 
-      const [, format, base64Data] = dataUrlMatch;
+      // Check for base64 encoded images
+      const base64Match = dataUrl.match(/^data:image\/([a-zA-Z]+);base64,(.+)$/);
+      if (!base64Match) {
+        return { valid: false, error: 'Invalid data URL format (must be base64 or UTF-8 encoded SVG)' };
+      }
+
+      const [, format, base64Data] = base64Match;
       const imageFormat = format.toLowerCase();
 
       // Check if format is supported
-      const supportedFormats = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
+      const supportedFormats = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'];
       if (!supportedFormats.includes(imageFormat)) {
         return { valid: false, error: `Unsupported image format: ${imageFormat}` };
       }

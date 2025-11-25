@@ -39,7 +39,7 @@ async function getInitialTemplates(): Promise<Template[]> {
 function StoryPageClient({ initialTemplates }: { initialTemplates: Template[] }) {
   const { user } = useAuth();
   const router = useRouter();
-  
+
   // Search and filter states
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -47,14 +47,14 @@ function StoryPageClient({ initialTemplates }: { initialTemplates: Template[] })
   const [selectedGenders, setSelectedGenders] = useState<string[]>([]);
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState('popular');
-  
+
   // UI states
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  
+
   // Refs
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -101,17 +101,17 @@ function StoryPageClient({ initialTemplates }: { initialTemplates: Template[] })
   });
 
   // Extract unique filter options
-  const categories = useMemo(() => 
+  const categories = useMemo(() =>
     [...new Set(templates.map(t => t.category))].filter(Boolean).sort(),
     [templates]
   );
 
-  const ageRanges = useMemo(() => 
+  const ageRanges = useMemo(() =>
     [...new Set(templates.map(t => t.ageRange))].filter(Boolean).sort(),
     [templates]
   );
 
-  const languages = useMemo(() => 
+  const languages = useMemo(() =>
     [...new Set(templates.map(t => t.language))].filter(Boolean).sort(),
     [templates]
   );
@@ -156,7 +156,7 @@ function StoryPageClient({ initialTemplates }: { initialTemplates: Template[] })
     setSearchQuery(template.title);
     setShowSuggestions(false);
     setIsSearchFocused(false);
-    
+
     // Scroll to template
     setTimeout(() => {
       const element = document.getElementById(`template-${template._id}`);
@@ -202,18 +202,18 @@ function StoryPageClient({ initialTemplates }: { initialTemplates: Template[] })
       const matchesSearch = !searchQuery ||
         template.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         template.description.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      const matchesCategories = selectedCategories.length === 0 || 
+
+      const matchesCategories = selectedCategories.length === 0 ||
         selectedCategories.includes(template.category);
-      
-      const matchesAges = selectedAges.length === 0 || 
+
+      const matchesAges = selectedAges.length === 0 ||
         selectedAges.includes(template.ageRange);
-      
+
       const templateGender = genderMapping[template.gender as keyof typeof genderMapping] || template.gender;
-      const matchesGenders = selectedGenders.length === 0 || 
+      const matchesGenders = selectedGenders.length === 0 ||
         selectedGenders.includes(templateGender);
-      
-      const matchesLanguages = selectedLanguages.length === 0 || 
+
+      const matchesLanguages = selectedLanguages.length === 0 ||
         selectedLanguages.includes(template.language);
 
       return matchesSearch && matchesCategories && matchesAges && matchesGenders && matchesLanguages;
@@ -287,106 +287,55 @@ function StoryPageClient({ initialTemplates }: { initialTemplates: Template[] })
     setSortBy('popular');
   };
 
-  const hasActiveFilters = searchQuery || selectedCategories.length > 0 || 
+  const hasActiveFilters = searchQuery || selectedCategories.length > 0 ||
     selectedAges.length > 0 || selectedGenders.length > 0 || selectedLanguages.length > 0;
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">
-        {/* Header with Search */}
-        <div className="mb-6 lg:mb-8">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-4 lg:mb-6">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+    <div className="min-h-screen bg-[#F8F9FB] pt-28 pb-16">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-12">
+          <div>
+            <h1 className="text-4xl font-light tracking-tight text-slate-900 mb-3">
+              Bibliothèque
+            </h1>
+            <p className="text-slate-500 text-lg">
+              Découvrez nos modèles d'histoires personnalisables
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <div className="relative flex-1 md:w-72">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <Input
                 ref={searchInputRef}
                 type="search"
-                placeholder="Rechercher une histoire..."
+                placeholder="Rechercher..."
                 value={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
-                onFocus={() => setIsSearchFocused(true)}
-                onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
-                className="pl-10 pr-10"
-                aria-label="Rechercher une histoire"
+                className="pl-10 bg-white border-slate-200 h-11"
               />
-              {searchQuery && (
-                <button
-                  onClick={() => handleSearchChange('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  aria-label="Effacer la recherche"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-              
-              {/* Search Suggestions */}
-              <AnimatePresence>
-                {showSuggestions && isSearchFocused && searchResults && searchResults.length > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    className="absolute z-50 w-full mt-2 bg-popover border rounded-lg shadow-lg overflow-hidden"
-                  >
-                    {searchResults.map((template) => (
-                      <button
-                        key={template._id}
-                        onClick={() => handleSuggestionSelect(template)}
-                        className="w-full px-4 py-3 text-left hover:bg-accent transition-colors flex items-start gap-3"
-                      >
-                        <Search className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <div className="font-medium truncate">{template.title}</div>
-                          <div className="text-sm text-muted-foreground truncate">{template.description}</div>
-                        </div>
-                      </button>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
             </div>
-            
-            {hasActiveFilters && (
-              <Button
-                variant="outline"
-                onClick={resetFilters}
-                className="flex-shrink-0 w-full sm:w-auto"
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Réinitialiser
-              </Button>
-            )}
-          </div>
-        </div>
 
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Mobile Filter Toggle */}
-          <div className="lg:hidden">
             <Button
               variant="outline"
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="w-full mb-4"
+              className="lg:hidden bg-white h-11 w-11 p-0"
             >
-              <Filter className="h-4 w-4 mr-2" />
-              {isSidebarOpen ? 'Masquer les filtres' : 'Afficher les filtres'}
+              <Filter className="h-4 w-4" />
             </Button>
           </div>
+        </div>
 
-          {/* Filters Sidebar */}
-          <aside className={`w-full lg:w-80 flex-shrink-0 ${isSidebarOpen ? 'block' : 'hidden'} lg:block`}>
-            <div className="sticky top-8 bg-card border rounded-lg p-4 lg:p-6 space-y-4 lg:space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Filtres</h2>
-                <Badge variant="secondary">{sortedTemplates.length}</Badge>
-              </div>
-
+        <div className="flex flex-col lg:flex-row gap-10">
+          {/* Filters Sidebar - Clean Style */}
+          <aside className={`w-full lg:w-64 flex-shrink-0 ${isSidebarOpen ? 'block' : 'hidden'} lg:block`}>
+            <div className="sticky top-28 space-y-8">
               {/* Sort */}
-              <div className="space-y-2">
-                <Label htmlFor="sort-select" className="text-sm font-medium">
-                  Trier par
-                </Label>
+              <div className="space-y-3">
+                <Label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Trier par</Label>
                 <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger id="sort-select">
+                  <SelectTrigger className="bg-white border-slate-200 h-10">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -400,10 +349,20 @@ function StoryPageClient({ initialTemplates }: { initialTemplates: Template[] })
               {/* Categories */}
               {categories.length > 0 && (
                 <div className="space-y-3">
-                  <Label className="text-sm font-medium">Catégories</Label>
-                  <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Catégories</Label>
+                    {selectedCategories.length > 0 && (
+                      <button
+                        onClick={() => setSelectedCategories([])}
+                        className="text-xs text-[#0055FF] hover:underline"
+                      >
+                        Effacer
+                      </button>
+                    )}
+                  </div>
+                  <div className="space-y-2.5">
                     {categories.map((category) => (
-                      <div key={category} className="flex items-center space-x-2">
+                      <div key={category} className="flex items-center space-x-3">
                         <Checkbox
                           id={`category-${category}`}
                           checked={selectedCategories.includes(category)}
@@ -414,10 +373,11 @@ function StoryPageClient({ initialTemplates }: { initialTemplates: Template[] })
                                 : selectedCategories.filter(c => c !== category)
                             );
                           }}
+                          className="border-slate-300 data-[state=checked]:bg-[#0055FF] data-[state=checked]:border-[#0055FF]"
                         />
                         <Label
                           htmlFor={`category-${category}`}
-                          className="text-sm font-normal cursor-pointer"
+                          className="text-sm font-normal text-slate-600 cursor-pointer hover:text-slate-900"
                         >
                           {category}
                         </Label>
@@ -430,10 +390,10 @@ function StoryPageClient({ initialTemplates }: { initialTemplates: Template[] })
               {/* Age Range */}
               {ageRanges.length > 0 && (
                 <div className="space-y-3">
-                  <Label className="text-sm font-medium">Tranche d'âge</Label>
-                  <div className="space-y-2">
+                  <Label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Tranche d'âge</Label>
+                  <div className="space-y-2.5">
                     {ageRanges.map((age) => (
-                      <div key={age} className="flex items-center space-x-2">
+                      <div key={age} className="flex items-center space-x-3">
                         <Checkbox
                           id={`age-${age}`}
                           checked={selectedAges.includes(age)}
@@ -444,70 +404,13 @@ function StoryPageClient({ initialTemplates }: { initialTemplates: Template[] })
                                 : selectedAges.filter(a => a !== age)
                             );
                           }}
+                          className="border-slate-300 data-[state=checked]:bg-[#0055FF] data-[state=checked]:border-[#0055FF]"
                         />
                         <Label
                           htmlFor={`age-${age}`}
-                          className="text-sm font-normal cursor-pointer"
+                          className="text-sm font-normal text-slate-600 cursor-pointer hover:text-slate-900"
                         >
                           {age}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Gender */}
-              <div className="space-y-3">
-                <Label className="text-sm font-medium">Genre</Label>
-                <div className="space-y-2">
-                  {Object.entries(genderMapping).map(([french, english]) => (
-                    <div key={english} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`gender-${english}`}
-                        checked={selectedGenders.includes(english)}
-                        onCheckedChange={(checked) => {
-                          setSelectedGenders(
-                            checked
-                              ? [...selectedGenders, english]
-                              : selectedGenders.filter(g => g !== english)
-                          );
-                        }}
-                      />
-                      <Label
-                        htmlFor={`gender-${english}`}
-                        className="text-sm font-normal cursor-pointer"
-                      >
-                        {french}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Languages */}
-              {languages.length > 0 && (
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium">Langue</Label>
-                  <div className="space-y-2">
-                    {languages.map((language) => (
-                      <div key={language} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`language-${language}`}
-                          checked={selectedLanguages.includes(language)}
-                          onCheckedChange={(checked) => {
-                            setSelectedLanguages(
-                              checked
-                                ? [...selectedLanguages, language]
-                                : selectedLanguages.filter(l => l !== language)
-                            );
-                          }}
-                        />
-                        <Label
-                          htmlFor={`language-${language}`}
-                          className="text-sm font-normal cursor-pointer"
-                        >
-                          {language}
                         </Label>
                       </div>
                     ))}
@@ -517,12 +420,12 @@ function StoryPageClient({ initialTemplates }: { initialTemplates: Template[] })
             </div>
           </aside>
 
-          {/* Main Content */}
+          {/* Main Content - Bento Grid */}
           <main className="flex-1 min-w-0">
             {/* Results */}
             {displayedTemplates.length > 0 ? (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                   {displayedTemplates.map((template) => (
                     <StoryCard
                       key={template._id}
@@ -535,9 +438,9 @@ function StoryPageClient({ initialTemplates }: { initialTemplates: Template[] })
 
                 {/* Infinite Scroll Trigger */}
                 {hasMore && (
-                  <div ref={loadMoreRef} className="flex justify-center py-8">
+                  <div ref={loadMoreRef} className="flex justify-center py-12">
                     {isLoadingMore && (
-                      <div className="flex items-center gap-2 text-muted-foreground">
+                      <div className="flex items-center gap-2 text-slate-400">
                         <Loader2 className="h-5 w-5 animate-spin" />
                         <span>Chargement...</span>
                       </div>
@@ -547,52 +450,30 @@ function StoryPageClient({ initialTemplates }: { initialTemplates: Template[] })
               </>
             ) : (
               /* Empty State */
-              <div className="text-center py-12 lg:py-16">
-                <motion.div
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  className="mb-6 relative inline-block"
-                >
-                  <div className="w-20 h-20 lg:w-24 lg:h-24 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-full flex items-center justify-center">
-                    <BookOpen className="w-10 h-10 lg:w-12 lg:h-12 text-primary" />
-                  </div>
-                  <Sparkles className="w-5 h-5 lg:w-6 lg:h-6 text-secondary absolute -top-1 -right-1 animate-pulse" />
-                </motion.div>
-
-                <h3 className="text-xl lg:text-2xl font-bold mb-3">
-                  {hasActiveFilters ? 'Aucun résultat trouvé' : 'Aucune histoire disponible'}
+              <div className="text-center py-20">
+                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Search className="w-8 h-8 text-slate-400" />
+                </div>
+                <h3 className="text-lg font-medium text-slate-900 mb-2">
+                  Aucun résultat trouvé
                 </h3>
-
-                <p className="text-muted-foreground mb-6 max-w-md mx-auto text-sm lg:text-base">
-                  {hasActiveFilters
-                    ? 'Essayez de modifier vos filtres pour découvrir plus d\'histoires.'
-                    : 'Les histoires seront bientôt disponibles. Revenez plus tard !'
-                  }
+                <p className="text-slate-500 mb-6">
+                  Essayez de modifier vos filtres pour découvrir plus d'histoires.
                 </p>
-
-                {hasActiveFilters && (
-                  <Button onClick={resetFilters}>
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    Réinitialiser les filtres
-                  </Button>
-                )}
+                <Button onClick={resetFilters} variant="outline" className="bg-white">
+                  Réinitialiser les filtres
+                </Button>
               </div>
             )}
 
             {/* Error State */}
             {swrError && (
-              <div className="text-center py-12 lg:py-16">
-                <div className="w-20 h-20 lg:w-24 lg:h-24 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <X className="w-10 h-10 lg:w-12 lg:h-12 text-red-500" />
+              <div className="text-center py-20">
+                <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <X className="w-8 h-8 text-red-400" />
                 </div>
-
-                <h3 className="text-xl lg:text-2xl font-bold mb-3">Oups ! Une erreur est survenue</h3>
-                <p className="text-muted-foreground mb-6 text-sm lg:text-base">
-                  Impossible de charger les histoires
-                </p>
-                
-                <Button onClick={() => mutate()}>
-                  <RefreshCw className="w-4 h-4 mr-2" />
+                <h3 className="text-lg font-medium text-slate-900 mb-2">Une erreur est survenue</h3>
+                <Button onClick={() => mutate()} variant="outline" className="bg-white">
                   Réessayer
                 </Button>
               </div>
@@ -610,8 +491,8 @@ function StoryPageClient({ initialTemplates }: { initialTemplates: Template[] })
         pdfUrl={selectedTemplate?.pdfUrl ? (selectedTemplate.pdfUrl.includes('res.cloudinary.com')
           ? `${process.env.NEXT_PUBLIC_API_URL}/uploads/${selectedTemplate.pdfUrl.split('/').pop()?.split('.')[0]}.pdf`
           : selectedTemplate.pdfUrl.startsWith('http')
-          ? selectedTemplate.pdfUrl
-          : `${process.env.NEXT_PUBLIC_API_URL}${selectedTemplate.pdfUrl}`) : undefined}
+            ? selectedTemplate.pdfUrl
+            : `${process.env.NEXT_PUBLIC_API_URL}${selectedTemplate.pdfUrl}`) : undefined}
       />
     </div>
   );

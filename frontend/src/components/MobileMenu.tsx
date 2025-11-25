@@ -2,30 +2,21 @@
 
 import React, { useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
   Search,
-  User,
   LogOut,
   BookOpen,
   Home,
   Sparkles,
-  ShoppingBag,
-  ChevronRight,
-  Settings,
-  UserCircle
+  User
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/useAuth';
-import { cn } from '@/lib/utils';
 
 interface Template {
   _id: string;
   title: string;
-  category?: string;
-  previewImage?: string;
 }
 
 interface User {
@@ -33,7 +24,6 @@ interface User {
   name: string;
   email: string;
   role: 'admin' | 'user';
-  childAvatar?: string;
 }
 
 interface MobileMenuProps {
@@ -55,367 +45,191 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
   isAuthenticated,
   onLogout
 }) => {
-  // Debug logs for authentication state
-  console.log('🔍 MobileMenu Debug - isAuthenticated:', isAuthenticated, 'user:', user);
-  if (user) {
-    console.log('🔍 MobileMenu Debug - user role:', user.role, 'avatar:', user.childAvatar);
-  }
   const menuRef = useRef<HTMLDivElement>(null);
-  const firstFocusableElement = useRef<HTMLElement>(null);
-  const lastFocusableElement = useRef<HTMLElement>(null);
 
   // Navigation links
   const navLinks = [
-    { href: '/le-concept', label: 'Le concept', icon: Sparkles },
+    { href: '/', label: 'Accueil', icon: Home },
+    { href: '/book-store', label: 'Nos histoires', icon: BookOpen },
+    { href: '/le-concept', label: 'Le concept', icon: Sparkles }
   ];
 
-  // Templates for dropdown
-  const templateLinks = templates.slice(0, 5).map(template => ({
-    href: `/histoires/hero/${template._id}`,
-    label: template.title
-  }));
-
-  // Handle focus trap
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (!isOpen) return;
-
-    if (e.key === 'Escape') {
-      onClose();
-      return;
-    }
-
-    if (e.key === 'Tab') {
-      if (e.shiftKey) {
-        // Shift + Tab (backward)
-        if (document.activeElement === firstFocusableElement.current) {
-          e.preventDefault();
-          lastFocusableElement.current?.focus();
-        }
-      } else {
-        // Tab (forward)
-        if (document.activeElement === lastFocusableElement.current) {
-          e.preventDefault();
-          firstFocusableElement.current?.focus();
-        }
+  // Close on Escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
       }
-    }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
 
-  // Focus management on open
+  // Lock body scroll when open
   useEffect(() => {
-    if (isOpen && menuRef.current) {
-      // Focus the first focusable element
-      const focusableElements = menuRef.current.querySelectorAll(
-        'a[href], button, input, textarea, select, [tabindex]:not([tabindex="-1"])'
-      );
-      
-      if (focusableElements.length > 0) {
-        firstFocusableElement.current = focusableElements[0] as HTMLElement;
-        lastFocusableElement.current = focusableElements[focusableElements.length - 1] as HTMLElement;
-        firstFocusableElement.current.focus();
-      }
-
-      // Prevent body scroll
+    if (isOpen) {
       document.body.style.overflow = 'hidden';
     } else {
-      // Restore body scroll
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = '';
     }
-
-    // Add event listeners
-    document.addEventListener('keydown', handleKeyDown);
-
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = '';
     };
-  }, [isOpen, handleKeyDown]);
-
-  // Handle menu item click
-  const handleMenuItemClick = useCallback(() => {
-    onClose();
-  }, [onClose]);
-
-  // Animation variants
-  const overlayVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1 },
-    exit: { opacity: 0 }
-  };
-
-  const menuVariants = {
-    hidden: { x: '100%' },
-    visible: { x: 0 },
-    exit: { x: '100%' }
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, x: 20 },
-    visible: { opacity: 1, x: 0 }
-  };
+  }, [isOpen]);
 
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Overlay */}
+          {/* Backdrop */}
           <motion.div
-            className="fixed inset-0 z-50 bg-background/95 backdrop-blur-lg"
-            variants={overlayVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
             onClick={onClose}
-            aria-hidden="true"
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40"
           />
 
           {/* Menu Panel */}
           <motion.div
             ref={menuRef}
-            className="fixed top-0 right-0 bottom-0 z-50 w-full max-w-sm bg-background/95 backdrop-blur-lg border-l border-border/50 shadow-2xl overflow-y-auto"
-            variants={menuVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="mobile-menu-title"
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+            className="fixed top-0 right-0 bottom-0 w-full sm:w-96 bg-white z-50 overflow-y-auto shadow-2xl"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-border/50">
-              <h1 id="mobile-menu-title" className="text-xl font-semibold">
-                Menu
-              </h1>
-              <Button
-                variant="ghost"
-                size="icon"
+            <div className="sticky top-0 bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-slate-900">Menu</h2>
+              <button
                 onClick={onClose}
-                className="rounded-full hover:bg-muted"
+                className="w-10 h-10 rounded-lg hover:bg-slate-100 flex items-center justify-center transition-colors"
                 aria-label="Fermer le menu"
               >
-                <X className="h-5 w-5" />
-              </Button>
+                <X className="w-5 h-5 text-slate-600" />
+              </button>
             </div>
 
             {/* Content */}
             <div className="p-6 space-y-8">
-              {/* Quick Actions */}
-              <div className="space-y-3">
-                <motion.div 
-                  custom={0}
-                  variants={itemVariants}
-                  initial="hidden"
-                  animate="visible"
-                >
-                  <Button
-                    variant="ghost"
-                    onClick={() => {
-                      onSearchToggle();
-                      handleMenuItemClick();
-                    }}
-                    className="w-full justify-start p-4 h-auto min-h-[44px] hover:bg-muted/50"
-                  >
-                    <Search className="h-5 w-5 mr-3" />
-                    <span className="text-left">Rechercher</span>
-                  </Button>
-                </motion.div>
-
-                <motion.div custom={1} variants={itemVariants} initial="hidden" animate="visible">
+              {/* User Section */}
+              {isAuthenticated && user && (
+                <div className="pb-6 border-b border-slate-100">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-12 h-12 rounded-full bg-[#0055FF]/10 flex items-center justify-center">
+                      <User className="w-6 h-6 text-[#0055FF]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-900 truncate">
+                        {user.email}
+                      </p>
+                      <p className="text-xs text-slate-500 capitalize">{user.role}</p>
+                    </div>
+                  </div>
                   <Button
                     asChild
-                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium p-4 h-auto min-h-[44px] rounded-lg"
+                    variant="outline"
+                    className="w-full justify-start h-10"
                   >
-                    <Link href="/histoires/creer" onClick={handleMenuItemClick}>
-                      <Sparkles className="h-5 w-5 mr-3" />
-                      <span className="text-left">Créer une histoire</span>
+                    <Link href="/dashboard" onClick={onClose}>
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Mon tableau de bord
                     </Link>
                   </Button>
-                </motion.div>
-              </div>
+                </div>
+              )}
+
+              {/* Search */}
+              <button
+                onClick={() => {
+                  onSearchToggle();
+                  onClose();
+                }}
+                className="w-full flex items-center gap-3 p-4 rounded-lg hover:bg-slate-50 transition-colors text-left"
+              >
+                <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
+                  <Search className="w-5 h-5 text-slate-600" />
+                </div>
+                <span className="text-sm font-medium text-slate-900">Rechercher</span>
+              </button>
 
               {/* Navigation Links */}
-              <div className="space-y-1">
-                <motion.h3
-                  className="text-sm font-semibold text-muted-foreground uppercase tracking-wide px-4 py-2"
-                  custom={2}
-                  variants={itemVariants}
-                  initial="hidden"
-                  animate="visible"
-                >
-                  Navigation
-                </motion.h3>
-                
-                {navLinks.map((link, index) => {
+              <nav className="space-y-1">
+                {navLinks.map((link) => {
                   const Icon = link.icon;
                   return (
-                    <motion.div key={link.href} custom={3 + index} variants={itemVariants} initial="hidden" animate="visible">
-                      <Link
-                        href={link.href}
-                        onClick={handleMenuItemClick}
-                        className="flex items-center justify-between p-4 text-foreground hover:text-primary hover:bg-muted/50 rounded-lg transition-all duration-200 min-h-[44px] group"
-                      >
-                        <div className="flex items-center">
-                          <Icon className="h-5 w-5 mr-3" />
-                          <span>{link.label}</span>
-                        </div>
-                        <ChevronRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                      </Link>
-                    </motion.div>
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={onClose}
+                      className="flex items-center gap-3 p-4 rounded-lg hover:bg-slate-50 transition-colors"
+                    >
+                      <Icon className="w-5 h-5 text-slate-600" />
+                      <span className="text-sm font-medium text-slate-900">{link.label}</span>
+                    </Link>
                   );
                 })}
+              </nav>
 
-                {/* Templates Dropdown */}
-                {templateLinks.length > 0 && (
-                  <motion.div custom={6} variants={itemVariants} initial="hidden" animate="visible">
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between p-4 text-muted-foreground">
-                        <div className="flex items-center">
-                          <BookOpen className="h-5 w-5 mr-3" />
-                          <span className="text-sm font-semibold">Nos histoires</span>
-                        </div>
-                        <ChevronRight className="h-4 w-4" />
-                      </div>
-                      
-                      <div className="ml-8 space-y-1">
-                        {templateLinks.map((template, index) => (
-                          <motion.div 
-                            key={template.href} 
-                            custom={7 + index}
-                            variants={itemVariants} 
-                            initial="hidden" 
-                            animate="visible"
-                          >
-                            <Link
-                              href={template.href}
-                              onClick={handleMenuItemClick}
-                              className="block p-3 text-sm text-foreground hover:text-primary hover:bg-muted/30 rounded-md transition-colors duration-200"
-                            >
-                              {template.label}
-                            </Link>
-                          </motion.div>
-                        ))}
-                        
-                        <motion.div custom={12} variants={itemVariants} initial="hidden" animate="visible">
-                          <Link
-                            href="/histoires"
-                            onClick={handleMenuItemClick}
-                            className="block p-3 text-sm font-medium text-primary hover:bg-primary/10 rounded-md transition-colors duration-200"
-                          >
-                            Voir toutes les histoires →
-                          </Link>
-                        </motion.div>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </div>
-
-              {/* User Section */}
-              <div className="space-y-4 pt-6 border-t border-border/50">
-                {isAuthenticated && user ? (
-                  <div className="space-y-3">
-                    {/* User Info */}
-                    <motion.div 
-                      custom={14}
-                      variants={itemVariants}
-                      initial="hidden"
-                      animate="visible"
-                      className="flex items-center space-x-3 p-4 bg-muted/30 rounded-lg"
-                    >
-                      <Image
-                        src={user.childAvatar || '/placeholder-avatar.svg'}
-                        alt={user.name}
-                        width={48}
-                        height={48}
-                        className="h-12 w-12 rounded-full object-cover border-2 border-primary/20"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{user.name}</p>
-                        <p className="text-sm text-muted-foreground truncate">{user.email}</p>
-                      </div>
-                    </motion.div>
-
-                    {/* User Menu Items */}
-                    <motion.div custom={14} variants={itemVariants} initial="hidden" animate="visible">
+              {/* Featured Templates */}
+              {templates.length > 0 && (
+                <div className="pt-6 border-t border-slate-100">
+                  <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+                    Histoires populaires
+                  </h3>
+                  <div className="space-y-2">
+                    {templates.slice(0, 4).map((template) => (
                       <Link
-                        href={`/profile/${user._id}`}
-                        onClick={handleMenuItemClick}
-                        className="flex items-center justify-between p-4 text-foreground hover:text-primary hover:bg-muted/50 rounded-lg transition-all duration-200 min-h-[44px] group"
+                        key={template._id}
+                        href={`/histoires/creer/${template._id}`}
+                        onClick={onClose}
+                        className="block p-3 rounded-lg hover:bg-slate-50 transition-colors"
                       >
-                        <div className="flex items-center">
-                          <UserCircle className="h-5 w-5 mr-3" />
-                          <span>Mon profil</span>
-                        </div>
-                        <ChevronRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                        <p className="text-sm text-slate-700 font-light">{template.title}</p>
                       </Link>
-                    </motion.div>
-
-                    <motion.div custom={15} variants={itemVariants} initial="hidden" animate="visible">
-                      <Link
-                        href="/dashboard"
-                        onClick={handleMenuItemClick}
-                        className="flex items-center justify-between p-4 text-foreground hover:text-primary hover:bg-muted/50 rounded-lg transition-all duration-200 min-h-[44px] group"
-                      >
-                        <div className="flex items-center">
-                          <BookOpen className="h-5 w-5 mr-3" />
-                          <span>Mes histoires</span>
-                        </div>
-                        <ChevronRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                      </Link>
-                    </motion.div>
-
-                    {user.role === 'admin' && (
-                      <motion.div custom={16} variants={itemVariants} initial="hidden" animate="visible">
-                        <Link
-                          href="/admin"
-                          onClick={handleMenuItemClick}
-                          className="flex items-center justify-between p-4 text-foreground hover:text-primary hover:bg-muted/50 rounded-lg transition-all duration-200 min-h-[44px] group"
-                        >
-                          <div className="flex items-center">
-                            <Settings className="h-5 w-5 mr-3" />
-                            <span>Administration</span>
-                          </div>
-                          <ChevronRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                        </Link>
-                      </motion.div>
-                    )}
-
-                    <motion.div custom={17} variants={itemVariants} initial="hidden" animate="visible">
-                      <button
-                        onClick={() => {
-                          onLogout();
-                          handleMenuItemClick();
-                        }}
-                        className="flex items-center justify-between p-4 text-destructive hover:text-destructive/80 hover:bg-destructive/10 rounded-lg transition-all duration-200 min-h-[44px] w-full text-left group"
-                      >
-                        <div className="flex items-center">
-                          <LogOut className="h-5 w-5 mr-3" />
-                          <span>Déconnexion</span>
-                        </div>
-                        <ChevronRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                      </button>
-                    </motion.div>
+                    ))}
                   </div>
-                ) : (
-                  <div className="space-y-3">
-                    <motion.div custom={14} variants={itemVariants} initial="hidden" animate="visible">
-                      <Button variant="outline" className="w-full" asChild>
-                        <Link href="/login" onClick={handleMenuItemClick}>
-                          Connexion
-                        </Link>
-                      </Button>
-                    </motion.div>
-                    
-                    <motion.div custom={15} variants={itemVariants} initial="hidden" animate="visible">
-                      <Button className="w-full" asChild>
-                        <Link href="/register" onClick={handleMenuItemClick}>
-                          S'inscrire
-                        </Link>
-                      </Button>
-                    </motion.div>
-                  </div>
-                )}
-              </div>
+                </div>
+              )}
+
+              {/* Auth Actions */}
+              {!isAuthenticated ? (
+                <div className="space-y-3 pt-6 border-t border-slate-100">
+                  <Button
+                    asChild
+                    className="w-full bg-[#0055FF] hover:bg-[#0044CC] h-11"
+                  >
+                    <Link href="/login" onClick={onClose}>
+                      Se connecter
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="w-full h-11"
+                  >
+                    <Link href="/register" onClick={onClose}>
+                      S'inscrire
+                    </Link>
+                  </Button>
+                </div>
+              ) : (
+                <div className="pt-6 border-t border-slate-100">
+                  <Button
+                    onClick={() => {
+                      onLogout();
+                      onClose();
+                    }}
+                    variant="outline"
+                    className="w-full justify-start text-red-600 border-red-200 hover:bg-red-50 h-10"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Se déconnecter
+                  </Button>
+                </div>
+              )}
             </div>
           </motion.div>
         </>

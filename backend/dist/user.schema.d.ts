@@ -44,11 +44,14 @@ export declare class User {
         eyes: string;
         eyebrows: string;
         mouth: string;
-        glasses: boolean;
+        glasses: string;
         glassesStyle: string;
         accessories: string;
         earrings: string;
         features: string;
+        base: string;
+        hair: string;
+        skinColor: string;
     };
     childAvatar?: string;
     lastLogin?: Date;

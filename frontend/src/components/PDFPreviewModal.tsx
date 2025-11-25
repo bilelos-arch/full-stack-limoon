@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, X, Maximize2, Minimize2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, X, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Template } from '@/lib/templatesApi';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
@@ -27,14 +26,11 @@ export default function PDFPreviewModal({
   const [currentPage, setCurrentPage] = useState(1);
   const [numPages, setNumPages] = useState(0);
   const [scale, setScale] = useState(1.2);
-  const [isFullscreen, setIsFullscreen] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
-  const firstFocusableRef = useRef<HTMLButtonElement>(null);
-  const lastFocusableRef = useRef<HTMLButtonElement>(null);
 
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:10000';
 
   // Dynamic import of PDF.js
   useEffect(() => {
@@ -45,7 +41,7 @@ export default function PDFPreviewModal({
     }
   }, []);
 
-  // Load PDF when template or pdfUrl changes
+  // Load PDF
   useEffect(() => {
     if (template && isOpen) {
       if (pdfUrl) {
@@ -56,50 +52,23 @@ export default function PDFPreviewModal({
     }
   }, [template, isOpen, pdfUrl]);
 
-  // Render current page
+  // Render page
   useEffect(() => {
     if (pdfDoc && canvasRef.current) {
       renderPage(currentPage);
     }
   }, [pdfDoc, currentPage, scale]);
 
-  // Focus trap
+  // Close on Escape
   useEffect(() => {
-    if (isOpen) {
-      const handleKeyDown = (e: KeyboardEvent) => {
-        if (e.key === 'Escape') {
-          onClose();
-        } else if (e.key === 'Tab') {
-          const focusableElements = modalRef.current?.querySelectorAll(
-            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-          ) as NodeListOf<HTMLElement>;
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
 
-          if (focusableElements.length === 0) return;
-
-          const firstElement = firstFocusableRef.current || focusableElements[0];
-          const lastElement = lastFocusableRef.current || focusableElements[focusableElements.length - 1];
-
-          if (e.shiftKey) {
-            if (document.activeElement === firstElement) {
-              lastElement.focus();
-              e.preventDefault();
-            }
-          } else {
-            if (document.activeElement === lastElement) {
-              firstElement.focus();
-              e.preventDefault();
-            }
-          }
-        }
-      };
-
-      document.addEventListener('keydown', handleKeyDown);
-      firstFocusableRef.current?.focus();
-
-      return () => {
-        document.removeEventListener('keydown', handleKeyDown);
-      };
-    }
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
 
   const loadPDF = async (customPdfUrl?: string) => {
@@ -109,256 +78,165 @@ export default function PDFPreviewModal({
     try {
       const { getDocument } = await import('pdfjs-dist');
 
-      // Debugging logs for API_BASE_URL and customPdfUrl
-      console.log('loadPDF called with customPdfUrl:', customPdfUrl);
-      console.log('API_BASE_URL value:', API_BASE_URL);
+      let url = customPdfUrl || `${API_BASE_URL?.replace(/\/$/, '')}/uploads/${template.pdfPath}`;
 
-      // Explicit check for API_BASE_URL if no customPdfUrl provided
-      if (!customPdfUrl && !API_BASE_URL) {
-        console.error('API_BASE_URL is not defined, cannot construct PDF URL');
-        throw new Error('API_BASE_URL is not defined. Please check your environment variables.');
-      }
-
-      let pdfUrl = customPdfUrl || `${API_BASE_URL?.replace(/\/$/, '')}/uploads/${template.pdfPath}`;
-
-      // Convert Cloudinary URLs to local URLs if needed
-      if (pdfUrl.includes('res.cloudinary.com')) {
-        // Extract filename from Cloudinary URL
-        const urlParts = pdfUrl.split('/');
-        const filename = urlParts[urlParts.length - 1].split('.')[0];
-        pdfUrl = `${API_BASE_URL}/uploads/pdfs/${filename}.pdf`;
-      } else {
-        // Ensure API_BASE_URL is defined before using it
-        if (!API_BASE_URL) {
-          console.error('API_BASE_URL is undefined in Cloudinary URL handling');
-          throw new Error('API_BASE_URL is not defined. Please check your environment variables.');
-        }
-      }
-
-      // Ensure we use local storage URLs
-      if (API_BASE_URL && !pdfUrl.startsWith(API_BASE_URL)) {
-        console.log('Adjusting PDF URL to use API_BASE_URL:', API_BASE_URL);
-        pdfUrl = `${API_BASE_URL}${pdfUrl.startsWith('/') ? '' : '/'}${pdfUrl}`;
-      } else if (!API_BASE_URL) {
-        console.error('API_BASE_URL is undefined, cannot adjust PDF URL');
-      }
-
-      console.log('Loading PDF from URL:', pdfUrl);
-      console.log('Template pdfPath:', template.pdfPath);
-      console.log('API_BASE_URL:', API_BASE_URL);
-      console.log('process.env.NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
-      console.log('About to call getDocument with URL:', pdfUrl);
-      const loadingTask = getDocument({url: pdfUrl});
-      console.log('getDocument called successfully, waiting for promise');
+      const loadingTask = getDocument(url);
       const pdf = await loadingTask.promise;
-      console.log('PDF loaded successfully, numPages:', pdf.numPages);
+
       setPdfDoc(pdf);
       setNumPages(pdf.numPages);
       setCurrentPage(1);
-      setScale(1.2);
     } catch (error) {
       console.error('Error loading PDF:', error);
-      console.error('Failed URL:', customPdfUrl || `${API_BASE_URL}/uploads/${template.pdfPath}`);
-      console.error('API_BASE_URL at error:', API_BASE_URL);
-      console.error('template.pdfPath at error:', template.pdfPath);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const renderPage = async (pageNum: number) => {
+  const renderPage = async (pageNumber: number) => {
     if (!pdfDoc || !canvasRef.current) return;
 
-    try {
-      const page = await pdfDoc.getPage(pageNum);
-      const viewport = page.getViewport({ scale });
+    const page = await pdfDoc.getPage(pageNumber);
+    const viewport = page.getViewport({ scale });
+    const canvas = canvasRef.current;
+    const context = canvas.getContext('2d');
 
-      const canvas = canvasRef.current;
-      const context = canvas.getContext('2d');
-      if (!context) return;
+    if (!context) return;
 
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    canvas.width = viewport.width;
 
-      const renderContext = {
-        canvasContext: context,
-        viewport: viewport,
-        canvas: canvas,
-      };
+    const renderContext = {
+      canvasContext: context,
+      viewport: viewport,
+      canvas: canvas
+    };
 
-      await page.render(renderContext).promise;
-    } catch (error) {
-      console.error('Error rendering page:', error);
-    }
+    await page.render(renderContext).promise;
   };
 
-  const goToPrevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
-  const goToNextPage = () => {
-    if (currentPage < numPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const zoomIn = () => {
-    setScale(prev => Math.min(prev + 0.25, 3.0));
-  };
-
-  const zoomOut = () => {
-    setScale(prev => Math.max(prev - 0.25, 0.5));
-  };
-
-  const toggleFullscreen = () => {
-    setIsFullscreen(!isFullscreen);
-  };
-
-  const handleCustomize = () => {
-    if (template) {
-      onCustomize(template);
-      onClose();
-    }
-  };
-
-  if (!isOpen || !template) return null;
+  const handleZoomIn = () => setScale(prev => Math.min(prev + 0.2, 3));
+  const handleZoomOut = () => setScale(prev => Math.max(prev - 0.2, 0.5));
+  const handlePrevPage = () => setCurrentPage(prev => Math.max(prev - 1, 1));
+  const handleNextPage = () => setCurrentPage(prev => Math.min(prev + 1, numPages));
 
   return (
     <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 bg-black/0 backdrop-blur-none"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="pdf-modal-title"
-          aria-describedby="pdf-modal-description"
-          onClick={onClose}
-        >
+      {isOpen && template && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50"
+          />
+
+          {/* Modal */}
           <motion.div
             ref={modalRef}
-            initial={{ scale: 1, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 1, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className={`relative mx-auto mt-0 mb-0 bg-background rounded-none shadow-none overflow-hidden ${
-              isFullscreen ? 'w-full h-full max-w-none max-h-none' : 'w-full max-w-4xl h-[80vh]'
-            }`}
-            onClick={(e) => e.stopPropagation()}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-4 md:inset-8 bg-white rounded-2xl z-50 flex flex-col overflow-hidden shadow-2xl"
           >
             {/* Header */}
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b">
-              <div>
-                <CardTitle id="pdf-modal-title" className="text-lg">
-                  Aperçu: {template.title}
-                </CardTitle>
-                <p id="pdf-modal-description" className="text-sm text-muted-foreground">
-                  Page {currentPage} sur {numPages}
-                </p>
+            <div className="flex items-center justify-between p-6 border-b border-slate-100">
+              <div className="flex-1 min-w-0">
+                <h2 className="text-xl font-semibold text-slate-900 truncate">{template.title}</h2>
+                <p className="text-sm text-slate-500 font-light truncate">{template.description}</p>
               </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={toggleFullscreen}
-                  aria-label={isFullscreen ? "Quitter le plein écran" : "Plein écran"}
-                >
-                  {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={onClose}
-                  aria-label="Fermer l'aperçu"
-                  ref={lastFocusableRef}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-
-            {/* Controls */}
-            <div className="flex items-center justify-between p-4 bg-muted/50 border-b">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={goToPrevPage}
-                  disabled={currentPage <= 1}
-                  aria-label="Page précédente"
-                  ref={firstFocusableRef}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span className="text-sm font-medium min-w-[80px] text-center">
-                  {currentPage} / {numPages}
-                </span>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={goToNextPage}
-                  disabled={currentPage >= numPages}
-                  aria-label="Page suivante"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={zoomOut}
-                  disabled={scale <= 0.5}
-                  aria-label="Zoom arrière"
-                >
-                  <ZoomOut className="h-4 w-4" />
-                </Button>
-                <span className="text-sm font-medium min-w-[60px] text-center">
-                  {Math.round(scale * 100)}%
-                </span>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={zoomIn}
-                  disabled={scale >= 3.0}
-                  aria-label="Zoom avant"
-                >
-                  <ZoomIn className="h-4 w-4" />
-                </Button>
-              </div>
-
               <Button
-                onClick={handleCustomize}
-                aria-label={`Personnaliser ${template.title}`}
+                variant="ghost"
+                size="icon"
+                onClick={onClose}
+                className="ml-4 flex-shrink-0"
               >
-                Personnaliser
+                <X className="h-5 w-5" />
               </Button>
             </div>
 
             {/* PDF Viewer */}
-            <CardContent className="p-0 flex-1 overflow-auto">
-              <div className="flex justify-center items-center min-h-full p-0">
-                {isLoading ? (
-                  <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    <span className="ml-2">Chargement du PDF...</span>
-                  </div>
-                ) : (
-                  <canvas
-                    ref={canvasRef}
-                    className="shadow-none border-none rounded-none"
-                    style={{ maxWidth: '100%', height: 'auto' }}
-                  />
-                )}
+            <div className="flex-1 overflow-auto bg-slate-50 p-8 flex items-center justify-center">
+              {isLoading ? (
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0055FF] mx-auto mb-4"></div>
+                  <p className="text-slate-500 font-light">Chargement du PDF...</p>
+                </div>
+              ) : (
+                <canvas ref={canvasRef} className="shadow-xl rounded-lg" />
+              )}
+            </div>
+
+            {/* Controls */}
+            <div className="border-t border-slate-100 p-6 bg-white">
+              <div className="flex items-center justify-between gap-4">
+                {/* Pagination */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handlePrevPage}
+                    disabled={currentPage === 1}
+                    className="h-9"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <span className="text-sm text-slate-600 font-light min-w-[100px] text-center">
+                    Page {currentPage} / {numPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleNextPage}
+                    disabled={currentPage === numPages}
+                    className="h-9"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                {/* Zoom Controls */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleZoomOut}
+                    disabled={scale <= 0.5}
+                    className="h-9"
+                  >
+                    <ZoomOut className="h-4 w-4" />
+                  </Button>
+                  <span className="text-sm text-slate-600 font-light min-w-[60px] text-center">
+                    {Math.round(scale * 100)}%
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleZoomIn}
+                    disabled={scale >= 3}
+                    className="h-9"
+                  >
+                    <ZoomIn className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                {/* Action Button */}
+                <Button
+                  onClick={() => {
+                    onCustomize(template);
+                    onClose();
+                  }}
+                  className="bg-[#0055FF] hover:bg-[#0044CC] text-white h-10 px-6"
+                >
+                  Personnaliser
+                </Button>
               </div>
-            </CardContent>
+            </div>
           </motion.div>
-        </motion.div>
+        </>
       )}
     </AnimatePresence>
   );

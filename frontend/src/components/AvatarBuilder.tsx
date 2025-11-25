@@ -7,103 +7,111 @@ import { adventurer } from "@dicebear/collection";
 import { getAdventurerOptions } from "../utils/dicebear-options";
 
 // ---- COMPONENT PRINCIPAL ----
-export default function AvatarBuilder({ userId, avatarConfig }: { userId: string; avatarConfig?: Record<string, any> }) {
-   console.log('🔍 AvatarBuilder: Composant monté avec userId:', userId, 'avatarConfig:', avatarConfig);
-   const [options, setOptions] = useState<Record<string, string[]>>({});
-   const [config, setConfig] = useState<Record<string, string>>({});
-   const [avatarUri, setAvatarUri] = useState<string>("");
-   const [isGenerating, setIsGenerating] = useState<boolean>(false);
+export default function AvatarBuilder({
+  userId,
+  avatarConfig,
+  initialConfig,
+  showNameField = false,
+  initialChildName = '',
+  onComplete
+}: {
+  userId: string;
+  avatarConfig?: Record<string, any>;
+  initialConfig?: Record<string, any>;
+  showNameField?: boolean;
+  initialChildName?: string;
+  onComplete?: (childName: string, avatarUri: string, config: Record<string, any>) => void;
+}) {
+  const [options, setOptions] = useState<Record<string, string[]>>({});
+  const [config, setConfig] = useState<Record<string, string>>({});
+  const [avatarUri, setAvatarUri] = useState<string>('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [childName, setChildName] = useState<string>(initialChildName);
+
+  console.log('🔍 AvatarBuilder: Composant monté avec userId:', userId, 'avatarConfig:', avatarConfig, 'initialConfig:', initialConfig);
 
   // Charger les options DiceBear
   useEffect(() => {
     console.log('🔧 AvatarBuilder: Chargement des options DiceBear...');
     const opts = getAdventurerOptions();
+    setOptions(opts);
     console.log('✅ AvatarBuilder: Options chargées:', Object.keys(opts).length, 'propriétés');
-    
+
     if (Object.keys(opts).length === 0) {
       console.error('❌ AvatarBuilder: Aucune option chargée - utilisation des valeurs par défaut');
-      // Fallback avec des valeurs par défaut statiques
-      const fallbackOptions = {
-        hair: ['short01', 'long01'],
-        hairColor: ['6d4c41', 'f5c842'],
-        skinColor: ['e0ac69', 'fdbcb4'],
-        eyes: ['variant01', 'variant02'],
-        eyebrows: ['variant01', 'variant02'],
-        mouth: ['variant01', 'variant02'],
-        earrings: ['variant01'],
-        glasses: ['variant01'],
-        features: ['blush'],
-        backgroundColor: ['b6e3f4']
-      };
-      setOptions(fallbackOptions);
-      
-      // Configuration par défaut avec fallback
-      const fallbackConfig: any = {};
-      Object.entries(fallbackOptions).forEach(([key, values]) => {
-        fallbackConfig[key] = [values[0]];
-      });
-      setConfig(fallbackConfig);
-      return;
     }
-    
-    setOptions(opts);
 
     // Mettre une valeur par défaut automatiquement
-    const defaults: any = {};
-    Object.entries(opts).forEach(([key, values]) => {
-      defaults[key] = values[0]; // première option
+    const defaults: Record<string, string> = {};
+    Object.keys(opts).forEach(key => {
+      if (opts[key] && opts[key].length > 0) {
+        defaults[key] = opts[key][0];
+      }
     });
-    console.log('✅ AvatarBuilder: Configuration par défaut:', defaults);
-    setConfig(defaults);
+
+    // Merge defaults with initialConfig if provided
+    const finalConfig = { ...defaults, ...(initialConfig || {}) };
+    console.log('✅ AvatarBuilder: Configuration initiale (defaults + initial):', finalConfig);
+    setConfig(finalConfig);
   }, []);
 
   // Générer l'avatar à chaque changement de config ou avatarConfig
-    useEffect(() => {
-      const currentConfig = avatarConfig || config;
-      console.log('🎨 AvatarBuilder: Génération avatar avec config:', currentConfig);
-      console.log('🎨 AvatarBuilder: avatarConfig fourni:', avatarConfig);
-      console.log('🎨 AvatarBuilder: config interne:', config);
-      console.log('🎨 AvatarBuilder: Priorité donnée à avatarConfig:', !!avatarConfig);
-      console.log('🔍 AvatarBuilder: Whether avatar generation succeeds or fails: Starting generation...');
+  useEffect(() => {
+    const currentConfig = avatarConfig || config;
+    console.log('🎨 AvatarBuilder: Génération avatar avec config:', JSON.stringify(currentConfig));
 
-      if (Object.keys(currentConfig).length === 0) {
-        console.log('⚠️ AvatarBuilder: Configuration vide, arrêt de la génération');
-        console.log('⚠️ AvatarBuilder: avatarConfig vide:', !avatarConfig || Object.keys(avatarConfig).length === 0);
-        console.log('⚠️ AvatarBuilder: config interne vide:', Object.keys(config).length === 0);
-        return;
-      }
+    if (Object.keys(currentConfig).length === 0) {
+      console.log('⚠️ AvatarBuilder: Configuration vide, arrêt de la génération');
+      return;
+    }
 
     setIsGenerating(true);
-    
+
     try {
-      const avatar = createAvatar(adventurer, currentConfig as any);
+      // DiceBear expects options to be arrays for randomization, or single values.
+      // However, best practice with this library version seems to be arrays or ensuring types match schema.
+      // Let's try wrapping values in arrays to be safe, as seen in dicebear-options.ts
+      const formattedConfig: Record<string, any> = {};
+      Object.entries(currentConfig).forEach(([key, value]) => {
+        formattedConfig[key] = Array.isArray(value) ? value : [value];
+      });
+
+      // Force probabilities to 100 if accessories are selected
+      if (formattedConfig.glasses && formattedConfig.glasses.length > 0) {
+        formattedConfig.glassesProbability = [100];
+      }
+      if (formattedConfig.earrings && formattedConfig.earrings.length > 0) {
+        formattedConfig.earringsProbability = [100];
+      }
+      if (formattedConfig.features && formattedConfig.features.length > 0) {
+        formattedConfig.featuresProbability = [100];
+      }
+
+      const avatar = createAvatar(adventurer, formattedConfig);
       const uri = avatar.toDataUri();
-      console.log('✅ AvatarBuilder: Avatar généré avec succès:', uri.substring(0, 50) + '...');
-      console.log('🔍 AvatarBuilder: Whether avatar generation succeeds or fails: SUCCESS');
+
+      if (!uri || uri === 'data:image/svg+xml;utf8,') {
+        console.error('❌ AvatarBuilder: URI généré vide ou invalide');
+        throw new Error('URI invalid');
+      }
+
+      console.log('✅ AvatarBuilder: Avatar généré avec succès. Longueur URI:', uri.length);
       setAvatarUri(uri);
-      console.log('🎯 AvatarBuilder: Final avatarUri value:', uri);
       setIsGenerating(false);
     } catch (error) {
       console.error('❌ AvatarBuilder: Erreur génération avatar:', error);
-      console.log('🔍 AvatarBuilder: Whether avatar generation succeeds or fails: FAILED - attempting fallback');
-      console.log('� AvatarBuilder: Tentative avec configuration fallback...');
-      // Configuration fallback minimale
+
+      // Fallback
       try {
         const fallbackConfig = { backgroundColor: ['b6e3f4'] };
         const fallbackAvatar = createAvatar(adventurer, fallbackConfig);
         const fallbackUri = fallbackAvatar.toDataUri();
-        console.log('✅ AvatarBuilder: Fallback avatar généré:', fallbackUri.substring(0, 50) + '...');
-        console.log('🔍 AvatarBuilder: Whether avatar generation succeeds or fails: SUCCESS (fallback)');
-        console.log('🎯 AvatarBuilder: Final avatarUri value (fallback):', fallbackUri);
+        console.log('✅ AvatarBuilder: Fallback avatar généré');
         setAvatarUri(fallbackUri);
-        setIsGenerating(false);
       } catch (fallbackError) {
-        console.error('❌ AvatarBuilder: Erreur critique fallback:', fallbackError);
-        console.log('💔 AvatarBuilder: Aucun avatar générable');
-        console.log('🔍 AvatarBuilder: Whether avatar generation succeeds or fails: FAILED (no fallback)');
-        console.log('🎯 AvatarBuilder: Final avatarUri value (error):', avatarUri || 'undefined');
-        setIsGenerating(false);
+        console.error('❌ AvatarBuilder: Echec total du fallback:', fallbackError);
       }
+      setIsGenerating(false);
     }
   }, [config, avatarConfig]);
 
@@ -122,17 +130,33 @@ export default function AvatarBuilder({ userId, avatarConfig }: { userId: string
   // Sauvegarde backend
   const saveAvatar = async () => {
     console.log('💾 AvatarBuilder: Tentative de sauvegarde...');
-    
+
     if (!avatarUri) {
       alert("⚠️ Aucun avatar à sauvegarder ! Générez d'abord un avatar.");
       return;
     }
 
+    if (showNameField && !childName.trim()) {
+      alert("⚠️ Veuillez entrer le nom de l'enfant.");
+      return;
+    }
+
     try {
+      // If onComplete callback is provided, use it instead of direct save
+      if (onComplete) {
+        console.log('✅ AvatarBuilder: Calling onComplete callback');
+        onComplete(childName, avatarUri, config);
+        return;
+      }
+
+      // Otherwise, save directly to backend
       const res = await fetch(`/api/users/profile/${userId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ avatar: avatarUri }),
+        body: JSON.stringify({
+          child: { name: childName, ...config },
+          childAvatar: avatarUri
+        }),
       });
 
       if (res.ok) {
@@ -149,119 +173,113 @@ export default function AvatarBuilder({ userId, avatarConfig }: { userId: string
   };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="p-1 max-w-5xl mx-auto">
 
-      <h1 className="text-3xl font-bold mb-6">Créer un avatar pour votre enfant</h1>
+      <h1 className="text-xl font-semibold mb-6 text-slate-900">Créer un avatar</h1>
 
-      <div className="flex gap-10 flex-col md:flex-row">
+      {/* Child Name Field */}
+      {showNameField && (
+        <div className="mb-6">
+          <label className="block text-sm font-medium mb-2 text-slate-700">
+            Nom de l'enfant *
+          </label>
+          <input
+            type="text"
+            value={childName}
+            onChange={(e) => setChildName(e.target.value)}
+            className="w-full border-0 bg-slate-100 p-3 rounded-lg focus:ring-2 focus:ring-[#0055FF] text-sm transition-all"
+            placeholder="Entrez le prénom"
+            required
+          />
+        </div>
+      )}
+
+      <div className="flex gap-10 flex-col">
 
         {/* PREVIEW */}
         <div className="flex flex-col items-center">
-          <div className="relative w-60 h-60">
+          <div className="relative w-56 h-56 mb-8">
             {isGenerating && (
-              <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center rounded-xl z-10">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-                <span className="ml-2 text-purple-600 font-medium">Génération...</span>
+              <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center rounded-full z-10">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#0055FF]"></div>
               </div>
             )}
             <img
-               src={avatarUri || "/placeholder-avatar.svg"}
-               className="w-60 h-60 rounded-xl shadow-xl border"
-               alt="Avatar Preview"
-               onError={(e) => {
-                 console.log('❌ AvatarBuilder: Erreur chargement image:', avatarUri || "/placeholder-avatar.svg");
-                 console.log('❌ AvatarBuilder: avatarUri actuel:', avatarUri);
-                 console.log('❌ AvatarBuilder: isGenerating:', isGenerating);
-                 if (avatarUri) {
-                   console.log('💡 AvatarBuilder: L\'avatarUri est défini mais l\'image ne se charge pas');
-                   // Fallback vers SVG si PNG échoue
-                   const img = e.target as HTMLImageElement;
-                   img.src = "/placeholder-avatar.svg";
-                 }
-               }}
-               onLoad={() => {
-                 console.log('✅ AvatarBuilder: Image chargée avec succès');
-               }}
-             />
-          </div>
-          <div className="mt-2 text-sm text-gray-600">
-            Statut: {avatarUri ? 'Avatar généré' : 'En cours de génération...'}
+              src={avatarUri || "/placeholder-avatar.svg"}
+              className="w-56 h-56 rounded-full shadow-xl border-4 border-white bg-slate-50"
+              alt="Avatar Preview"
+              onError={(e) => {
+                const img = e.target as HTMLImageElement;
+                img.src = "/placeholder-avatar.svg";
+              }}
+            />
           </div>
 
           {!avatarConfig && (
-            <>
+            <div className="flex gap-3 w-full max-w-xs">
               <button
                 onClick={randomize}
-                className="mt-4 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white"
+                className="flex-1 px-4 py-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium transition-colors"
               >
-                Random Avatar 🎲
+                Aléatoire 🎲
               </button>
 
               <button
                 onClick={saveAvatar}
-                className="mt-3 px-4 py-2 rounded-xl bg-green-600 hover:bg-green-700 text-white"
+                className="flex-1 px-4 py-2.5 rounded-lg bg-[#0055FF] hover:bg-[#0044CC] text-white text-sm font-medium transition-colors shadow-lg shadow-blue-500/20"
               >
-                Enregistrer l’avatar ✓
+                Enregistrer ✓
               </button>
-            </>
+            </div>
           )}
         </div>
 
         {/* PANNEAU D'OPTIONS */}
         {!avatarConfig && (
-          <div className="w-full max-w-md">
-            <div className="mb-4 p-4 bg-gray-50 rounded-lg border">
-              <h3 className="font-bold text-lg mb-2">🔧 Personnaliser l'avatar</h3>
-              <p className="text-sm text-gray-600 mb-3">
-                Utilisez les options ci-dessous pour créer l'avatar parfait pour votre enfant
-              </p>
-              <button
-                onClick={() => {
-                  console.log('🔄 AvatarBuilder: Régénération complète...');
-                  const defaults: any = {};
-                  Object.entries(options).forEach(([key, values]) => {
-                    defaults[key] = values[0];
-                  });
-                  setConfig(defaults);
-                }}
-                className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
-              >
-                🔄 Réinitialiser aux valeurs par défaut
-              </button>
-            </div>
-            
-            <div className="grid grid-cols-1 gap-3 max-h-[60vh] overflow-y-auto pr-2">
-              {Object.entries(options).map(([key, values]) => (
-                <div key={key} className="flex flex-col bg-white p-3 rounded-lg border border-gray-200">
-                  <label className="text-sm font-semibold mb-2 text-gray-800 capitalize">
-                    {key.replace(/([A-Z])/g, ' $1').trim()}
-                  </label>
+          <div className="w-full">
+            <div className="mb-4">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="font-medium text-slate-900 text-lg">Personnalisation</h3>
+                <button
+                  onClick={() => {
+                    const defaults: any = {};
+                    Object.entries(options).forEach(([key, values]) => {
+                      defaults[key] = values[0];
+                    });
+                    setConfig(defaults);
+                  }}
+                  className="text-sm text-[#0055FF] hover:underline font-medium"
+                >
+                  Réinitialiser
+                </button>
+              </div>
 
-                  <select
-                    className="border border-gray-300 p-2 rounded-md bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors"
-                    value={config[key]}
-                    onChange={(e) => {
-                      const newConfig = { ...config, [key]: e.target.value };
-                      console.log('🔄 AvatarBuilder: Changement', key, '->', e.target.value);
-                      setConfig(newConfig);
-                    }}
-                  >
-                    {values.map((v) => (
-                      <option key={v} value={v}>
-                        {v}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ))}
-            </div>
+              <div className="grid grid-cols-1 gap-5 max-h-[450px] overflow-y-auto pr-3 custom-scrollbar">
+                {Object.entries(options)
+                  .filter(([key]) => key !== 'features')
+                  .map(([key, values]) => (
+                    <div key={key} className="space-y-2">
+                      <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                        {key.replace(/([A-Z])/g, ' $1').trim()}
+                      </label>
 
-            <div className="mt-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
-              <h4 className="font-semibold text-purple-800 mb-2">💡 Conseils</h4>
-              <ul className="text-xs text-purple-700 space-y-1">
-                <li>• Utilisez le bouton "Random Avatar 🎲" pour une création rapide</li>
-                <li>• N'oubliez pas de sauvegarder votre création avec "Enregistrer l'avatar ✓"</li>
-              </ul>
+                      <select
+                        className="w-full border-0 bg-slate-50 p-3 rounded-lg text-sm text-slate-700 focus:ring-2 focus:ring-[#0055FF] transition-all cursor-pointer hover:bg-slate-100"
+                        value={config[key]}
+                        onChange={(e) => {
+                          const newConfig = { ...config, [key]: e.target.value };
+                          setConfig(newConfig);
+                        }}
+                      >
+                        {values.map((v) => (
+                          <option key={v} value={v}>
+                            {v}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ))}
+              </div>
             </div>
           </div>
         )}

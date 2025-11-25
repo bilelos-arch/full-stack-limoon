@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { User } from '@/stores/authStore';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:10000';
 
 export interface LoginData {
   email: string;

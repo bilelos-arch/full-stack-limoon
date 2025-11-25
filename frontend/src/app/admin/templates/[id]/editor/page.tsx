@@ -18,7 +18,7 @@ import ElementPropertiesPanel from '@/components/ElementPropertiesPanel';
 import { DndContext } from '@dnd-kit/core';
 import axios from 'axios';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:10000';
 
 interface Template {
   _id: string;
@@ -71,7 +71,7 @@ export default function TemplateEditorPage() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   // ⚠️ CORRECTION : Stocker les dimensions ORIGINALES du PDF
-  const [originalPdfDimensions, setOriginalPdfDimensions] = useState<{width: number, height: number} | null>(null);
+  const [originalPdfDimensions, setOriginalPdfDimensions] = useState<{ width: number, height: number } | null>(null);
 
   // État pour les valeurs par défaut des variables
   const [defaultValues, setDefaultValues] = useState<Record<string, string>>({});
@@ -104,7 +104,7 @@ export default function TemplateEditorPage() {
         withCredentials: true,
       });
       setTemplate(response.data);
-      
+
       // ⚠️ CORRECTION : Stocker les dimensions originales du PDF
       if (response.data.dimensions) {
         setOriginalPdfDimensions(response.data.dimensions);
@@ -184,14 +184,14 @@ export default function TemplateEditorPage() {
 
   const handleAddText = () => {
     if (!template || !originalPdfDimensions) return;
-    
+
     // CRITIQUE : Utiliser les dimensions ORIGINALES pour les calculs
     const actualDimensions = originalPdfDimensions;
-    
+
     // Dimensions en pourcentages relatifs
     const targetWidthPercent = 15; // 15% de la largeur originale
     const targetHeightPercent = 5; // 5% de la hauteur originale
-    
+
     const newElement: EditorElement = {
       id: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       templateId: template._id,
@@ -211,11 +211,11 @@ export default function TemplateEditorPage() {
 
   const handleAddImage = () => {
     if (!template || !originalPdfDimensions) return;
-    
+
     // Dimensions en pourcentages relatifs
     const targetWidthPercent = 20; // 20% de la largeur originale
     const targetHeightPercent = 15; // 15% de la hauteur originale
-    
+
     const newElement: EditorElement = {
       id: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       templateId: template._id,
@@ -343,7 +343,7 @@ export default function TemplateEditorPage() {
   const handleDimensionsChange = (dimensions: { width: number; height: number }) => {
     console.log('handleDimensionsChange: dimensions rendues:', dimensions);
     setRenderedPdfDimensions(dimensions);
-    
+
     // Ajuster automatiquement le zoom si nécessaire pour s'adapter à la largeur
     if (containerRef.current && dimensions.width > containerRef.current.clientWidth) {
       const newZoom = containerRef.current.clientWidth / dimensions.width;
@@ -435,7 +435,7 @@ export default function TemplateEditorPage() {
           handleSave();
         }
         break;
-      
+
       // Déplacement au clavier en pourcentages relatifs
       case 'ArrowUp':
         e.preventDefault();
@@ -527,35 +527,35 @@ export default function TemplateEditorPage() {
 
           <nav className="flex items-center gap-2 flex-wrap" role="toolbar" aria-label="Outils d'édition">
             <Button
-               onClick={handleAddText}
-               variant="outline"
-               size="sm"
-               aria-label="Ajouter un élément texte"
-               title="Ajouter un nouveau champ texte (Ctrl+T)"
-             >
-               ➕ Texte
-             </Button>
-             <Button
-               onClick={handleAddImage}
-               variant="outline"
-               size="sm"
-               aria-label="Ajouter un élément image"
-               title="Ajouter une nouvelle zone image (Ctrl+I)"
-             >
-               🖼️ Image
-             </Button>
-            
+              onClick={handleAddText}
+              variant="outline"
+              size="sm"
+              aria-label="Ajouter un élément texte"
+              title="Ajouter un nouveau champ texte (Ctrl+T)"
+            >
+              ➕ Texte
+            </Button>
             <Button
-               onClick={handleDelete}
-               variant="outline"
-               size="sm"
-               disabled={!selectedElement}
-               aria-label="Supprimer l'élément sélectionné"
-               title="Supprimer l'élément sélectionné (Suppr)"
-             >
-               🗑️ Supprimer
-             </Button>
-            
+              onClick={handleAddImage}
+              variant="outline"
+              size="sm"
+              aria-label="Ajouter un élément image"
+              title="Ajouter une nouvelle zone image (Ctrl+I)"
+            >
+              🖼️ Image
+            </Button>
+
+            <Button
+              onClick={handleDelete}
+              variant="outline"
+              size="sm"
+              disabled={!selectedElement}
+              aria-label="Supprimer l'élément sélectionné"
+              title="Supprimer l'élément sélectionné (Suppr)"
+            >
+              🗑️ Supprimer
+            </Button>
+
             <Button
               onClick={handleSave}
               variant="default"
@@ -648,11 +648,10 @@ export default function TemplateEditorPage() {
               .map(element => (
                 <Card
                   key={`${element.id}_${element.pageIndex}_${element.x}_${element.y}`}
-                  className={`p-3 cursor-pointer transition-colors ${
-                    selectedElement?.id === element.id
+                  className={`p-3 cursor-pointer transition-colors ${selectedElement?.id === element.id
                       ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20'
                       : 'hover:bg-gray-50 dark:hover:bg-gray-700'
-                  }`}
+                    }`}
                   onClick={() => handleElementSelect(element)}
                   role="listitem"
                   tabIndex={0}

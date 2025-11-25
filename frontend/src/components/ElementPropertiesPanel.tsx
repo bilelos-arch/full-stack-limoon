@@ -11,7 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import axios from 'axios';
 import googleFonts from '@/data/googleFonts.json';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:10000';
 
 interface EditorElement {
   id: string;
@@ -55,7 +55,7 @@ export default function ElementPropertiesPanel({
 }: ElementPropertiesPanelProps) {
   const [localElement, setLocalElement] = useState<EditorElement | null>(null);
   const [saving, setSaving] = useState(false);
-  const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
+  const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({});
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -75,10 +75,10 @@ export default function ElementPropertiesPanel({
   // ⚠️ CORRECTION : Gestion du cas null
   const getCurrentScale = useCallback(() => {
     if (!currentDisplayDimensions) return { scaleX: 1, scaleY: 1 };
-    
+
     const scaleX = currentDisplayDimensions.width / templateDimensions.width;
     const scaleY = currentDisplayDimensions.height / templateDimensions.height;
-    
+
     return { scaleX, scaleY };
   }, [currentDisplayDimensions, templateDimensions]);
 
@@ -124,7 +124,7 @@ export default function ElementPropertiesPanel({
   };
 
   const validateAndUpdateField = (field: keyof EditorElement, value: any) => {
-    const errors: {[key: string]: string} = {};
+    const errors: { [key: string]: string } = {};
 
     // Validation des champs de position/dimension (pourcentages)
     if (field === 'x' || field === 'y' || field === 'width' || field === 'height') {
@@ -159,7 +159,7 @@ export default function ElementPropertiesPanel({
     setValidationErrors(prev => ({ ...prev, [field]: errors[field] || '' }));
 
     // On bloque seulement les erreurs de format, pas les avertissements de débordement
-    const hasBlockingErrors = Object.keys(errors).some(key => 
+    const hasBlockingErrors = Object.keys(errors).some(key =>
       !errors[key].includes('⚠️') && errors[key] !== ''
     );
 
@@ -221,7 +221,7 @@ export default function ElementPropertiesPanel({
 
   // Afficher l'état de sauvegarde
   const isTempElement = localElement.id?.startsWith('temp_') || false;
-  
+
   if (isTempElement) {
     return (
       <div className="space-y-4">
@@ -233,7 +233,7 @@ export default function ElementPropertiesPanel({
             ⚠️ Nouvel élément - Utiliser "Sauvegarder" pour créer
           </p>
         </div>
-        
+
         {/* Indicateur d'échelle */}
         {isScaled && (
           <div className="bg-blue-50 dark:bg-blue-900/20 p-2 rounded text-center">
@@ -245,7 +245,7 @@ export default function ElementPropertiesPanel({
 
         {/* Affichage des coordonnées en pourcentages */}
         <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
-          x: {localElement.x.toFixed(1)}%, y: {localElement.y.toFixed(1)}%<br/>
+          x: {localElement.x.toFixed(1)}%, y: {localElement.y.toFixed(1)}%<br />
           w: {localElement.width.toFixed(1)}%, h: {localElement.height.toFixed(1)}%
         </div>
 
@@ -519,7 +519,7 @@ export default function ElementPropertiesPanel({
 
       {/* Affichage des coordonnées en pourcentages */}
       <div className="text-xs text-gray-500 dark:text-gray-400 text-center">
-        x: {localElement.x.toFixed(1)}%, y: {localElement.y.toFixed(1)}%<br/>
+        x: {localElement.x.toFixed(1)}%, y: {localElement.y.toFixed(1)}%<br />
         w: {localElement.width.toFixed(1)}%, h: {localElement.height.toFixed(1)}%
       </div>
 

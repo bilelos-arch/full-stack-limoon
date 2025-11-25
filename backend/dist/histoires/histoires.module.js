@@ -14,6 +14,7 @@ const histoires_service_1 = require("./histoires.service");
 const histoire_schema_1 = require("./schemas/histoire.schema");
 const pdf_generator_service_1 = require("./utils/pdf-generator.service");
 const image_mapping_service_1 = require("./utils/image-mapping.service");
+const image_conversion_service_1 = require("../image-conversion.service");
 const templates_module_1 = require("../templates.module");
 const users_module_1 = require("../users.module");
 let HistoiresModule = class HistoiresModule {
@@ -27,8 +28,8 @@ exports.HistoiresModule = HistoiresModule = __decorate([
             (0, common_1.forwardRef)(() => users_module_1.UsersModule),
         ],
         controllers: [histoires_controller_1.HistoiresController],
-        providers: [histoires_service_1.HistoiresService, pdf_generator_service_1.PdfGeneratorService, image_mapping_service_1.ImageMappingService],
-        exports: [histoires_service_1.HistoiresService, pdf_generator_service_1.PdfGeneratorService, image_mapping_service_1.ImageMappingService],
+        providers: [histoires_service_1.HistoiresService, pdf_generator_service_1.PdfGeneratorService, image_mapping_service_1.ImageMappingService, image_conversion_service_1.ImageConversionService],
+        exports: [histoires_service_1.HistoiresService, pdf_generator_service_1.PdfGeneratorService, image_mapping_service_1.ImageMappingService, image_conversion_service_1.ImageConversionService],
     })
 ], HistoiresModule);
 //# sourceMappingURL=histoires.module.js.map

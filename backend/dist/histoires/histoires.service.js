@@ -177,7 +177,7 @@ let HistoiresService = HistoiresService_1 = class HistoiresService {
             throw new common_1.NotFoundException('Histoire not found');
         }
         const histoireObj = histoire.toObject();
-        const baseUrl = process.env.BASE_URL || 'http://localhost:3000';
+        const baseUrl = process.env.BASE_URL || 'http://localhost:10000';
         return {
             ...histoireObj,
             previewImage: histoireObj.previewUrls?.[0] || null,

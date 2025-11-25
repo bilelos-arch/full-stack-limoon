@@ -192,7 +192,7 @@ let TemplatesService = class TemplatesService {
         const filename = path.basename(finalTempPath);
         const pdfUrl = `/uploads/temp-previews/${filename}`;
         console.log('Returning PDF URL:', pdfUrl);
-        console.log('Full URL should be:', `${process.env.BASE_URL || 'http://localhost:3000'}${pdfUrl}`);
+        console.log('Full URL should be:', `${process.env.BASE_URL || 'http://localhost:10000'}${pdfUrl}`);
         console.log('File exists at final path:', fs.existsSync(finalTempPath));
         console.log('File size:', fs.existsSync(finalTempPath) ? fs.statSync(finalTempPath).size : 'N/A');
         return {

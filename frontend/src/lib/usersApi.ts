@@ -49,7 +49,7 @@ export interface QueryUsersParams {
   status?: 'active' | 'inactive' | 'suspended';
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:10000';
 
 class UsersApi {
   private api = axios.create({

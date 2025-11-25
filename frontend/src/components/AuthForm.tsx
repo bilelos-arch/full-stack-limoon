@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/hooks/useAuth';
 import { useAuthForm } from '@/hooks/useAuthForm';
 import Link from 'next/link';
@@ -29,109 +31,82 @@ export const AuthForm = ({ isRegister = false }: AuthFormProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          placeholder="votre@email.com"
-          value={formData.email}
-          onChange={(e) => updateField('email', e.target.value)}
-          className={errors.email ? 'border-red-500' : ''}
-        />
-        {errors.email && (
-          <p className="text-sm text-red-500">{errors.email}</p>
-        )}
-      </div>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-5">
+        <div className="space-y-2">
+          <Label htmlFor="email" className="text-slate-700 font-medium">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            placeholder="votre@email.com"
+            value={formData.email}
+            onChange={(e) => updateField('email', e.target.value)}
+            className={`h-11 ${errors.email ? 'border-red-500 focus-visible:ring-red-200' : ''}`}
+          />
+          {errors.email && (
+            <p className="text-sm text-red-500">{errors.email}</p>
+          )}
+        </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="password">Mot de passe</Label>
-        <Input
-          id="password"
-          type="password"
-          placeholder="Votre mot de passe"
-          value={formData.password}
-          onChange={(e) => updateField('password', e.target.value)}
-          className={errors.password ? 'border-red-500' : ''}
-        />
-        {errors.password && (
-          <p className="text-sm text-red-500">{errors.password}</p>
-        )}
-      </div>
+        <div className="space-y-2">
+          <Label htmlFor="password" className="text-slate-700 font-medium">Mot de passe</Label>
+          <Input
+            id="password"
+            type="password"
+            placeholder="••••••••"
+            value={formData.password}
+            onChange={(e) => updateField('password', e.target.value)}
+            className={`h-11 ${errors.password ? 'border-red-500 focus-visible:ring-red-200' : ''}`}
+          />
+          {errors.password && (
+            <p className="text-sm text-red-500">{errors.password}</p>
+          )}
+        </div>
 
-      {isRegister && (
-        <>
+        {isRegister && (
           <div className="space-y-2">
-            <Label htmlFor="name">Nom</Label>
-            <Input
-              id="name"
-              type="text"
-              placeholder="Votre nom"
-              value={formData.name}
-              onChange={(e) => updateField('name', e.target.value)}
-              className={errors.name ? 'border-red-500' : ''}
-            />
-            {errors.name && (
-              <p className="text-sm text-red-500">{errors.name}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirmer le mot de passe</Label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              placeholder="Confirmer votre mot de passe"
-              value={formData.confirmPassword}
-              onChange={(e) => updateField('confirmPassword', e.target.value)}
-              className={errors.confirmPassword ? 'border-red-500' : ''}
-            />
-            {errors.confirmPassword && (
-              <p className="text-sm text-red-500">{errors.confirmPassword}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="role">Rôle</Label>
-            <select
-              id="role"
+            <Label htmlFor="role" className="text-slate-700 font-medium">Rôle</Label>
+            <Select
               value={formData.role}
-              onChange={(e) => updateField('role', e.target.value as 'admin' | 'user')}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onValueChange={(value) => updateField('role', value)}
             >
-              <option value="user">Utilisateur</option>
-              <option value="admin">Administrateur</option>
-            </select>
+              <SelectTrigger className="h-11 w-full bg-[#F1F5F9] border-transparent focus:bg-white focus:border-[#0055FF] focus:ring-2 focus:ring-[#0055FF]/20 rounded-lg transition-all duration-200">
+                <SelectValue placeholder="Sélectionnez un rôle" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="parent">Parent</SelectItem>
+                <SelectItem value="admin">Administrateur</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        </>
-      )}
+        )}
+      </div>
 
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-sm text-red-600">{error}</p>
-        </div>
+        <Alert variant="destructive" className="bg-red-50 border-red-100 text-red-900">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
-      <Button type="submit" className="w-full" disabled={isLoading}>
+      <Button type="submit" className="w-full h-12 text-base font-medium shadow-lg shadow-blue-500/20 mt-2" disabled={isLoading}>
         {isLoading ? 'Chargement...' : isRegister ? 'S\'inscrire' : 'Se connecter'}
       </Button>
 
-      <div className="text-center text-sm">
+      <div className="text-center text-sm text-slate-500 mt-6">
         {isRegister ? (
-          <p>
+          <>
             Déjà un compte ?{' '}
-            <Link href="/login" className="text-blue-600 hover:underline">
+            <Link href="/login" className="text-[#0055FF] hover:underline font-medium">
               Se connecter
             </Link>
-          </p>
+          </>
         ) : (
-          <p>
-            Pas de compte ?{' '}
-            <Link href="/register" className="text-blue-600 hover:underline">
+          <>
+            Pas encore de compte ?{' '}
+            <Link href="/register" className="text-[#0055FF] hover:underline font-medium">
               S'inscrire
             </Link>
-          </p>
+          </>
         )}
       </div>
     </form>

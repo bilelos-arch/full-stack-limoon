@@ -39,6 +39,19 @@ interface User {
   childAvatar?: string;
 }
 
+interface NavLinkItem {
+  href: string;
+  label: string;
+}
+
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ForwardRefExoticComponent<Omit<any, "ref"> & React.RefAttributes<SVGSVGElement>>;
+  hasDropdown: boolean;
+  items?: NavLinkItem[];
+}
+
 interface NavbarProps {
 }
 
@@ -77,10 +90,10 @@ const Navbar: React.FC<NavbarProps> = () => {
     if (typeof window === 'undefined') {
       return isScrolled ? 'h-16' : 'h-20';
     }
-    
+
     const isDesktop = window.innerWidth >= 1024;
     const isTablet = window.innerWidth >= 768;
-    
+
     if (isScrolled) {
       return isDesktop ? 'h-16' : isTablet ? 'h-14' : 'h-14';
     }
@@ -91,7 +104,7 @@ const Navbar: React.FC<NavbarProps> = () => {
   const fetchTemplates = useCallback(async (force = false) => {
     const cacheKey = 'templates';
     const cached = templatesCache.current.get(cacheKey);
-    
+
     if (!force && cached && Date.now() - cached.timestamp < CACHE_DURATION) {
       setTemplates(cached.data);
       return;
@@ -209,7 +222,7 @@ const Navbar: React.FC<NavbarProps> = () => {
   const handleDropdownToggle = useCallback(() => setIsDropdownOpen(prev => !prev), []);
   const handleUserMenuToggle = useCallback(() => setIsUserMenuOpen(prev => !prev), []);
   const handleSearchToggle = useCallback(() => setIsSearchOpen(prev => !prev), []);
-  
+
   const handleLogout = useCallback(() => {
     logout();
     setIsMenuOpen(false);
@@ -224,53 +237,54 @@ const Navbar: React.FC<NavbarProps> = () => {
   }, [searchQuery, handleSearch]);
 
   // Desktop navigation links
-  const navLinks = useMemo(() => [
+  const navLinks = useMemo<NavItem[]>(() => [
     {
-      href: '#',
-      label: 'Nos histoires',
+      href: '/book-store',
+      label: 'Book-store',
       icon: BookOpen,
-      hasDropdown: true,
-      items: templates.slice(0, 5).map(template => ({
-        href: `/histoires/hero/${template._id}`,
-        label: template.title
-      }))
+      hasDropdown: false
     },
-    { href: '/le-concept', label: 'Le concept', icon: Sparkles },
+    {
+      href: '/le-concept',
+      label: 'Le concept',
+      icon: Sparkles,
+      hasDropdown: false
+    },
   ], [templates]);
 
   // Animation variants are now handled directly with initial/animate props
 
   return (
     <>
-      {/* Main Navbar */}
-      <motion.nav 
+      {/* Main Navbar - Floating Style */}
+      <motion.nav
         className={cn(
-          "fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b border-border/50 shadow-sm",
-          navbarHeight
+          "fixed top-4 left-0 right-0 z-50 mx-auto max-w-7xl px-4",
+          "transition-all duration-300 ease-in-out"
         )}
         role="navigation"
         aria-label="Navigation principale"
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.3, ease: 'easeOut' }}
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, ease: 'easeOut' }}
       >
-        <div className="max-w-[1620px] mx-auto px-4 sm:px-6 lg:px-8 h-full">
-          <div className="flex items-center justify-between h-full">
+        <div className="bg-white/80 backdrop-blur-md border border-white/20 shadow-[0_8px_30px_rgb(0,0,0,0.04)] rounded-2xl px-4 sm:px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center justify-between w-full">
             {/* Logo */}
-            <motion.div 
+            <motion.div
               className="flex items-center"
               whileHover={{ scale: 1.05 }}
               transition={{ duration: 0.2 }}
             >
-              <Link 
-                href="/" 
+              <Link
+                href="/"
                 className="flex items-center space-x-3 hover:opacity-80 transition-opacity duration-200"
                 aria-label="Accueil - Limoon"
               >
-                <Image 
-                  src="/logo.svg" 
-                  alt="Limoon" 
-                  width={120} 
+                <Image
+                  src="/logo.svg"
+                  alt="Limoon"
+                  width={120}
                   height={40}
                   className="h-8 w-auto"
                 />
@@ -282,8 +296,8 @@ const Navbar: React.FC<NavbarProps> = () => {
               {navLinks.map((link, index) => {
                 const Icon = link.icon;
                 return (
-                  <motion.div 
-                    key={link.href} 
+                  <motion.div
+                    key={link.href}
                     className="relative"
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -309,7 +323,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                             <ChevronDown className="h-4 w-4" />
                           </motion.div>
                         </motion.button>
-                        
+
                         {/* Dropdown Menu */}
                         <AnimatePresence>
                           {isDropdownOpen && (
@@ -327,7 +341,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                                 <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
                                   Histoires populaires
                                 </h3>
-                                {link.items?.map((item, itemIndex) => (
+                                {link.items?.map((item: NavLinkItem, itemIndex: number) => (
                                   <motion.div
                                     key={item.href}
                                     initial={{ opacity: 0, x: -10 }}
@@ -374,7 +388,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                           <Icon className="h-4 w-4" />
                           <span className="relative">
                             {link.label}
-                            <motion.span 
+                            <motion.span
                               className="absolute bottom-0 left-0 h-0.5 bg-primary origin-left"
                               initial={{ scaleX: 0 }}
                               whileHover={{ scaleX: 1 }}
@@ -413,7 +427,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                 whileTap={{ scale: 0.95 }}
               >
                 <Button
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-medium px-6 py-2 rounded-full transition-all duration-200 shadow-lg"
+                  className="bg-[#0055FF] hover:bg-[#0044CC] text-white font-medium px-6 py-2 rounded-lg shadow-lg shadow-blue-500/20 border-0"
                   asChild
                 >
                   <Link href="/histoires/creer">
@@ -611,7 +625,7 @@ const Navbar: React.FC<NavbarProps> = () => {
               }
             }}
           >
-            <div 
+            <div
               className="w-full max-w-2xl mx-4 bg-background/95 backdrop-blur-md border border-border/50 rounded-lg shadow-2xl p-6"
               onClick={(e) => e.stopPropagation()}
             >
@@ -627,15 +641,15 @@ const Navbar: React.FC<NavbarProps> = () => {
                     className="flex-1 bg-transparent text-lg placeholder:text-muted-foreground focus:outline-none"
                     aria-label="Recherche"
                   />
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     size="sm"
                     disabled={isSearching}
                   >
                     {isSearching ? '...' : 'Rechercher'}
                   </Button>
                 </div>
-                
+
                 {/* Search Results */}
                 {searchResults && (
                   <div className="max-h-64 overflow-y-auto space-y-2 border-t border-border/50 pt-4">
@@ -654,7 +668,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                         ))}
                       </div>
                     )}
-                    
+
                     {searchResults.templates.length > 0 && (
                       <div>
                         <h4 className="text-sm font-medium text-muted-foreground mb-2">Templates</h4>
@@ -670,7 +684,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                         ))}
                       </div>
                     )}
-                    
+
                     {searchResults.stories.length === 0 && searchResults.templates.length === 0 && (
                       <p className="text-sm text-muted-foreground text-center py-4">
                         Aucun résultat trouvé
@@ -678,7 +692,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                     )}
                   </div>
                 )}
-                
+
                 <div className="flex justify-between items-center">
                   <p className="text-sm text-muted-foreground">
                     Appuyez sur Échap pour fermer

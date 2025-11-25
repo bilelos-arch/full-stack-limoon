@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
       '@/components/ui'
     ],
   },
-  
+
   // Configuration des images optimisées
   images: {
     formats: ['image/avif', 'image/webp'],
@@ -125,7 +125,12 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/templates',
-        destination: '/story',
+        destination: '/book-store',
+        permanent: true,
+      },
+      {
+        source: '/story',
+        destination: '/book-store',
         permanent: true,
       },
     ];

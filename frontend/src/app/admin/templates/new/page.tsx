@@ -30,7 +30,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import axios from 'axios';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:10000';
 
 const formSchema = z.object({
   title: z.string().min(1, 'Le titre est requis'),
@@ -198,12 +198,12 @@ export default function NewTemplatePage() {
         status: error.response?.status,
         data: error.response?.data
       });
-      
+
       // Afficher le message d'erreur exact du backend
       if (error.response) {
         const status = error.response.status;
         const message = error.response.data?.message || error.response.data || 'Erreur inconnue';
-        
+
         if (status === 401) {
           alert(`Erreur d'authentification (401): ${message}. Veuillez vous reconnecter.`);
           router.push('/login');

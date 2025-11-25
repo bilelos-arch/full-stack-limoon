@@ -19,10 +19,12 @@ const pdf2pic = require("pdf2pic");
 const sharp = require("sharp");
 const editor_elements_service_1 = require("../../editor-elements.service");
 const image_mapping_service_1 = require("./image-mapping.service");
+const image_conversion_service_1 = require("../../image-conversion.service");
 let PdfGeneratorService = PdfGeneratorService_1 = class PdfGeneratorService {
-    constructor(editorElementsService, imageMappingService) {
+    constructor(editorElementsService, imageMappingService, imageConversionService) {
         this.editorElementsService = editorElementsService;
         this.imageMappingService = imageMappingService;
+        this.imageConversionService = imageConversionService;
         this.logger = new common_1.Logger(PdfGeneratorService_1.name);
         this.uploadsDir = './uploads';
         this.tempImagesDir = './uploads/temp-images';
@@ -352,36 +354,55 @@ let PdfGeneratorService = PdfGeneratorService_1 = class PdfGeneratorService {
                 let imageFormat;
                 if (imageVar.startsWith('data:image/')) {
                     this.logger.log(`[PDF-GENERATOR] 🔍 Detected data URL for variable "${element.variableName}"`);
-                    const dataUrlValidation = this.validateDataUrl(imageVar);
-                    if (!dataUrlValidation.valid) {
-                        this.logger.error(`[PDF-GENERATOR] ❌ Data URL validation failed for variable "${element.variableName}": ${dataUrlValidation.error}`);
-                        failedImages++;
-                        imageErrors.push(`Variable "${element.variableName}": ${dataUrlValidation.error}`);
-                        continue;
-                    }
-                    imageFormat = dataUrlValidation.format;
-                    const base64Data = imageVar.split(',')[1];
-                    try {
-                        imageBytes = this.decodeBase64Data(base64Data);
-                        this.logger.log(`[PDF-GENERATOR] ✅ Successfully decoded base64 data (${imageBytes.length} bytes) for format: ${imageFormat}`);
-                        if (imageBytes.length === 0) {
-                            this.logger.error(`[PDF-GENERATOR] ❌ Decoded base64 data is empty for variable "${element.variableName}"`);
-                            failedImages++;
-                            imageErrors.push(`Variable "${element.variableName}": decoded data is empty`);
-                            continue;
+                    if (imageVar.startsWith('data:image/svg+xml')) {
+                        this.logger.log(`[PDF-GENERATOR] 🎨 Detected SVG DataURI for variable "${element.variableName}"`);
+                        try {
+                            const pngPath = await this.imageConversionService.convertDataUriToPng(imageVar, this.tempImagesDir, `svg-temp-${Date.now()}`);
+                            const pngFullPath = path.join(this.tempImagesDir, path.basename(pngPath));
+                            imageBytes = fs.readFileSync(pngFullPath);
+                            imageFormat = 'png';
+                            fs.unlinkSync(pngFullPath);
+                            this.logger.log(`[PDF-GENERATOR] ✅ SVG converted to PNG successfully (${imageBytes.length} bytes)`);
                         }
-                        if (imageBytes.length > 50 * 1024 * 1024) {
-                            this.logger.error(`[PDF-GENERATOR] ❌ Decoded base64 data too large (${imageBytes.length} bytes) for variable "${element.variableName}"`);
+                        catch (svgConversionError) {
+                            this.logger.error(`[PDF-GENERATOR] ❌ SVG conversion failed: ${svgConversionError.message}`);
                             failedImages++;
-                            imageErrors.push(`Variable "${element.variableName}": image data too large (max 50MB)`);
+                            imageErrors.push(`Variable "${element.variableName}": SVG conversion failed - ${svgConversionError.message}`);
                             continue;
                         }
                     }
-                    catch (decodeError) {
-                        this.logger.error(`[PDF-GENERATOR] ❌ Failed to decode base64 data: ${decodeError.message}`);
-                        failedImages++;
-                        imageErrors.push(`Variable "${element.variableName}": base64 decode failed - ${decodeError.message}`);
-                        continue;
+                    else {
+                        const dataUrlValidation = this.validateDataUrl(imageVar);
+                        if (!dataUrlValidation.valid) {
+                            this.logger.error(`[PDF-GENERATOR] ❌ Data URL validation failed for variable "${element.variableName}": ${dataUrlValidation.error}`);
+                            failedImages++;
+                            imageErrors.push(`Variable "${element.variableName}": ${dataUrlValidation.error}`);
+                            continue;
+                        }
+                        imageFormat = dataUrlValidation.format;
+                        const base64Data = imageVar.split(',')[1];
+                        try {
+                            imageBytes = this.decodeBase64Data(base64Data);
+                            this.logger.log(`[PDF-GENERATOR] ✅ Successfully decoded base64 data (${imageBytes.length} bytes) for format: ${imageFormat}`);
+                            if (imageBytes.length === 0) {
+                                this.logger.error(`[PDF-GENERATOR] ❌ Decoded base64 data is empty for variable "${element.variableName}"`);
+                                failedImages++;
+                                imageErrors.push(`Variable "${element.variableName}": decoded data is empty`);
+                                continue;
+                            }
+                            if (imageBytes.length > 50 * 1024 * 1024) {
+                                this.logger.error(`[PDF-GENERATOR] ❌ Decoded base64 data too large (${imageBytes.length} bytes) for variable "${element.variableName}"`);
+                                failedImages++;
+                                imageErrors.push(`Variable "${element.variableName}": image data too large (max 50MB)`);
+                                continue;
+                            }
+                        }
+                        catch (decodeError) {
+                            this.logger.error(`[PDF-GENERATOR] ❌ Failed to decode base64 data: ${decodeError.message}`);
+                            failedImages++;
+                            imageErrors.push(`Variable "${element.variableName}": base64 decode failed - ${decodeError.message}`);
+                            continue;
+                        }
                     }
                 }
                 else {
@@ -569,13 +590,18 @@ let PdfGeneratorService = PdfGeneratorService_1 = class PdfGeneratorService {
     }
     validateDataUrl(dataUrl) {
         try {
-            const dataUrlMatch = dataUrl.match(/^data:image\/([a-zA-Z]+);base64,(.+)$/);
-            if (!dataUrlMatch) {
-                return { valid: false, error: 'Invalid data URL format' };
+            const svgUtf8Match = dataUrl.match(/^data:image\/svg\+xml;(utf8|charset=utf-8),(.+)$/i);
+            if (svgUtf8Match) {
+                this.logger.log(`[PDF-GENERATOR] ✅ Validated UTF-8 encoded SVG data URL`);
+                return { valid: true, format: 'svg' };
             }
-            const [, format, base64Data] = dataUrlMatch;
+            const base64Match = dataUrl.match(/^data:image\/([a-zA-Z]+);base64,(.+)$/);
+            if (!base64Match) {
+                return { valid: false, error: 'Invalid data URL format (must be base64 or UTF-8 encoded SVG)' };
+            }
+            const [, format, base64Data] = base64Match;
             const imageFormat = format.toLowerCase();
-            const supportedFormats = ['png', 'jpg', 'jpeg', 'gif', 'webp'];
+            const supportedFormats = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'];
             if (!supportedFormats.includes(imageFormat)) {
                 return { valid: false, error: `Unsupported image format: ${imageFormat}` };
             }
@@ -664,6 +690,7 @@ exports.PdfGeneratorService = PdfGeneratorService;
 exports.PdfGeneratorService = PdfGeneratorService = PdfGeneratorService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [editor_elements_service_1.EditorElementsService,
-        image_mapping_service_1.ImageMappingService])
+        image_mapping_service_1.ImageMappingService,
+        image_conversion_service_1.ImageConversionService])
 ], PdfGeneratorService);
 //# sourceMappingURL=pdf-generator.service.js.map
