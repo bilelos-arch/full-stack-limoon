@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 
 import React from 'react';
 import Link from 'next/link';
@@ -42,29 +43,22 @@ export const LivertéLogo: React.FC<{ className?: string }> = ({ className = '' 
 );
 
 // Reusable Footer component (to include on all pages)
-export const Footer: React.FC = () => (
-  <footer className="w-full bg-card border-t border-border mt-12">
-    <div className="container mx-auto px-4 py-8 flex flex-col md:flex-row items-center justify-between gap-4">
-      <div className="flex items-center gap-3">
-        <LivertéLogo className="w-10 h-10" />
-        <div>
-          <h3 className="text-sm font-semibold">Liverté — Le livre libre</h3>
-          <p className="text-xs text-muted-foreground">Histoires personnalisées pour petits héros</p>
-        </div>
-      </div>
+// Import shared Footer component
+import Footer from '@/components/Footer';
 
-      <nav className="flex items-center gap-4 text-sm text-muted-foreground">
-        <Link href="/">Accueil</Link>
-        <Link href="/story">Histoires</Link>
-        <Link href="/legal/privacy">Politique de confidentialité</Link>
-      </nav>
-    </div>
-    <div className="text-center text-xs text-muted-foreground py-3 border-t border-gray-50/30">© {new Date().getFullYear()} Liverté. Tous droits réservés.</div>
-  </footer>
-);
-
+// Removed inline Footer component definition (now using shared Footer).
 // Page component — "Le concept"
 export default function LeConceptPage() {
+  // Testimonials carousel state
+  const [testimonialIndex, setTestimonialIndex] = useState(0);
+  const testimonials = [
+    { author: 'Claire', text: 'Liverté a transformé les soirées lecture de mon fils en aventures magiques.' },
+    { author: 'Marc', text: 'Un outil fantastique pour créer des souvenirs personnalisés.' },
+    { author: 'Sophie', text: 'Mes enfants adorent voir leurs prénoms dans les histoires.' },
+  ];
+  const nextTestimonial = () => setTestimonialIndex((testimonialIndex + 1) % testimonials.length);
+  const prevTestimonial = () => setTestimonialIndex((testimonialIndex - 1 + testimonials.length) % testimonials.length);
+
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       {/* Hero */}
@@ -87,6 +81,45 @@ export default function LeConceptPage() {
           </div>
         </div>
       </header>
+
+      {/* Feature Grid – Pourquoi Liverté ? */}
+      <section className="container mx-auto px-4 py-12">
+        <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8">Pourquoi Liverté ?</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="p-6 bg-card rounded-lg shadow-citron">
+            <h3 className="font-semibold mb-2">Rapide & ludique</h3>
+            <p className="text-sm text-muted-foreground">En quelques clics, créez une histoire unique et téléchargez le PDF.</p>
+          </div>
+          <div className="p-6 bg-card rounded-lg shadow-citron">
+            <h3 className="font-semibold mb-2">Sûr & confidentiel</h3>
+            <p className="text-sm text-muted-foreground">Les photos et prénoms sont supprimés dès la génération — rien n'est réutilisé.</p>
+          </div>
+          <div className="p-6 bg-card rounded-lg shadow-citron">
+            <h3 className="font-semibold mb-2">Personnalisable</h3>
+            <p className="text-sm text-muted-foreground">Choisissez le prénom, l’âge, une photo et quelques détails d’univers.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Carousel */}
+      <section className="bg-gray-50 py-12">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-6">Ce que disent nos utilisateurs</h2>
+          <div className="relative max-w-xl mx-auto">
+            <div className="p-6 bg-white rounded-lg shadow-lg">
+              <p className="italic text-muted-foreground mb-4">"{testimonials[testimonialIndex].text}"</p>
+              <p className="font-semibold">- {testimonials[testimonialIndex].author}</p>
+            </div>
+            <button onClick={prevTestimonial} className="absolute left-0 top-1/2 -translate-y-1/2 bg-[#0055FF] text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-[#0044CC]">
+              ‹
+            </button>
+            <button onClick={nextTestimonial} className="absolute right-0 top-1/2 -translate-y-1/2 bg-[#0055FF] text-white rounded-full w-8 h-8 flex items-center justify-center hover:bg-[#0044CC]">
+              ›
+            </button>
+          </div>
+        </div>
+      </section>
+
 
       <main className="container mx-auto px-4 flex-1">
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center py-8">
