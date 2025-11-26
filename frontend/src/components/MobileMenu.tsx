@@ -48,10 +48,13 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Navigation links
+  // Navigation links
   const navLinks = [
-    { href: '/', label: 'Accueil', icon: Home },
-    { href: '/book-store', label: 'Nos histoires', icon: BookOpen },
-    { href: '/le-concept', label: 'Le concept', icon: Sparkles }
+    { href: '/', label: 'Accueil' },
+    { href: '/book-store', label: 'Nos histoires' },
+    { href: '/le-concept', label: 'Le concept' },
+    { href: '/contact', label: 'Contact' },
+    { href: '/politique-confidentialite', label: 'Confidentialité' }
   ];
 
   // Close on Escape key
@@ -158,7 +161,6 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
               {/* Navigation Links */}
               <nav className="space-y-1">
                 {navLinks.map((link) => {
-                  const Icon = link.icon;
                   return (
                     <Link
                       key={link.href}
@@ -166,7 +168,6 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
                       onClick={onClose}
                       className="flex items-center gap-3 p-4 rounded-lg hover:bg-slate-50 transition-colors"
                     >
-                      <Icon className="w-5 h-5 text-slate-600" />
                       <span className="text-sm font-medium text-slate-900">{link.label}</span>
                     </Link>
                   );

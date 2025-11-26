@@ -47,7 +47,6 @@ interface NavLinkItem {
 interface NavItem {
   href: string;
   label: string;
-  icon: React.ForwardRefExoticComponent<Omit<any, "ref"> & React.RefAttributes<SVGSVGElement>>;
   hasDropdown: boolean;
   items?: NavLinkItem[];
 }
@@ -241,13 +240,21 @@ const Navbar: React.FC<NavbarProps> = () => {
     {
       href: '/book-store',
       label: 'Book-store',
-      icon: BookOpen,
       hasDropdown: false
     },
     {
       href: '/le-concept',
       label: 'Le concept',
-      icon: Sparkles,
+      hasDropdown: false
+    },
+    {
+      href: '/contact',
+      label: 'Contact',
+      hasDropdown: false
+    },
+    {
+      href: '/politique-confidentialite',
+      label: 'Confidentialité',
       hasDropdown: false
     },
   ], [templates]);
@@ -294,7 +301,6 @@ const Navbar: React.FC<NavbarProps> = () => {
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center space-x-8">
               {navLinks.map((link, index) => {
-                const Icon = link.icon;
                 return (
                   <motion.div
                     key={link.href}
@@ -314,8 +320,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
                         >
-                          <Icon className="h-4 w-4" />
-                          <span>{link.label}</span>
+                          <span className="text-sm">{link.label}</span>
                           <motion.div
                             animate={{ rotate: isDropdownOpen ? 180 : 0 }}
                             transition={{ duration: 0.2 }}
@@ -385,8 +390,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                           href={link.href}
                           className="flex items-center space-x-1 text-foreground/80 hover:text-primary transition-colors duration-200 font-medium group"
                         >
-                          <Icon className="h-4 w-4" />
-                          <span className="relative">
+                          <span className="relative text-sm">
                             {link.label}
                             <motion.span
                               className="absolute bottom-0 left-0 h-0.5 bg-primary origin-left"
@@ -421,20 +425,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                 </Button>
               </motion.div>
 
-              {/* CTA Button */}
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Button
-                  className="bg-[#0055FF] hover:bg-[#0044CC] text-white font-medium px-6 py-2 rounded-lg shadow-lg shadow-blue-500/20 border-0"
-                  asChild
-                >
-                  <Link href="/histoires/creer">
-                    Créer une histoire
-                  </Link>
-                </Button>
-              </motion.div>
+              {/* CTA Button removed */}
 
               {/* User Menu */}
               {isAuthenticated && user ? (

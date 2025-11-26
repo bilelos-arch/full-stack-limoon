@@ -42,11 +42,7 @@ export const LivertéLogo: React.FC<{ className?: string }> = ({ className = '' 
   </svg>
 );
 
-// Reusable Footer component (to include on all pages)
-// Import shared Footer component
 
-
-// Removed inline Footer component definition (now using shared Footer).
 // Page component — "Le concept"
 export default function LeConceptPage() {
   // Testimonials carousel state
