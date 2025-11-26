@@ -35,9 +35,9 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:10000'
 const formSchema = z.object({
   title: z.string().min(1, 'Le titre est requis'),
   description: z.string().min(1, 'La description est requise'),
-  category: z.enum(['super hero', 'aventure', 'animal', 'éducation']),
+  category: z.enum(['contes-et-aventures-imaginaires', 'heros-du-quotidien', 'histoires-avec-des-animaux', 'histoires-educatives', 'valeurs-et-developpement-personnel', 'vie-quotidienne-et-ecole', 'fetes-et-occasions-speciales', 'exploration-et-science-fiction', 'culture-et-traditions', 'histoires-du-soir']),
   gender: z.enum(['boy', 'girl', 'unisex']),
-  ageRange: z.enum(['3 ans - 5ans', '6 ans - 8 ans', '9 ans - 11 ans', '12 ans - 15 ans']),
+  ageRange: z.enum(['3 ans - 5 ans', '6 ans - 8 ans', '9 ans - 11 ans', '12 ans - 15 ans']),
   language: z.string().min(1, 'La langue est requise'),
   isPublished: z.boolean(),
   pdf: z.instanceof(File).optional(),
@@ -50,9 +50,9 @@ interface Template {
   _id: string;
   title: string;
   description: string;
-  category: 'super hero' | 'aventure' | 'animal' | 'éducation';
+  category: 'contes-et-aventures-imaginaires' | 'heros-du-quotidien' | 'histoires-avec-des-animaux' | 'histoires-educatives' | 'valeurs-et-developpement-personnel' | 'vie-quotidienne-et-ecole' | 'fetes-et-occasions-speciales' | 'exploration-et-science-fiction' | 'culture-et-traditions' | 'histoires-du-soir';
   gender: 'boy' | 'girl' | 'unisex';
-  ageRange: '3 ans - 5ans' | '6 ans - 8 ans' | '9 ans - 11 ans' | '12 ans - 15 ans';
+  ageRange: '3 ans - 5 ans' | '6 ans - 8 ans' | '9 ans - 11 ans' | '12 ans - 15 ans';
   language: string;
   pdfPath: string;
   coverPath: string;
@@ -282,10 +282,16 @@ export default function EditTemplatePage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="super hero">Super Héros</SelectItem>
-                        <SelectItem value="aventure">Aventure</SelectItem>
-                        <SelectItem value="animal">Animal</SelectItem>
-                        <SelectItem value="éducation">Éducation</SelectItem>
+                        <SelectItem value="contes-et-aventures-imaginaires">Contes et aventures imaginaires</SelectItem>
+                        <SelectItem value="heros-du-quotidien">Héros du quotidien</SelectItem>
+                        <SelectItem value="histoires-avec-des-animaux">Histoires avec des animaux</SelectItem>
+                        <SelectItem value="histoires-educatives">Histoires éducatives</SelectItem>
+                        <SelectItem value="valeurs-et-developpement-personnel">Valeurs et développement personnel</SelectItem>
+                        <SelectItem value="vie-quotidienne-et-ecole">Vie quotidienne et école</SelectItem>
+                        <SelectItem value="fetes-et-occasions-speciales">Fêtes et occasions spéciales</SelectItem>
+                        <SelectItem value="exploration-et-science-fiction">Exploration et science-fiction</SelectItem>
+                        <SelectItem value="culture-et-traditions">Culture et traditions</SelectItem>
+                        <SelectItem value="histoires-du-soir">Histoires du soir</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormDescription id="category-description">
@@ -335,7 +341,7 @@ export default function EditTemplatePage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="3 ans - 5ans">3 ans - 5 ans</SelectItem>
+                        <SelectItem value="3 ans - 5 ans">3 ans - 5 ans</SelectItem>
                         <SelectItem value="6 ans - 8 ans">6 ans - 8 ans</SelectItem>
                         <SelectItem value="9 ans - 11 ans">9 ans - 11 ans</SelectItem>
                         <SelectItem value="12 ans - 15 ans">12 ans - 15 ans</SelectItem>
