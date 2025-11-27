@@ -35,7 +35,7 @@ export default function Home() {
     >
       {/* 1. Section Héro - Chargement immédiat */}
       <HeroPortal />
-      
+
       {/* 2. Carousel des mondes d'aventures - Lazy loaded */}
       <Suspense fallback={<SectionLoader>des univers</SectionLoader>}>
         <motion.div
@@ -47,7 +47,7 @@ export default function Home() {
           <WorldCarousel />
         </motion.div>
       </Suspense>
-      
+
       {/* 3. Cartes des fonctionnalités clés - Lazy loaded */}
       <Suspense fallback={<SectionLoader>des fonctionnalités</SectionLoader>}>
         <motion.div
@@ -59,7 +59,7 @@ export default function Home() {
           <FeatureCards />
         </motion.div>
       </Suspense>
-      
+
       {/* 4. Manifeste de l'entreprise - Lazy loaded */}
       <Suspense fallback={<SectionLoader>du manifeste</SectionLoader>}>
         <motion.div
@@ -71,7 +71,7 @@ export default function Home() {
           <Manifesto />
         </motion.div>
       </Suspense>
-      
+
       {/* 5. Guide "Comment ça marche" - Lazy loaded avec skeleton */}
       <Suspense fallback={<SectionLoader>du guide</SectionLoader>}>
         <motion.div
@@ -83,7 +83,7 @@ export default function Home() {
           <HowItWorks />
         </motion.div>
       </Suspense>
-      
+
       {/* 6. Mur de témoignages authentiques - Lazy loaded */}
       <Suspense fallback={<TestimonialsGridSkeleton count={12} />}>
         <motion.div
@@ -93,18 +93,6 @@ export default function Home() {
           viewport={{ once: true, margin: "-100px" }}
         >
           <TestimonialsWall />
-        </motion.div>
-      </Suspense>
-      
-      {/* 7. CTA final avec garantie - Lazy loaded */}
-      <Suspense fallback={<SectionLoader>du CTA final</SectionLoader>}>
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut", delay: 0.5 }}
-          viewport={{ once: true, margin: "-100px" }}
-        >
-          <FinalCTA />
         </motion.div>
       </Suspense>
     </motion.main>
